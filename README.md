@@ -54,9 +54,8 @@ Việc trễ giờ, lạc đường hoặc thiếu thông tin về vị trí xe 
 - Nhận thông báo khi xe sắp đến điểm đón.  
 - Nhận cảnh báo khi xe bị trễ hoặc gặp sự cố.
 
-
+```bash
 smart-school-bus-tracking/
-│
 ├── frontend/                      # Next.js (UI cho phụ huynh & quản lý)
 │   ├── public/                    # Static assets (logo, icons, ảnh bus)
 │   ├── src/
@@ -115,4 +114,5 @@ smart-school-bus-tracking/
 ├── .gitignore
 ├── .env.example                   # Env chung cho dự án
 └── README.md
+```
 
