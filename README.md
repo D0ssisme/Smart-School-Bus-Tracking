@@ -52,4 +52,67 @@ Việc trễ giờ, lạc đường hoặc thiếu thông tin về vị trí xe 
 ### 📌 Phụ huynh
 - Theo dõi **vị trí xe buýt của con** theo thời gian thực.  
 - Nhận thông báo khi xe sắp đến điểm đón.  
-- Nhận cảnh báo khi xe bị trễ hoặc gặp sự cố.  
+- Nhận cảnh báo khi xe bị trễ hoặc gặp sự cố.
+
+
+smart-school-bus-tracking/
+│
+├── frontend/                      # Next.js (UI cho phụ huynh & quản lý)
+│   ├── public/                    # Static assets (logo, icons, ảnh bus)
+│   ├── src/
+│   │   ├── app/                   # Next.js App Router (v13+)
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx           # Trang home/dashboard
+│   │   │   ├── parents/           # Module cho phụ huynh
+│   │   │   │   └── page.tsx
+│   │   │   ├── drivers/           # Module cho tài xế
+│   │   │   │   └── page.tsx
+│   │   │   ├── admin/             # Module cho quản lý nhà trường
+│   │   │   │   └── page.tsx
+│   │   ├── components/            # UI components tái sử dụng (Navbar, Button)
+│   │   ├── features/              # Chia theo tính năng
+│   │   │   ├── auth/              # Đăng nhập/đăng ký
+│   │   │   ├── bus-tracking/      # Realtime map tracking
+│   │   │   ├── schedule/          # Quản lý lịch trình
+│   │   │   └── notifications/     # Thông báo phụ huynh
+│   │   ├── services/              # API client (axios/fetch đến backend)
+│   │   ├── hooks/                 # Custom hooks (useAuth, useBusTracking)
+│   │   ├── styles/                # Tailwind/CSS modules
+│   │   └── utils/                 # Helper nhỏ
+│   ├── next.config.js
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── backend/                       # Express.js API server
+│   ├── src/
+│   │   ├── config/                # Config DB, env, logger
+│   │   │   └── db.js
+│   │   ├── models/                # Mô hình dữ liệu (Student, Driver, Bus, Schedule)
+│   │   │   ├── student.model.js
+│   │   │   ├── driver.model.js
+│   │   │   ├── bus.model.js
+│   │   │   └── schedule.model.js
+│   │   ├── routes/                # Routes API
+│   │   │   ├── student.routes.js
+│   │   │   ├── driver.routes.js
+│   │   │   ├── bus.routes.js
+│   │   │   └── schedule.routes.js
+│   │   ├── controllers/           # Controller nhận request, trả response
+│   │   ├── services/              # Business logic (gọi DB, xử lý chính)
+│   │   ├── middlewares/           # Auth, error handler, validate
+│   │   ├── utils/                 # Tiện ích (jwtHelper, sendNotification)
+│   │   ├── app.js                 # Khởi tạo Express app
+│   │   └── server.js              # Điểm vào (start server)
+│   ├── package.json
+│   └── .env.example
+│
+├── docs/                          # Tài liệu hệ thống
+│   ├── architecture-diagram.png   # Sơ đồ kiến trúc
+│   ├── use-case.md
+│   └── api-docs.md                # Tài liệu API (Swagger/Postman)
+│
+├── docker-compose.yml             # Nếu muốn chạy cả FE + BE + DB bằng docker
+├── .gitignore
+├── .env.example                   # Env chung cho dự án
+└── README.md
+
