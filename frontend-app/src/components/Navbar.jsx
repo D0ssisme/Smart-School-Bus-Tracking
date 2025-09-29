@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 function Navbar() {
   return (
@@ -10,38 +11,53 @@ function Navbar() {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        height: "60px"
+        height: "60px",
       }}
     >
+      {/* Logo */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <img src="/icon/bus.png" alt="Bus Icon" style={{ width: "30px", height: "30px" }} />
+        <img
+          src="/icon/bus.png"
+          alt="Bus Icon"
+          style={{ width: "30px", height: "30px" }}
+        />
         <h3 style={{ margin: 0 }}>
-          <a 
-            href="/" 
+          <Link
+            to="/"
             style={{ textDecoration: "none", color: "white" }}
           >
             Smart School Bus
-          </a>
+          </Link>
         </h3>
-
       </div>
 
+      {/* Menu */}
       <div>
-        <a href="#" style={{ margin: "0 10px", color: "white" }}>Trang chủ</a>
-        <a href="#" style={{ margin: "0 10px", color: "white" }}>Tính năng</a>
-        <a href="#" style={{ margin: "0 10px", color: "white" }}>Liên hệ</a>
-        <button
+        <Link to="/" style={{ margin: "0 10px", color: "white", textDecoration: "none" }}>
+          Trang chủ
+        </Link>
+        <Link to="/*" style={{ margin: "0 10px", color: "white", textDecoration: "none" }}>
+          Tính năng
+        </Link>
+        <Link to="/*" style={{ margin: "0 10px", color: "white", textDecoration: "none" }}>
+          Liên hệ
+        </Link>
+        <Link
+          to="/login"
           style={{
             marginLeft: "20px",
             padding: "5px 10px",
             background: "white",
             color: "#1e3a8a",
             border: "none",
-            borderRadius: "5px"
+            borderRadius: "5px",
+            fontWeight: "bold",
+            textDecoration: "none",
+            display: "inline-block",
           }}
         >
           Đăng nhập
-        </button>
+        </Link>
       </div>
     </nav>
   );
