@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
-import "./App.css";
 
 const Page = ({ children }) => (
   <motion.div
