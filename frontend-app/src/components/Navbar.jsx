@@ -36,7 +36,7 @@ function Navbar() {
         <Link to="/" style={{ margin: "0 10px", color: "white", textDecoration: "none" }}>
           Trang chủ
         </Link>
-        <Link to="/*" style={{ margin: "0 10px", color: "white", textDecoration: "none" }}>
+        <Link to="/dashboard" style={{ margin: "0 10px", color: "white", textDecoration: "none" }}>
           Tính năng
         </Link>
         <Link to="/*" style={{ margin: "0 10px", color: "white", textDecoration: "none" }}>
