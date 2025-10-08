@@ -1,4 +1,3 @@
-import React from 'react'
 
 const NotFound = () => {
   return (
@@ -12,12 +11,8 @@ const NotFound = () => {
       className='inline-block px-6 py-3 mt-6 font-medium !text-white transition shadow-md bg-blue-900 rounded-2xl hover:bg-primary-dark'>
       Quay về trang chủ
     </a>
-
-    
     
     </div>
-
-
   )
 }
 
