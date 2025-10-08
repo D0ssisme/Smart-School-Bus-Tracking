@@ -1,6 +1,6 @@
 export default function Dashboard() {
   return (
-    <div className="bg-white rounded shadow p-6">
+    <div className="bg-white rounded shadow p-5 m-5">
       <h2 className="text-xl font-bold mb-4">🚍 Thống kê hệ thống</h2>
       <div className="grid grid-cols-3 gap-4">
         <div className="p-4 bg-blue-100 rounded">

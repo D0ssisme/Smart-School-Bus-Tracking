@@ -1,4 +1,5 @@
-import { List,CircleUserRound,ChevronDown } from "lucide-react";
+import { EllipsisVertical  } from "lucide-react";
+import UserDropdown from "./UserDropdown";
 
 export default function Navbar_db({ toggleSidebar, isOpen }) {
   return (
@@ -11,16 +12,12 @@ export default function Navbar_db({ toggleSidebar, isOpen }) {
         onClick={toggleSidebar}
         className="p-2 rounded hover:bg-gray-200 text-black bg-gray-100"
       >
-        <List className="w-6 h-6" />
+        <EllipsisVertical  className="w-5 h-5" />
       </button>
 
       <div className="flex items-center gap-3">
-        <div className="w-15 h-10 rounded bg-gray-100 justify-center items-center flex text-black p-1 ">
-            <CircleUserRound className="w-5 h-5"/>
-                <ChevronDown className="w-5 h-5"/>
-
+            <UserDropdown />
         </div>
       </div>
-    </div>
   );
 }

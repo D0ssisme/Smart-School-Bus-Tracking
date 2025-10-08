@@ -1,4 +1,4 @@
-import { LayoutDashboard, Bus, Users, BellRing } from "lucide-react";
+import { LayoutDashboard, Bus, Users, BellRing, Route,GraduationCap,AlertTriangle,UserCog,LifeBuoy   } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Sidebar({ isOpen }) {
@@ -38,7 +38,7 @@ export default function Sidebar({ isOpen }) {
               isOpen ? "opacity-100" : "opacity-0"
             }`}
           >
-            Quản lý xe
+            Xe bus
           </span>
         </Link>
 
@@ -49,11 +49,44 @@ export default function Sidebar({ isOpen }) {
               isOpen ? "opacity-100" : "opacity-0"
             }`}
           >
-            Quản lý tài khoản
+            Người dùng
           </span>
         </Link>
 
-        <Link to="/notifications" className={item}>
+        <Link to="/accounts" className={item}>
+          <LifeBuoy  className={icon} />
+          <span
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
+              isOpen ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            Tài xế
+          </span>
+        </Link>
+        
+        <Link to="/accounts" className={item}>
+          <GraduationCap className={icon} />
+          <span
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
+              isOpen ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            Học sinh
+          </span>
+        </Link>
+        
+        <Link to="/accounts" className={item}>
+          <Route className={icon} />
+          <span
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
+              isOpen ? "opacity-100" : "opacity-0"
+            }`}
+          >
+           Tuyến đường
+          </span>
+        </Link>
+
+        <Link to="/notification" className={item}>
           <BellRing className={icon} />
           <span
             className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
@@ -63,6 +96,18 @@ export default function Sidebar({ isOpen }) {
             Thông báo
           </span>
         </Link>
+
+        <Link to="/accounts" className={item}>
+          <AlertTriangle className={icon} />
+          <span
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
+              isOpen ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            Báo cáo, cảnh báo
+          </span>
+        </Link>
+
       </nav>
     </aside>
   );
