@@ -4,7 +4,7 @@ import { roleLabels } from "@/lib/mockData";
 
 function AccountTable({ users, onEdit, onDelete }) {
     return (
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded-lg shadow overflow-x-auto">
             <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                     <tr>
@@ -12,6 +12,7 @@ function AccountTable({ users, onEdit, onDelete }) {
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Họ và tên</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Giới tính</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ngày sinh</th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Số điện thoại</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nhóm quyền</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ngày tham gia</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
@@ -37,6 +38,10 @@ function AccountTable({ users, onEdit, onDelete }) {
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-700">{user.gender}</td>
                             <td className="px-6 py-4 text-sm text-gray-700">{user.birthday}</td>
+                            {/* CỘT SỐ ĐIỆN THOẠI - ĐÃ THÊM */}
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                                {user.phone || "Chưa cập nhật"}
+                            </td>
                             <td className="px-6 py-4 text-sm text-gray-700">{roleLabels[user.role]}</td>
                             <td className="px-6 py-4 text-sm text-gray-700">{user.joinDate}</td>
                             <td className="px-6 py-4">

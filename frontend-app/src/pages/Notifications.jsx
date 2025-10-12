@@ -1,50 +1,30 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import NotificationCard from "../components/NotificationCard";
-import NotificationForm from "../components/NotificationForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { mockNotifications } from "@/lib/mockData";
+import ToastService from "@/lib/toastService";
 
 function Notifications() {
+    const navigate = useNavigate();
     const [notifications, setNotifications] = useState(mockNotifications);
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const [editingNotification, setEditingNotification] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
 
-    const handleAddNotification = (newNotification) => {
-        const notification = {
-            ...newNotification,
-            id: crypto.randomUUID(),
-            sentAt: new Date().toLocaleString("vi-VN", {
-                hour: "2-digit",
-                minute: "2-digit",
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric"
-            }),
-            status: "sent"
-        };
-        setNotifications([notification, ...notifications]);
-        setIsFormOpen(false);
-    };
-
-    const handleEditNotification = (updatedNotification) => {
-        setNotifications(notifications.map(n =>
-            n.id === updatedNotification.id ? updatedNotification : n
-        ));
-        setIsFormOpen(false);
-        setEditingNotification(null);
-    };
 
     const handleDeleteNotification = (id) => {
         if (confirm("Bạn có chắc muốn xóa thông báo này?")) {
-            setNotifications(notifications.filter(n => n.id !== id));
+            const loadingToast = ToastService.loading("Đang xóa thông báo...");
+
+            setTimeout(() => {
+                setNotifications(notifications.filter(n => n.id !== id));
+                ToastService.update(loadingToast, "Xóa thông báo thành công!", "success");
+            }, 1000);
         }
     };
 
-    const openEditForm = (notification) => {
-        setEditingNotification(notification);
-        setIsFormOpen(true);
+    const handleEditNotification = (notification) => {
+        navigate(`/notifications/edit/${notification.id}`);
     };
 
     const filteredNotifications = notifications.filter(n =>
@@ -55,10 +35,6 @@ function Notifications() {
     return (
         <div className="p-6">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                    Thông báo
-                </h1>
-
                 <div className="flex gap-4 items-center">
                     <Input
                         placeholder="Tìm kiếm thông báo..."
@@ -67,11 +43,8 @@ function Notifications() {
                         className="max-w-md"
                     />
                     <Button
-                        onClick={() => {
-                            setEditingNotification(null);
-                            setIsFormOpen(true);
-                        }}
-                        className="ml-auto bg-blue-600 hover:bg-blue-700"
+                        onClick={() => navigate("/notifications/create")}
+                        className="ml-auto bg-blue-900 hover:bg-blue-700"
                     >
                         + TẠO THÔNG BÁO
                     </Button>
@@ -81,29 +54,22 @@ function Notifications() {
             <div className="space-y-4">
                 {filteredNotifications.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
-                        Không tìm thấy thông báo nào
+                        <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                        </svg>
+                        <p className="text-lg">Không tìm thấy thông báo nào</p>
                     </div>
                 ) : (
                     filteredNotifications.map((notification) => (
                         <NotificationCard
                             key={notification.id}
                             notification={notification}
-                            onEdit={openEditForm}
+                            onEdit={handleEditNotification}
                             onDelete={handleDeleteNotification}
                         />
                     ))
                 )}
             </div>
-
-            <NotificationForm
-                isOpen={isFormOpen}
-                onClose={() => {
-                    setIsFormOpen(false);
-                    setEditingNotification(null);
-                }}
-                onSubmit={editingNotification ? handleEditNotification : handleAddNotification}
-                editingNotification={editingNotification}
-            />
         </div>
     );
 }

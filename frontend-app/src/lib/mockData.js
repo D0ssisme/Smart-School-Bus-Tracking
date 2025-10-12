@@ -5,6 +5,7 @@ export const mockUsers = [
         msdd: "3118410001",
         name: "Nguyễn Văn A",
         email: "nguyenvana@student.sgu.edu.vn",
+        phone: "0901234567",
         gender: "Nam",
         birthday: "2000-05-15",
         role: "parent",
@@ -16,6 +17,7 @@ export const mockUsers = [
         msdd: "3118410002",
         name: "Trần Thị B",
         email: "tranthib@student.sgu.edu.vn",
+        phone: "0912345678",
         gender: "Nữ",
         birthday: "2001-08-20",
         role: "parent",
@@ -27,6 +29,7 @@ export const mockUsers = [
         msdd: "TX001",
         name: "Lê Văn C",
         email: "levanc@driver.sgu.edu.vn",
+        phone: "0923456789",
         gender: "Nam",
         birthday: "1985-03-12",
         role: "driver",
@@ -38,22 +41,12 @@ export const mockUsers = [
         msdd: "TX002",
         name: "Phạm Thị D",
         email: "phamthid@driver.sgu.edu.vn",
+        phone: "0934567890",
         gender: "Nữ",
         birthday: "1990-11-25",
         role: "driver",
         joinDate: "2023-04-03",
         status: "inactive"
-    },
-    {
-        id: 5,
-        msdd: "ADMIN001",
-        name: "Hoàng Văn E",
-        email: "admin@sgu.edu.vn",
-        gender: "Nam",
-        birthday: "1980-01-01",
-        role: "admin",
-        joinDate: "2023-04-01",
-        status: "active"
     }
 ];
 
@@ -111,3 +104,12 @@ export const genderLabels = {
     "Nam": "Nam",
     "Nữ": "Nữ"
 };
+//student
+export const mockStudents = [
+    { id: 1, MaHS: "HS001", HoTen: "Nguyễn Văn A", Lop: "10A1", MaPhuHuynh: "PH001", MaTuyen: "T1", status: "active" },
+    { id: 2, MaHS: "HS002", HoTen: "Trần Thị B", Lop: "10A2", MaPhuHuynh: "PH002", MaTuyen: "T2", status: "inactive" },
+];
+export const mockRoutes = [
+    { id: 1, name: "Tuyến 1 - Quận 1" },
+    { id: 2, name: "Tuyến 2 - Quận 2" },
+];

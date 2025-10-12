@@ -1,45 +1,30 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AccountTable from "../components/AccountTable";
-import AccountForm from "../components/AccountForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { mockUsers } from "@/lib/mockData";
+import ToastService from "@/lib/toastService";
 
 function AccountManager() {
+    const navigate = useNavigate();
     const [users, setUsers] = useState(mockUsers);
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const [editingUser, setEditingUser] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterRole, setFilterRole] = useState("all");
 
-    const handleAddUser = (newUser) => {
-        const user = {
-            ...newUser,
-            id: crypto.randomUUID(),
-            joinDate: new Date().toISOString().split('T')[0],
-            status: "active"
-        };
-        setUsers([...users, user]);
-        setIsFormOpen(false);
-    };
-
-    const handleEditUser = (updatedUser) => {
-        setUsers(users.map(u =>
-            u.id === updatedUser.id ? { ...u, ...updatedUser } : u
-        ));
-        setIsFormOpen(false);
-        setEditingUser(null);
-    };
-
     const handleDeleteUser = (id) => {
         if (confirm("Bạn có chắc muốn xóa tài khoản này?")) {
-            setUsers(users.filter(u => u.id !== id));
+            const loadingToast = ToastService.loading("Đang xóa người dùng...");
+
+            setTimeout(() => {
+                setUsers(users.filter(u => u.id !== id));
+                ToastService.update(loadingToast, "Xóa người dùng thành công!", "success");
+            }, 1000);
         }
     };
 
-    const openEditForm = (user) => {
-        setEditingUser(user);
-        setIsFormOpen(true);
+    const handleEditUser = (user) => {
+        navigate(`/accounts/edit/${user.id}`);
     };
 
     const filteredUsers = users.filter(user => {
@@ -54,10 +39,6 @@ function AccountManager() {
     return (
         <div className="p-6">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                    Quản lý tài khoản
-                </h1>
-
                 <div className="flex gap-4 items-center">
                     <select
                         value={filterRole}
@@ -67,7 +48,6 @@ function AccountManager() {
                         <option value="all">Tất cả</option>
                         <option value="parent">Phụ huynh</option>
                         <option value="driver">Tài xế</option>
-                        <option value="admin">Quản trị viên</option>
                     </select>
 
                     <Input
@@ -78,11 +58,8 @@ function AccountManager() {
                     />
 
                     <Button
-                        onClick={() => {
-                            setEditingUser(null);
-                            setIsFormOpen(true);
-                        }}
-                        className="ml-auto bg-blue-600 hover:bg-blue-700"
+                        onClick={() => navigate("/accounts/create")}
+                        className="ml-auto bg-blue-900 hover:bg-blue-700"
                     >
                         THÊM NGƯỜI DÙNG
                     </Button>
@@ -91,18 +68,8 @@ function AccountManager() {
 
             <AccountTable
                 users={filteredUsers}
-                onEdit={openEditForm}
+                onEdit={handleEditUser}
                 onDelete={handleDeleteUser}
-            />
-
-            <AccountForm
-                isOpen={isFormOpen}
-                onClose={() => {
-                    setIsFormOpen(false);
-                    setEditingUser(null);
-                }}
-                onSubmit={editingUser ? handleEditUser : handleAddUser}
-                editingUser={editingUser}
             />
         </div>
     );
