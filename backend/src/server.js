@@ -1,9 +1,21 @@
-const dotenv = require("dotenv");
-const app = require("./app");
+import express from 'express';
+import cors from "cors";
+const app = express()
+const port = process.env.PORT || 8080
+import userRoutes from './routes/userRoutes.js'
+import authRoutes from './routes/authRoutes.js'
+import { connectDB } from './config/db.js';
+import dotenv from 'dotenv'
 
 dotenv.config();
-const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
-});
+connectDB();
+
+app.use(cors());
+app.use(express.json());
+app.use('/api/user', userRoutes);
+app.use('/api/login',authRoutes)
+
+app.listen(port, () => {
+  console.log(`successfully run web by poryt ${port}`)
+})
