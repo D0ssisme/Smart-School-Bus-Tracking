@@ -14,8 +14,10 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 app.use('/api/user', userRoutes);
-app.use('/api/login',authRoutes)
-
+app.use('/api/login', authRoutes)
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
 app.listen(port, () => {
-  console.log(`successfully run web by poryt ${port}`)
+  console.log(`successfully run web by poryt http://localhost:${port}`)
 })
