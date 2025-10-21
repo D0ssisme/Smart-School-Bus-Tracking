@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Toaster } from "react-hot-toast"; // ✅ đúng cú pháp import
+import { Toaster } from "react-hot-toast";
 
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
@@ -8,6 +8,9 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Layout from "./components/Layout";
 import Myaccount from "./pages/Myaccount";
+import BusRoute from "./pages/Route";
+import CreateRoute from "./pages/Createroute";
+import BusManagementPage from "./pages/BusManagementPage";
 
 
 const Page = ({ children }) => (
@@ -48,6 +51,30 @@ function App() {
             element={
               <Layout>
                 <Page><Myaccount /></Page>
+              </Layout>
+            }
+          />
+          <Route
+            path="/route"
+            element={
+              <Layout>
+                <Page><BusRoute /></Page>
+              </Layout>
+            }
+          />
+          <Route
+            path="/createroute"
+            element={
+              <Layout>
+                <Page><CreateRoute /></Page>
+              </Layout>
+            }
+          />
+          <Route
+            path="/buses"
+            element={
+              <Layout>
+                <Page><BusManagementPage /></Page>
               </Layout>
             }
           />
