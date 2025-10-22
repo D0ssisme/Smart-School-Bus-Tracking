@@ -13,7 +13,14 @@ import CreateRoute from "./pages/Createroute";
 import BusManagementPage from "./pages/BusManagementPage";
 import StudentListPage from "./pages/StudentListPage";
 import CheckinPage from "./pages/CheckinPage";
-
+import Notifications from "./pages/Notifications";
+import NotificationFormPage from "./pages/NotificationFormPage";
+import AccountFormPage from "./pages/AccountFormPage";
+import StudentManager from "./pages/StudentManager";
+import StudentFormPage from "./pages/StudentFormPage";
+import AccountManager from "./pages/AccountManager";
+import DriverLayout from "./components/DriverLayout";
+import DriverDashboard from "./pages/DriverDashboard";
 
 const Page = ({ children }) => (
   <motion.div
@@ -46,6 +53,14 @@ function App() {
               <Layout>
                 <Page><Dashboard /></Page>
               </Layout>
+            }
+          />
+          <Route
+            path="/contact"
+            element={
+              <DriverLayout>
+                <Page><DriverDashboard /></Page>
+              </DriverLayout>
             }
           />
           <Route
@@ -95,6 +110,81 @@ function App() {
             element={
               <Layout>
                 <Page><CheckinPage /></Page>
+              </Layout>
+            }
+          />
+           <Route
+            path="/accounts"
+            element={
+              <Layout>
+                <Page><AccountManager /></Page>
+              </Layout>
+            }
+          />
+          <Route
+            path="/accounts/create"
+            element={
+              <Layout>
+                <Page><AccountFormPage /></Page>
+              </Layout>
+            }
+          />
+          <Route
+            path="/accounts/edit/:id"
+            element={
+              <Layout>
+                <Page><AccountFormPage /></Page>
+              </Layout>
+            }
+          />
+
+          {/* Thông báo */}
+          <Route
+            path="/notifications"
+            element={
+              <Layout>
+                <Page><Notifications /></Page>
+              </Layout>
+            }
+          />
+          <Route
+            path="/notifications/create"
+            element={
+              <Layout>
+                <Page><NotificationFormPage /></Page>
+              </Layout>
+            }
+          />
+          <Route
+            path="/notifications/edit/:id"
+            element={
+              <Layout>
+                <Page><NotificationFormPage /></Page>
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/students"
+            element={
+              <Layout>
+                <Page><StudentManager /></Page>
+              </Layout>
+            }
+          />
+          <Route
+            path="/students/create"
+            element={
+              <Layout>
+                <Page><StudentFormPage /></Page>
+              </Layout>
+            }
+          />
+          <Route
+            path="/students/edit/:id"
+            element={
+              <Layout>
+                <Page><StudentFormPage /></Page>
               </Layout>
             }
           />
