@@ -12,7 +12,7 @@ function NotificationFormPage() {
     const isEditMode = !!id;
 
     const [formData, setFormData] = useState({
-        title: "",
+        type: "",
         content: "",
         route: "",
         recipients: {
@@ -31,7 +31,7 @@ function NotificationFormPage() {
             const notification = mockNotifications.find(n => n.id === parseInt(id));
             if (notification) {
                 setFormData({
-                    title: notification.title,
+                    type: notification.type,
                     content: notification.content,
                     route: notification.route || "",
                     recipients: notification.recipients || {
@@ -143,16 +143,19 @@ function NotificationFormPage() {
             <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-lg shadow-sm border p-6">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tiêu đề <span className="text-red-500">*</span>
+                        Type <span className="text-red-500">*</span>
                     </label>
-                    <Input
-                        name="title"
-                        value={formData.title}
+                    <select
+                        name="type"
+                        value={formData.type}
                         onChange={handleChange}
-                        placeholder="Nhập tiêu đề thông báo"
-                        className="text-base"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
-                    />
+                    >
+                        <option value="parent">Alert</option>
+                        <option value="driver">Info</option>
+                        <option value="manager">Reminder</option>
+                    </select>
                 </div>
 
                 <div>

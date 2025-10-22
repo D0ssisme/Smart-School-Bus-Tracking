@@ -12,12 +12,11 @@ function AccountFormPage() {
     const isEditMode = !!id;
 
     const [formData, setFormData] = useState({
-        msdd: "",
+        uid: "",
         name: "",
         email: "",
         phone: "",
-        gender: "Nam",
-        birthday: "",
+        password: "",
         role: "parent"
     });
 
@@ -94,16 +93,16 @@ function AccountFormPage() {
 
             <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-lg shadow-sm border p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* MSDD */}
+                    {/* uid */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            MSDD <span className="text-red-500">*</span>
+                            UID <span className="text-red-500">*</span>
                         </label>
                         <Input
-                            name="msdd"
-                            value={formData.msdd}
+                            name="uid"
+                            value={formData.uid}
                             onChange={handleChange}
-                            placeholder="Nhập MSDD"
+                            placeholder="Nhập UID"
                             required
                         />
                     </div>
@@ -154,35 +153,21 @@ function AccountFormPage() {
                         <p className="text-xs text-gray-500 mt-1">Nhập 10 chữ số</p>
                     </div>
 
-                    {/* Giới tính */}
+                    {/* Password */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Giới tính <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            name="gender"
-                            value={formData.gender}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            required
-                        >
-                            <option value="Nam">Nam</option>
-                            <option value="Nữ">Nữ</option>
-                        </select>
-                    </div>
-
-                    {/* Ngày sinh */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Ngày sinh <span className="text-red-500">*</span>
+                            Password <span className="text-red-500">*</span>
                         </label>
                         <Input
-                            name="birthday"
-                            type="date"
-                            value={formData.birthday}
+                            name="password"
+                            type="password"
+                            value={formData.password}
                             onChange={handleChange}
+                            placeholder="Nhập mật khẩu..."
                             required
+                            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{10,}$"
                         />
+                        <p className="text-xs text-gray-500 mt-1">Mật khẩu phải có ít nhất 10 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt!</p>
                     </div>
 
                     {/* Nhóm quyền */}
@@ -199,6 +184,7 @@ function AccountFormPage() {
                         >
                             <option value="parent">Phụ huynh</option>
                             <option value="driver">Tài xế</option>
+                            <option value="manager">Quản lý</option>
                         </select>
                     </div>
                 </div>

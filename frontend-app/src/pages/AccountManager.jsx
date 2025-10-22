@@ -31,7 +31,7 @@ function AccountManager() {
         const matchSearch =
             user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.msdd.includes(searchTerm);
+            user.uid.includes(searchTerm);
         const matchRole = filterRole === "all" || user.role === filterRole;
         return matchSearch && matchRole;
     });
@@ -48,6 +48,7 @@ function AccountManager() {
                         <option value="all">Tất cả</option>
                         <option value="parent">Phụ huynh</option>
                         <option value="driver">Tài xế</option>
+                        <option value="manager">Quản lý</option>
                     </select>
 
                     <Input

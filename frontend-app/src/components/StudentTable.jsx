@@ -11,8 +11,8 @@ function StudentTable({ students, onEdit, onDelete }) {
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Họ và tên</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Lớp</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Mã Phụ huynh</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Mã Tuyến</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Điểm đón</th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Điểm trả</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Hành động</th>
                     </tr>
                 </thead>
@@ -47,15 +47,8 @@ function StudentTable({ students, onEdit, onDelete }) {
                                     </Badge>
                                 </td>
                                 <td className="px-6 py-4 text-sm text-gray-700">{student.MaPhuHuynh}</td>
-                                <td className="px-6 py-4 text-sm text-gray-700">{student.MaTuyen}</td>
-                                <td className="px-6 py-4">
-                                    <Badge
-                                        variant={student.status === "active" ? "default" : "secondary"}
-                                        className={student.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}
-                                    >
-                                        {student.status === "active" ? "Đang học" : "Nghỉ học"}
-                                    </Badge>
-                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{student.Diemdon}</td>
+                                <td className="px-6 py-4 text-sm text-gray-700">{student.Diemtra}</td>
                                 <td className="px-6 py-4">
                                     <div className="flex gap-2">
                                         <button

@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 function NotificationCard({ notification, onEdit, onDelete }) {
-    // Map recipient type to Vietnamese label
     const recipientLabels = {
         all: "Tất cả",
         parent: "Phụ huynh",
@@ -12,9 +11,21 @@ function NotificationCard({ notification, onEdit, onDelete }) {
 
     // Color coding for recipient types
     const recipientColors = {
-        all: "bg-blue-100 text-blue-700",
-        parent: "bg-green-100 text-green-700",
-        driver: "bg-orange-100 text-orange-700",
+        all: "text-purple-800",
+        parent: "text-blue-700",
+        driver: "text-orange-800",
+    };
+
+    const typeLabels = {
+        info: "THÔNG BÁO",
+        reminder: "LỜI NHẮC",
+        alert: "CẢNH BÁO",
+    }
+
+    const typeColors = {
+        info: "bg-green-100 text-green-700",
+        reminder: "bg-yellow-100 text-yellow-700",
+        alert: "bg-red-100 text-red-700",
     };
 
     return (
@@ -22,12 +33,14 @@ function NotificationCard({ notification, onEdit, onDelete }) {
             <div className="flex justify-between items-start">
                 <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-bold text-gray-900">
-                            {notification.title}
+                        <h3>
+                            <Badge className={typeColors[notification.type.toLowerCase()] || typeColors.info}>
+                                {typeLabels[notification.type.toLowerCase()] || typeLabels.info}
+                            </Badge>
                         </h3>
-                        <Badge className={recipientColors[notification.recipientType] || recipientColors.all}>
+                        <span className={recipientColors[notification.recipientType] || recipientColors.all}>
                             {recipientLabels[notification.recipientType] || recipientLabels.all}
-                        </Badge>
+                        </span>
                     </div>
 
                     {notification.content && (

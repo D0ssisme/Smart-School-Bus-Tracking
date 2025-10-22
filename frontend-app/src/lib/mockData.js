@@ -2,50 +2,42 @@
 export const mockUsers = [
     {
         id: 1,
-        msdd: "3118410001",
+        uid: "3118410001",
         name: "Nguyễn Văn A",
         email: "nguyenvana@student.sgu.edu.vn",
         phone: "0901234567",
-        gender: "Nam",
-        birthday: "2000-05-15",
+        password: "*********",
         role: "parent",
-        joinDate: "2023-04-24",
         status: "active"
     },
     {
         id: 2,
-        msdd: "3118410002",
+        uid: "3118410002",
         name: "Trần Thị B",
         email: "tranthib@student.sgu.edu.vn",
         phone: "0912345678",
-        gender: "Nữ",
-        birthday: "2001-08-20",
+        password: "***********",
         role: "parent",
-        joinDate: "2023-04-24",
         status: "active"
     },
     {
         id: 3,
-        msdd: "TX001",
+        uid: "001",
         name: "Lê Văn C",
         email: "levanc@driver.sgu.edu.vn",
         phone: "0923456789",
-        gender: "Nam",
-        birthday: "1985-03-12",
+        password: "*********",
         role: "driver",
-        joinDate: "2023-04-03",
         status: "active"
     },
     {
         id: 4,
-        msdd: "TX002",
+        uid: "002",
         name: "Phạm Thị D",
         email: "phamthid@driver.sgu.edu.vn",
         phone: "0934567890",
-        gender: "Nữ",
-        birthday: "1990-11-25",
+        password: "***********",
         role: "driver",
-        joinDate: "2023-04-03",
         status: "inactive"
     }
 ];
@@ -54,7 +46,7 @@ export const mockUsers = [
 export const mockNotifications = [
     {
         id: 1,
-        title: "Xe buýt đang đến",
+        type: "Info",
         content: "Xe buýt tuyến 01 sẽ đến điểm đón trong 5 phút nữa.",
         recipientType: "parent",
         sentAt: "16:53 08/05/2023",
@@ -62,7 +54,7 @@ export const mockNotifications = [
     },
     {
         id: 3,
-        title: "Thông báo điều chỉnh lộ trình",
+        type: "Reminder",
         content: "Tuyến 03 có điều chỉnh lộ trình từ ngày mai, vui lòng chú ý.",
         recipientType: "driver",
         sentAt: "08:53 08/05/2023",
@@ -70,7 +62,7 @@ export const mockNotifications = [
     },
     {
         id: 4,
-        title: "Xe buýt trễ giờ",
+        type: "Alert",
         content: "Xe buýt tuyến 02 bị trễ 15 phút do tắc đường.",
         recipientType: "parent",
         sentAt: "14:20 07/05/2023",
@@ -78,7 +70,7 @@ export const mockNotifications = [
     },
     {
         id: 5,
-        title: "Bảo trì hệ thống",
+        type: "Reminder",
         content: "Hệ thống sẽ bảo trì vào tối nay từ 22:00 - 23:00.",
         recipientType: "all",
         sentAt: "09:30 06/05/2023",
@@ -86,6 +78,11 @@ export const mockNotifications = [
     }
 ];
 
+export const typeLabels = {
+    info: "THÔNG BÁO",
+    reminder: "LỜI NHẮC",
+    alert: "CẢNH BÁO",
+};
 // Role mapping
 export const roleLabels = {
     parent: "Phụ huynh",
@@ -99,15 +96,10 @@ export const statusLabels = {
     inactive: "Vô hiệu hóa"
 };
 
-// Gender mapping
-export const genderLabels = {
-    "Nam": "Nam",
-    "Nữ": "Nữ"
-};
 //student
 export const mockStudents = [
-    { id: 1, MaHS: "HS001", HoTen: "Nguyễn Văn A", Lop: "10A1", MaPhuHuynh: "PH001", MaTuyen: "T1", status: "active" },
-    { id: 2, MaHS: "HS002", HoTen: "Trần Thị B", Lop: "10A2", MaPhuHuynh: "PH002", MaTuyen: "T2", status: "inactive" },
+    { id: 1, MaHS: "31001", HoTen: "Nguyễn Văn A", Lop: "10A1", MaPhuHuynh: "22001", Diemdon: "###", Diemtra: "###" },
+    { id: 2, MaHS: "31002", HoTen: "Trần Thị B", Lop: "10A2", MaPhuHuynh: "22002", Diemdon: "###", Diemtra: "###" },
 ];
 export const mockRoutes = [
     { id: 1, name: "Tuyến 1 - Quận 1" },

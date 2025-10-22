@@ -8,13 +8,11 @@ function AccountTable({ users, onEdit, onDelete }) {
             <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                     <tr>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">MSDD</th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">UID</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Họ và tên</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Giới tính</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ngày sinh</th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Password</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Số điện thoại</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nhóm quyền</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ngày tham gia</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Hành động</th>
                     </tr>
@@ -22,7 +20,7 @@ function AccountTable({ users, onEdit, onDelete }) {
                 <tbody className="divide-y divide-gray-200">
                     {users.map((user) => (
                         <tr key={user.id} className="hover:bg-gray-50 transition">
-                            <td className="px-6 py-4 text-sm text-gray-900">{user.msdd}</td>
+                            <td className="px-6 py-4 text-sm text-gray-900">{user.uid}</td>
                             <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
@@ -36,14 +34,12 @@ function AccountTable({ users, onEdit, onDelete }) {
                                     </div>
                                 </div>
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{user.gender}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{user.birthday}</td>
-                            {/* CỘT SỐ ĐIỆN THOẠI - ĐÃ THÊM */}
+                            <td className="px-6 py-4 text-sm text-gray-700">{user.password}</td>
+                            {/* CỘT SỐ ĐIỆN THOẠI */}
                             <td className="px-6 py-4 text-sm text-gray-700">
                                 {user.phone || "Chưa cập nhật"}
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-700">{roleLabels[user.role]}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{user.joinDate}</td>
                             <td className="px-6 py-4">
                                 <Badge
                                     variant={user.status === "active" ? "default" : "secondary"}

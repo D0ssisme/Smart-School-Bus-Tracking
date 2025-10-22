@@ -28,7 +28,7 @@ function Notifications() {
     };
 
     const filteredNotifications = notifications.filter(n =>
-        n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        n.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
         n.content.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
