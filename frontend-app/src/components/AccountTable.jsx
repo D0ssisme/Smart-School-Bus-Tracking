@@ -13,7 +13,7 @@ function AccountTable({ users, onEdit, onDelete }) {
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Password</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Số điện thoại</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nhóm quyền</th>
-                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Hành động</th>
                     </tr>
                 </thead>
@@ -30,7 +30,6 @@ function AccountTable({ users, onEdit, onDelete }) {
                                     </div>
                                     <div>
                                         <div className="text-sm font-medium text-blue-600">{user.name}</div>
-                                        <div className="text-xs text-gray-500">{user.email}</div>
                                     </div>
                                 </div>
                             </td>
@@ -41,12 +40,7 @@ function AccountTable({ users, onEdit, onDelete }) {
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-700">{roleLabels[user.role]}</td>
                             <td className="px-6 py-4">
-                                <Badge
-                                    variant={user.status === "active" ? "default" : "secondary"}
-                                    className={user.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}
-                                >
-                                    {user.status === "active" ? "Hoạt động" : "Vô hiệu hóa"}
-                                </Badge>
+                                <div className="text-sm text-gray-700">{user.email}</div>
                             </td>
                             <td className="px-6 py-4">
                                 <div className="flex gap-2">

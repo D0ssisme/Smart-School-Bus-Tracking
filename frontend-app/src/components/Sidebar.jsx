@@ -48,17 +48,6 @@ export default function Sidebar({ isOpen }) {
             Người dùng
           </span>
         </Link>
-
-        <Link to="/accounts" className={item}>
-          <LifeBuoy className={icon} />
-          <span
-            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
-              }`}
-          >
-            Tài xế
-          </span>
-        </Link>
-
         <Link to="/students" className={item}>
           <GraduationCap className={icon} />
           <span

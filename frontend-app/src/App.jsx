@@ -15,6 +15,9 @@ import AccountFormPage from "./pages/AccountFormPage";
 import StudentManager from "./pages/StudentManager";
 import StudentFormPage from "./pages/StudentFormPage";
 
+import DriverLayout from "./components/DriverLayout";
+import DriverDashboard from "./pages/DriverDashboard";
+
 const Page = ({ children }) => (
   <motion.div
     initial={{ opacity: 0, x: 40 }}
@@ -47,6 +50,16 @@ function AppRoutes() {
               </Layout>
             }
           />
+
+          <Route
+            path="/contact"
+            element={
+              <DriverLayout>
+                <Page><DriverDashboard /></Page>
+              </DriverLayout>
+            }
+          />
+
           <Route
             path="/myaccount"
             element={
@@ -55,7 +68,6 @@ function AppRoutes() {
               </Layout>
             }
           />
-
           {/* Quản lý người dùng */}
           <Route
             path="/accounts"

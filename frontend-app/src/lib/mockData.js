@@ -8,7 +8,6 @@ export const mockUsers = [
         phone: "0901234567",
         password: "*********",
         role: "parent",
-        status: "active"
     },
     {
         id: 2,
@@ -18,7 +17,6 @@ export const mockUsers = [
         phone: "0912345678",
         password: "***********",
         role: "parent",
-        status: "active"
     },
     {
         id: 3,
@@ -28,7 +26,6 @@ export const mockUsers = [
         phone: "0923456789",
         password: "*********",
         role: "driver",
-        status: "active"
     },
     {
         id: 4,
@@ -38,7 +35,6 @@ export const mockUsers = [
         phone: "0934567890",
         password: "***********",
         role: "driver",
-        status: "inactive"
     }
 ];
 
@@ -88,12 +84,6 @@ export const roleLabels = {
     parent: "Phụ huynh",
     driver: "Tài xế",
     admin: "Quản trị viên",
-};
-
-// Status mapping
-export const statusLabels = {
-    active: "Hoạt động",
-    inactive: "Vô hiệu hóa"
 };
 
 //student
