@@ -11,6 +11,8 @@ import Myaccount from "./pages/Myaccount";
 import BusRoute from "./pages/Route";
 import CreateRoute from "./pages/Createroute";
 import BusManagementPage from "./pages/BusManagementPage";
+import StudentListPage from "./pages/StudentListPage";
+import CheckinPage from "./pages/CheckinPage";
 
 
 const Page = ({ children }) => (
@@ -78,6 +80,24 @@ function App() {
               </Layout>
             }
           />
+          
+          {/* 2. Thêm Route cho trang danh sách sinh viên */}
+          <Route
+            path="/buses/:busId/students"
+            element={
+              <Layout>
+                <Page><StudentListPage /></Page>
+              </Layout>
+            }
+          />
+          <Route
+            path="/buses/:busId/checkin"
+            element={
+              <Layout>
+                <Page><CheckinPage /></Page>
+              </Layout>
+            }
+          />
         </Routes>
       </AnimatePresence>
 
@@ -103,3 +123,4 @@ export default () => (
     <App />
   </BrowserRouter>
 );
+
