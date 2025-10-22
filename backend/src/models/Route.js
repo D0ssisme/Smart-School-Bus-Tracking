@@ -2,34 +2,36 @@ import mongoose from 'mongoose';
 
 const routeSchema = new mongoose.Schema({
   route_id: {
-    type: Number,
-    required: true,
-    unique: true,
+    type: String,
+    unique: true
   },
   name: {
     type: String,
     required: true,
-    trim: true,
+    trim: true
   },
   start_point: {
     type: String,
     required: true,
-    trim: true,
+    trim: true
   },
   end_point: {
     type: String,
     required: true,
-    trim: true,
-  },
-}, {
-  timestamps: true,
-});
+    trim: true
+  }
+}, { timestamps: true });
 
-// Mô phỏng auto-increment cho route_id
+// 🔸 Tự sinh mã ROUTE001, ROUTE002, ...
 routeSchema.pre('save', async function (next) {
   if (!this.route_id) {
     const lastRoute = await mongoose.model('Route').findOne().sort('-route_id');
-    this.route_id = lastRoute ? lastRoute.route_id + 1 : 1;
+    let nextNum = 1;
+    if (lastRoute && lastRoute.route_id) {
+      const lastNum = parseInt(lastRoute.route_id.replace('ROUTE', ''));
+      nextNum = lastNum + 1;
+    }
+    this.route_id = 'ROUTE' + String(nextNum).padStart(3, '0');
   }
   next();
 });

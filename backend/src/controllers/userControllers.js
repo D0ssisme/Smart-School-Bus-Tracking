@@ -1,7 +1,7 @@
 import User from '../models/User.js'
 import bcrypt from "bcryptjs";
 
-
+// test
 export const getAllUser = async (req, res) => {
 
     try {
@@ -16,7 +16,7 @@ export const getAllUser = async (req, res) => {
    
 }
 
-
+// test
 export const createUser = async (req, res) => {
   try {
     const { fullName, email, password, phoneNumber, role, driverInfo, parentInfo } = req.body;
@@ -67,7 +67,7 @@ export const updateUser = (req, res) => {
 }
 
 
-//chưa test 
+// test 
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;

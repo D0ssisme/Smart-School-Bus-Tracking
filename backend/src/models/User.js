@@ -26,19 +26,18 @@ const userSchema = new mongoose.Schema({
     required: true
   },
 
-  // Nếu là tài xế:
+ 
   driverInfo: {
-    licenseNumber: String, // số bằng lái
-    vehiclePlate: String,  // biển số xe
+    licenseNumber: String, 
+    vehiclePlate: String,  
     busRoute: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'BusRoute' // liên kết tới tuyến xe
+      ref: 'BusRoute' 
     }
   },
 
-  // Nếu là phụ huynh:
   parentInfo: {
-    childrenNames: [String], // tên các con
+    childrenNames: [String], 
     busRoute: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'BusRoute'
@@ -51,7 +50,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Xuất model
+
 const User = mongoose.model('User', userSchema);
 export default User;
 

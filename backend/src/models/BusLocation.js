@@ -8,7 +8,7 @@ const busLocationSchema = new mongoose.Schema({
   },
   bus_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Bus', // Tham chiếu model Bus
+    ref: 'Bus', 
     required: true,
   },
   latitude: {
@@ -28,7 +28,7 @@ const busLocationSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Mô phỏng auto-increment cho location_id
+
 busLocationSchema.pre('save', async function (next) {
   if (!this.location_id) {
     const lastLocation = await mongoose.model('BusLocation').findOne().sort('-location_id');
