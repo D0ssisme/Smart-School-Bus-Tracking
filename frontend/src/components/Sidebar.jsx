@@ -1,4 +1,4 @@
-import { LayoutDashboard, Bus, Users, BellRing, Route,GraduationCap,AlertTriangle,UserCog,LifeBuoy   } from "lucide-react";
+import { LayoutDashboard, Bus, Users, BellRing, Route, GraduationCap, AlertTriangle, UserCog, LifeBuoy } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Sidebar({ isOpen }) {
@@ -7,9 +7,8 @@ export default function Sidebar({ isOpen }) {
 
   return (
     <aside
-      className={`${
-        isOpen ? "w-64" : "w-18"
-      } bg-white h-screen shadow-md fixed left-0 top-0 transition-all duration-1000 overflow-hidden`}
+      className={`${isOpen ? "w-64" : "w-18"
+        } bg-white h-screen shadow-md fixed left-0 top-0 transition-all duration-1000 overflow-hidden`}
     >
       {/* Logo */}
       <div className="h-16 flex items-center border-b bg-blue-900 pl-5">
@@ -23,9 +22,8 @@ export default function Sidebar({ isOpen }) {
         <Link to="/dashboard" className={item}>
           <LayoutDashboard className={icon} />
           <span
-            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
-              isOpen ? "opacity-100" : "opacity-0"
-            }`  }
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
+              }`}
           >
             Trang chủ
           </span>
@@ -34,9 +32,8 @@ export default function Sidebar({ isOpen }) {
         <Link to="/buses" className={item}>
           <Bus className={icon} />
           <span
-            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
-              isOpen ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
+              }`}
           >
             Xe bus
           </span>
@@ -45,53 +42,37 @@ export default function Sidebar({ isOpen }) {
         <Link to="/accounts" className={item}>
           <Users className={icon} />
           <span
-            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
-              isOpen ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
+              }`}
           >
             Người dùng
           </span>
         </Link>
-
-        <Link to="/accounts" className={item}>
-          <LifeBuoy  className={icon} />
-          <span
-            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
-              isOpen ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            Tài xế
-          </span>
-        </Link>
-        
-        <Link to="/accounts" className={item}>
+        <Link to="/students" className={item}>
           <GraduationCap className={icon} />
           <span
-            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
-              isOpen ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
+              }`}
           >
             Học sinh
           </span>
         </Link>
-        
-        <Link to="/accounts" className={item}>
+
+        <Link to="/route" className={item}>
           <Route className={icon} />
           <span
-            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
-              isOpen ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
+              }`}
           >
-           Tuyến đường
+            Tuyến đường
           </span>
         </Link>
 
-        <Link to="/notification" className={item}>
+        <Link to="/notifications" className={item}>
           <BellRing className={icon} />
           <span
-            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
-              isOpen ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
+              }`}
           >
             Thông báo
           </span>
@@ -100,9 +81,8 @@ export default function Sidebar({ isOpen }) {
         <Link to="/accounts" className={item}>
           <AlertTriangle className={icon} />
           <span
-            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${
-              isOpen ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
+              }`}
           >
             Báo cáo, cảnh báo
           </span>
