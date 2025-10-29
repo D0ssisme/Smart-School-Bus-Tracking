@@ -12,13 +12,15 @@ export const getAllUser = async (req, res) => {
   }
 };
 
-// 📌 Tạo mới user
+
 export const createUser = async (req, res) => {
   try {
-    const { name, password, phone, role, driverInfo, parentInfo } = req.body;
+    
+    const { name, password, phoneNumber, role, driverInfo, parentInfo } = req.body;
 
-    // Kiểm tra dữ liệu cơ bản
-    if (!name || !password || !role) {
+   
+    if (!name || !password || !role || !phoneNumber) {
+      
       return res.status(400).json({ message: "Thiếu thông tin bắt buộc!" });
     }
 
@@ -28,7 +30,7 @@ export const createUser = async (req, res) => {
     const newUser = new User({
       name,
       password: hashedPassword,
-      phone,
+      phoneNumber,
       role,
       driverInfo,
       parentInfo
@@ -39,10 +41,10 @@ export const createUser = async (req, res) => {
     res.status(201).json({
       message: "✅ Tạo người dùng thành công!",
       user: {
-        user_id: newUser.user_id, // hiển thị mã USER001
+        userId: newUser.userId, 
         name: newUser.name,
         role: newUser.role,
-        phone: newUser.phone,
+        phoneNumber: newUser.phoneNumber, 
         createdAt: newUser.createdAt,
       },
     });
@@ -51,7 +53,6 @@ export const createUser = async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi tạo người dùng!", error: error.message });
   }
 };
-
 // 📌 Cập nhật thông tin user
 export const updateUser = async (req, res) => {
   try {
