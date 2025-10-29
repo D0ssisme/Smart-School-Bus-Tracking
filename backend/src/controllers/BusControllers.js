@@ -1,64 +1,81 @@
-import Bus from "../models/bus.js";
+import Bus from "../models/Bus.js";
 
-// test
-export const createBus = async (req, res) => {
-    try {
-        const bus = new Bus(req.body);
-        await bus.save();
-        res.status(201).json(bus);
-    } catch (err) {
-        res.status(400).json({ message: err.message });
-    }
-};
-
-// test
+// 🟢 Lấy toàn bộ xe bus
 export const getAllBuses = async (req, res) => {
     try {
         const buses = await Bus.find();
         res.status(200).json(buses);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy danh sách xe:", error);
+        res.status(500).json({ message: "Lỗi server khi lấy danh sách xe!" });
     }
 };
 
-// chưa test
-export const getBusById = async (req, res) => {
+// 🟢 Tạo mới xe bus
+export const createBus = async (req, res) => {
     try {
-        const bus = await Bus.findById(req.params.id);
-        if (!bus) {
-            return res.status(404).json({ message: 'Không tìm thấy xe buýt' });
-        }
-        res.status(200).json(bus);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+        const { license_plate, capacity, status } = req.body;
+
+        const newBus = new Bus({
+            license_plate,
+            capacity,
+            status,
+        });
+
+        await newBus.save();
+
+        res.status(201).json({
+            message: "✅ Tạo xe bus thành công!",
+            bus: newBus,
+        });
+    } catch (error) {
+        console.error("❌ Lỗi khi tạo xe:", error);
+        res.status(500).json({ message: "Lỗi server khi tạo xe!", error: error.message });
     }
 };
 
-// test 
+// 🟡 Cập nhật xe bus
 export const updateBus = async (req, res) => {
     try {
-        const bus = await Bus.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true
-        });
-        if (!bus) {
-            return res.status(404).json({ message: 'Không tìm thấy xe buýt' });
+        const { id } = req.params;
+        const { license_plate, capacity, status } = req.body;
+
+        const updatedBus = await Bus.findByIdAndUpdate(
+            id,
+            { license_plate, capacity, status },
+            { new: true }
+        );
+
+        if (!updatedBus) {
+            return res.status(404).json({ message: "Không tìm thấy xe để cập nhật!" });
         }
-        res.status(200).json(bus);
-    } catch (err) {
-        res.status(400).json({ message: err.message });
+
+        res.status(200).json({
+            message: "✅ Cập nhật xe thành công!",
+            bus: updatedBus,
+        });
+    } catch (error) {
+        console.error("❌ Lỗi khi cập nhật xe:", error);
+        res.status(500).json({ message: "Lỗi server khi cập nhật xe!" });
     }
 };
 
-// 🔴 DELETE - Xóa xe buýt
+// 🔴 Xóa xe bus
 export const deleteBus = async (req, res) => {
     try {
-        const bus = await Bus.findByIdAndDelete(req.params.id);
-        if (!bus) {
-            return res.status(404).json({ message: 'Không tìm thấy xe buýt' });
+        const { id } = req.params;
+        const deletedBus = await Bus.findByIdAndDelete(id);
+
+        if (!deletedBus) {
+            return res.status(404).json({ message: "Không tìm thấy xe để xóa!" });
         }
-        res.status(200).json({ message: 'Đã xóa xe buýt thành công' });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+
+        res.status(200).json({
+            message: "🗑️ Xóa xe thành công!",
+            bus: deletedBus,
+        });
+    } catch (error) {
+        console.error("❌ Lỗi khi xóa xe:", error);
+        res.status(500).json({ message: "Lỗi server khi xóa xe!" });
     }
 };

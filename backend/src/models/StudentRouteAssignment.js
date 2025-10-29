@@ -1,36 +1,38 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const studentRouteAssignmentSchema = new mongoose.Schema({
-  id: {
-    type: Number,
-    required: true,
-    unique: true
-  },
   student_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Student', // tham chiếu đến học sinh
-    required: true
+    ref: "Student",
+    required: true,
   },
   route_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Route', // tham chiếu đến tuyến xe
-    required: true
+    ref: "Route",
+    required: true,
+  },
+  pickup_stop_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Stop",
+    required: true,
+  },
+  dropoff_stop_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Stop",
+    required: true,
+  },
+  active: {
+    type: Boolean,
+    default: true,
   },
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
-// Tự động tăng id
-studentRouteAssignmentSchema.pre('save', async function (next) {
-  if (!this.id) {
-    const lastRecord = await mongoose.model('StudentRouteAssignment').findOne().sort('-id');
-    this.id = lastRecord ? lastRecord.id + 1 : 1;
-  }
-  next();
-});
+const StudentRouteAssignment =
+  mongoose.models.StudentRouteAssignment ||
+  mongoose.model("StudentRouteAssignment", studentRouteAssignmentSchema);
 
-// Xuất model
-const StudentRouteAssignment = mongoose.model('StudentRouteAssignment', studentRouteAssignmentSchema);
 export default StudentRouteAssignment;

@@ -1,56 +1,52 @@
+// models/User.js
 import mongoose from 'mongoose';
+import Counter from './Counter.js';
 
 const userSchema = new mongoose.Schema({
-  fullName: {
+  userId: {
+    type: String,
+    unique: true
+  },
+  name: {
     type: String,
     required: true,
     trim: true
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true
   },
   password: {
     type: String,
     required: true
   },
-  phoneNumber: {
-    type: String,
-    required: false
-  },
+  phoneNumber: String,
   role: {
     type: String,
     enum: ['admin', 'parent', 'driver'],
     required: true
   },
-
- 
   driverInfo: {
-    licenseNumber: String, 
-    vehiclePlate: String,  
-    busRoute: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'BusRoute' 
-    }
+    licenseNumber: String,
+    vehiclePlate: String
   },
-
-  parentInfo: {
-    childrenNames: [String], 
-    busRoute: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'BusRoute'
-    }
-  },
-
+  parentInfo: {},
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
 
+// 📦 Tạo userId tự động trước khi lưu
+userSchema.pre('save', async function (next) {
+  if (this.isNew) {
+    const counter = await Counter.findOneAndUpdate(
+      { name: 'user' },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+
+    const nextNumber = counter.seq.toString().padStart(3, '0');
+    this.userId = `USER${nextNumber}`;
+  }
+  next();
+});
 
 const User = mongoose.model('User', userSchema);
 export default User;
-

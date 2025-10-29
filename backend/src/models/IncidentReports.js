@@ -1,68 +1,55 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const incidentReportSchema = new mongoose.Schema({
-  report_id: {
-    type: Number,
-    required: true,
-    unique: true
-  },
   driver_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // tham chiếu tới tài xế
-    required: true
+    ref: "User",
+    required: true,
   },
   bus_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Bus', // tham chiếu tới xe buýt
-    required: true
+    ref: "Bus",
+    required: true,
   },
   schedule_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'BusSchedule', // tham chiếu tới lịch trình
-    required: true
+    ref: "BusSchedule",
+    required: true,
   },
   title: {
     type: String,
     required: true,
-    trim: true
   },
   description: {
     type: String,
-    required: true,
-    trim: true
   },
-  timestamp: {
-    type: Date,
-    default: Date.now
-  },
-  location_lat: {
-    type: Number,
-    required: false
-  },
-  location_lng: {
-    type: Number,
-    required: false
+  location: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      default: "Point",
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true,
+    },
   },
   status: {
     type: String,
-    enum: ['pending', 'resolved', 'ignored'],
-    default: 'pending'
+    enum: ["pending", "resolved", "ignored"],
+    default: "pending",
   },
-  createdAt: {
+  timestamp: {
     type: Date,
-    default: Date.now
-  }
-});
+    default: Date.now,
+  },
+}, { timestamps: true });
 
-// Mô phỏng AUTO_INCREMENT cho report_id
-incidentReportSchema.pre('save', async function (next) {
-  if (!this.report_id) {
-    const lastReport = await mongoose.model('IncidentReport').findOne().sort('-report_id');
-    this.report_id = lastReport ? lastReport.report_id + 1 : 1;
-  }
-  next();
-});
+// ✅ Thêm index không gian để query theo vị trí
+incidentReportSchema.index({ location: "2dsphere" });
 
-// Xuất model
-const IncidentReport = mongoose.model('IncidentReport', incidentReportSchema);
+const IncidentReport =
+  mongoose.models.IncidentReport ||
+  mongoose.model("IncidentReport", incidentReportSchema);
+
 export default IncidentReport;

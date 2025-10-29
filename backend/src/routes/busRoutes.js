@@ -4,9 +4,11 @@ import { getAllBuses, createBus, updateBus, deleteBus } from '../controllers/Bus
 
 
 
-router.get("/", getAllBuses)
+router.get("/", getAllBuses);
 
-router.post("/", createBus)
+router.post("/", createBus);
+
+router.put("/:id", updateBus);
 
 router.delete("/:id", deleteBus)
 

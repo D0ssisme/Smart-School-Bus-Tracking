@@ -1,13 +1,18 @@
-import express from 'express';
+import express from "express";
+import {
+  createRouteStop,
+  getAllRouteStops,
+  getStopsByRoute,
+  updateRouteStop,
+  deleteRouteStop
+} from "../controllers/RoutestopControllers.js";
+
 const router = express.Router();
-import { getAllRouteStops, getStopsByRoute, createRouteStop } from '../controllers/RoutestopControllers.js';
 
-
-
-router.get("/", getAllRouteStops)
-router.post("/",createRouteStop)
-
-router.get("/:id", getStopsByRoute); 
-
+router.post("/", createRouteStop);
+router.get("/", getAllRouteStops);
+router.get("/route/:routeId", getStopsByRoute);
+router.put("/:id", updateRouteStop);
+router.delete("/:id", deleteRouteStop);
 
 export default router;

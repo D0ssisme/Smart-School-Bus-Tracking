@@ -1,55 +1,58 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
+import Counter from "./Counter.js";
 
 const busScheduleSchema = new mongoose.Schema({
   schedule_id: {
-    type: Number,
-    required: true,
-    unique: true
+    type: String,
+    unique: true,
   },
   bus_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Bus', // tham chiếu đến xe buýt
-    required: true
+    ref: "Bus",
+    required: true,
   },
   driver_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // tham chiếu đến tài xế
-    required: true
+    ref: "User",
+    required: true,
   },
   route_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Route', // tham chiếu đến tuyến đường
-    required: true
+    ref: "Route",
+    required: true,
   },
   date: {
     type: Date,
-    required: true
+    required: true,
   },
   start_time: {
-    type: String, // định dạng HH:mm
+    type: String, // "07:30"
     required: true,
-    trim: true
   },
   end_time: {
-    type: String, // định dạng HH:mm
+    type: String, // "08:30"
     required: true,
-    trim: true
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  status: {
+    type: String,
+    enum: ["scheduled", "completed", "cancelled"],
+    default: "scheduled",
   }
-});
+}, { timestamps: true });
 
-// Tự động tăng schedule_id
-busScheduleSchema.pre('save', async function (next) {
+// Auto-generate schedule_id: SCHEDULE001, SCHEDULE002...
+busScheduleSchema.pre("save", async function (next) {
   if (!this.schedule_id) {
-    const lastSchedule = await mongoose.model('BusSchedule').findOne().sort('-schedule_id');
-    this.schedule_id = lastSchedule ? lastSchedule.schedule_id + 1 : 1;
+    const counter = await Counter.findOneAndUpdate(
+      { name: "bus_schedule" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+    const nextNumber = counter.seq.toString().padStart(3, "0");
+    this.schedule_id = `SCHEDULE${nextNumber}`;
   }
   next();
 });
 
-// Xuất model
-const BusSchedule = mongoose.model('BusSchedule', busScheduleSchema);
+const BusSchedule = mongoose.models.BusSchedule || mongoose.model("BusSchedule", busScheduleSchema);
 export default BusSchedule;

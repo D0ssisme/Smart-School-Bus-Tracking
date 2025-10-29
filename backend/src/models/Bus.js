@@ -1,9 +1,10 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
+import Counter from "./Counter.js";
 
 const busSchema = new mongoose.Schema({
   bus_id: {
     type: String,
-    unique: true
+    unique: true,
   },
   license_plate: {
     type: String,
@@ -17,32 +18,29 @@ const busSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'inactive', 'repair'],
-    default: 'active',
+    enum: ["active", "inactive", "repair"],
+    default: "active",
   },
 }, {
   timestamps: true,
 });
 
-// ✅ Tự động tạo bus_id kiểu BUS001, BUS002, ...
-busSchema.pre('save', async function (next) {
-  if (this.bus_id) return next();
+// 🔹 Auto-generate bus_id: BUS001, BUS002...
+busSchema.pre("save", async function (next) {
+  if (this.isNew && !this.bus_id) {
+    const counter = await Counter.findOneAndUpdate(
+      { name: "bus" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
 
-  try {
-    const lastBus = await mongoose.model('Bus').findOne().sort({ bus_id: -1 });
-
-    let nextNumber = 1;
-    if (lastBus && lastBus.bus_id) {
-      const match = lastBus.bus_id.match(/\d+$/);
-      if (match) nextNumber = parseInt(match[0]) + 1;
-    }
-
-    this.bus_id = `BUS${String(nextNumber).padStart(3, '0')}`;
-    next();
-  } catch (err) {
-    next(err);
+    const nextNumber = counter.seq.toString().padStart(3, "0");
+    this.bus_id = `BUS${nextNumber}`;
   }
+  next();
 });
 
-const Bus = mongoose.model('Bus', busSchema);
+// ✅ tránh lỗi khi reload server
+const Bus = mongoose.models.Bus || mongoose.model("Bus", busSchema);
+
 export default Bus;

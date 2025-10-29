@@ -1,16 +1,21 @@
-import express from 'express';
+import express from "express";
+import {
+    createRouteAuto,
+    getAllRoutes,
+    getRouteById,
+    createRoute,
+    updateRoute,
+    deleteRoute,
+} from "../controllers/RouteControllers.js";
+
 const router = express.Router();
-import { getAllRoutes, getRouteById, createRoute, updateRoute, deleteRoute } from '../controllers/RouteControllers.js';
+// ✅ Endpoint mới: tự động tạo tuyến đường theo danh sách stop
+router.post("/auto", createRouteAuto);
 
-
-
-router.get("/", getAllRoutes)
-
-router.post("/", createRoute)
-
-router.delete("/:id", deleteRoute)
-
-router.get("/:id", getRouteById); 
-
+router.get("/", getAllRoutes);
+router.get("/:id", getRouteById);
+router.post("/", createRoute);
+router.put("/:id", updateRoute);
+router.delete("/:id", deleteRoute);
 
 export default router;
