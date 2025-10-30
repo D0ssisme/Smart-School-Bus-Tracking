@@ -29,7 +29,14 @@ const userSchema = new mongoose.Schema({
     licenseNumber: String,
     vehiclePlate: String
   },
-  parentInfo: {},
+  parentInfo: {
+    address: {
+      type: String,
+      trim: true // Nên có trim để loại bỏ khoảng trắng thừa
+    }
+    
+
+  },
   createdAt: {
     type: Date,
     default: Date.now

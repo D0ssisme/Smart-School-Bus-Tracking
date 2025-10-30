@@ -5,10 +5,10 @@ import { verifyToken } from "../middlewares/authMiddleware.js";
 const router = express.Router();
 
 // 🧩 Lấy toàn bộ user (chỉ cho phép người có token)
-router.get("/", verifyToken, getAllUser);
+router.get("/", getAllUser);
 
 // 🧩 Tạo user mới (ví dụ: admin tạo tài khoản cho tài xế/phụ huynh)
-router.post("/", verifyToken, createUser);
+router.post("/", createUser);
 
 // 🧩 Cập nhật thông tin user theo id
 router.put("/:id", verifyToken, updateUser);
