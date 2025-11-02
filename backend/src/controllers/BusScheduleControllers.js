@@ -6,15 +6,15 @@ import Route from '../models/Route.js';
 
 export const createBusSchedule = async (req, res) => {
   try {
-    const { bus_id, driver_id, route_id, date, start_time, end_time } = req.body;
+    const { bus_id, driver_id, route_id, start_time, end_time } = req.body;
 
     // ===== VALIDATION =====
 
     // 1. Kiểm tra các trường bắt buộc
-    if (!bus_id || !driver_id || !route_id || !date || !start_time) {
+    if (!bus_id || !driver_id || !route_id || !start_time) {
       return res.status(400).json({
         success: false,
-        message: 'Thiếu thông tin bắt buộc (bus_id, driver_id, route_id, date, start_time)'
+        message: 'Thiếu thông tin bắt buộc (bus_id, driver_id, route_id, start_time)'
       });
     }
 
@@ -83,17 +83,15 @@ export const createBusSchedule = async (req, res) => {
     // 9. Kiểm tra Bus đã có lịch trong thời gian này chưa
     const busConflict = await BusSchedule.findOne({
       bus_id: bus._id,
-      date: new Date(date),
       status: { $in: ['scheduled', 'in_progress'] }
     });
 
     if (busConflict) {
       return res.status(409).json({
         success: false,
-        message: `Xe bus '${bus.license_plate}' đã có lịch vào ngày ${date}`,
+        message: `Xe bus '${bus.license_plate}' đã có lịch vào ngày }`,
         conflict: {
           schedule_id: busConflict.schedule_id,
-          date: busConflict.date,
           start_time: busConflict.start_time
         }
       });
@@ -102,17 +100,17 @@ export const createBusSchedule = async (req, res) => {
     // 10. Kiểm tra Driver đã có lịch trong thời gian này chưa
     const driverConflict = await BusSchedule.findOne({
       driver_id: driver._id,
-      date: new Date(date),
+  
       status: { $in: ['scheduled', 'in_progress'] }
     });
 
     if (driverConflict) {
       return res.status(409).json({
         success: false,
-        message: `Tài xế '${driver.name}' đã có lịch vào ngày ${date}`,
+        message: `Tài xế '${driver.name}' đã có lịch `,
         conflict: {
           schedule_id: driverConflict.schedule_id,
-          date: driverConflict.date,
+         
           start_time: driverConflict.start_time
         }
       });
@@ -124,7 +122,6 @@ export const createBusSchedule = async (req, res) => {
       bus_id: bus._id,
       driver_id: driver._id,
       route_id: route._id,
-      date: new Date(date),
       start_time,
       end_time,
       status: 'scheduled'

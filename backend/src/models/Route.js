@@ -1,3 +1,4 @@
+//src/models/route.js
 import mongoose from "mongoose";
 import Counter from "./Counter.js";
 

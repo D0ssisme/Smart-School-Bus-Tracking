@@ -1,10 +1,11 @@
+//src/components/BusCard.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Settings, Info, CalendarCheck, Pencil, Trash2, Clock 
+import {
+  Settings, Info, CalendarCheck, Pencil, Trash2, Clock
 } from 'lucide-react';
 
-const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete }) => { // Thêm prop onDelete
+const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete }) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -20,9 +21,9 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete }) => { // 
 
   const getStatusClasses = (status) => {
     switch (status) {
-      case 'Đang chạy': return 'bg-green-100 text-green-800';
-      case 'Ngừng': return 'bg-red-100 text-red-800';
-      case 'Bảo trì': return 'bg-yellow-100 text-yellow-800';
+      case 'Đang chờ': return 'bg-yellow-100 text-yellow-800';
+      case 'Hoàn thành': return 'bg-green-100 text-green-800';
+      case 'Hủy': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -33,7 +34,7 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete }) => { // 
   };
 
   const handleDeleteClick = () => {
-    onDelete(bus.id); // Gọi hàm onDelete từ cha và truyền ID của xe
+    onDelete(bus.id);
     setOpen(false);
   };
 
@@ -60,7 +61,6 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete }) => { // 
                 Sửa thông tin
               </button>
               <div className="my-1 h-px bg-gray-100" />
-              {/* --- CẬP NHẬT Ở ĐÂY --- */}
               <button onClick={handleDeleteClick} className="group flex w-full items-center rounded-md px-3 py-2 text-sm text-red-600 font-medium hover:bg-red-50 hover:text-red-700">
                 <Trash2 size={16} className="mr-3" />
                 Xoá xe
@@ -71,7 +71,7 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete }) => { // 
       </div>
       <div className="space-y-2 text-sm text-gray-700">
         <p><span className="font-medium text-gray-900">Tài xế:</span> {bus.driver}</p>
-        <p><span className="font-medium text-gray-900">sức chứa:</span> 40</p>
+        <p><span className="font-medium text-gray-900">Sức chứa:</span> {bus.capacity} chỗ</p>
         <div className="flex items-center">
           <Clock size={15} className="text-gray-500 mr-2 flex-shrink-0" />
           <span className="font-medium text-gray-900">{bus.startTime} - {bus.endTime}</span>
@@ -88,4 +88,3 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete }) => { // 
 };
 
 export default BusCard;
-
