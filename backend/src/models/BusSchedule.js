@@ -21,10 +21,6 @@ const busScheduleSchema = new mongoose.Schema({
     ref: "Route",
     required: true,
   },
-  date: {
-    type: Date,
-    required: true,
-  },
   start_time: {
     type: String, // "07:30"
     required: true,
