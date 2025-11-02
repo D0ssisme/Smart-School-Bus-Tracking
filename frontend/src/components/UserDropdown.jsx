@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { User, ChevronDown, LogOut, Settings } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth"; // ✅ dùng context để gọi logout()
 
 export default function UserDropdown() {
     const [open, setOpen] = useState(false);
+    const { user, logout } = useAuth(); // ✅ lấy user & logout từ context
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout(); // xoá token, xoá user
+        navigate("/"); // điều hướng về trang login
+    };
 
     return (
         <div className="relative">
@@ -23,7 +31,9 @@ export default function UserDropdown() {
                             alt="avatar"
                             className="w-12 h-12 rounded-full"
                         />
-                        <p className="font-semibold text-black mt-1">Nguyễn Kim Long</p>
+                        <p className="font-semibold text-black mt-1">
+                            {user?.name || ""}
+                        </p>
                     </div>
 
                     <div className="flex flex-col p-2">
@@ -35,7 +45,11 @@ export default function UserDropdown() {
                             <span>Tài khoản</span>
                         </Link>
 
-                        <button className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-md text-red-600">
+                        {/* ✅ Nút logout */}
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-md text-red-600"
+                        >
                             <LogOut className="w-4 h-4" />
                             <span>Đăng xuất</span>
                         </button>

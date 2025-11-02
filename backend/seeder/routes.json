@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Route A - Eastside",
+    "route_id": "ROUTE001",
+    "start_point": "<STOP_OBJECT_ID_START_1>",
+    "end_point": "<STOP_OBJECT_ID_END_1>",
+    "path": {
+      "type": "LineString",
+      "coordinates": [
+        [106.700000, 10.762000],
+        [106.701200, 10.763500],
+        [106.703000, 10.765000]
+      ]
+    },
+    "status": "active"
+  },
+  {
+    "name": "Route B - Westside",
+    "route_id": "ROUTE002",
+    "start_point": "<STOP_OBJECT_ID_START_2>",
+    "end_point": "<STOP_OBJECT_ID_END_2>",
+    "path": {
+      "type": "LineString",
+      "coordinates": [
+        [106.710000, 10.770000],
+        [106.712500, 10.772000],
+        [106.715000, 10.774000]
+      ]
+    },
+    "status": "active"
+  }
+]

@@ -12,11 +12,7 @@ const parentStudentSchema = new mongoose.Schema(
       ref: 'Student',
       required: true,
     },
-    relationshipType: {
-      type: String,
-      enum: ['father', 'mother', 'guardian'],
-      default: 'guardian',
-    },
+    
     active: {
       type: Boolean,
       default: true,

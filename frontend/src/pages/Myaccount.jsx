@@ -1,17 +1,34 @@
-import { useState } from "react";
+import { useAuth } from "../hooks/useAuth"; // hoặc "../context/AuthContext" tuỳ mày đặt
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import ToastService from "../lib/toastService";
 
 export default function MyAccount() {
+  const { user } = useAuth(); // ✅ lấy thông tin user hiện tại
   const [activeTab, setActiveTab] = useState("profile");
   const [avatar, setAvatar] = useState("https://cdn-icons-png.flaticon.com/512/219/219983.png");
   const [formData, setFormData] = useState({
-    Sdt: "0123456789",
-    hoTen: "Nguyễn Kim Long",
-    email: "longnguyen210405@gmail.com",
-    gioiTinh: "Nam",
-    ngaySinh: "2005-05-21",
+    Sdt: "",
+    hoTen: "",
+    address: "",
+    gioiTinh: "",
+    ngaySinh: "",
   });
+
+  // ✅ Khi user load xong thì gán dữ liệu vào form
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        Sdt: user.phoneNumber || "",
+        hoTen: user.name || "",
+        address: user.email || "",
+        gioiTinh: user.gender || "",
+        ngaySinh: user.birthDate || "",
+      });
+
+      if (user.avatar) setAvatar(user.avatar);
+    }
+  }, [user]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -22,20 +39,26 @@ export default function MyAccount() {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const id = ToastService.loading("Đang cập nhật...");
 
+    try {
+      await new Promise((r) => setTimeout(r, 1500));
+      ToastService.success("Hồ sơ đã được cập nhật!");
+    } catch {
+      ToastService.error("Cập nhật thất bại!");
+    }
+  };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  const id = ToastService.loading("Đang cập nhật...");
-
-  try {
-    await new Promise((r) => setTimeout(r, 1500));
-    ToastService.success(" Hồ sơ đã được cập nhật!");
-  } catch {
-    ToastService.error(" Cập nhật thất bại!");
+  // ⚠️ Nếu chưa login thì không có user
+  if (!user) {
+    return (
+      <div className="p-10 text-center text-gray-600">
+        Bạn cần đăng nhập để xem thông tin tài khoản.
+      </div>
+    );
   }
-};
-
 
   return (
     <div className="p-6 min-h-screen">
@@ -44,21 +67,19 @@ const handleSubmit = async (e) => {
         <div className="border-b flex">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`px-6 py-3 font-medium ${
-              activeTab === "profile"
+            className={`px-6 py-3 font-medium ${activeTab === "profile"
                 ? "border-b-2 border-blue-900 text-blue-900"
                 : "text-gray-600 hover:text-blue-900"
-            }`}
+              }`}
           >
             Hồ sơ
           </button>
           <button
             onClick={() => setActiveTab("password")}
-            className={`px-6 py-3 font-medium ${
-              activeTab === "password"
+            className={`px-6 py-3 font-medium ${activeTab === "password"
                 ? "border-b-2 border-blue-900 text-blue-900"
                 : "text-gray-600 hover:text-blue-900"
-            }`}
+              }`}
           >
             Mật khẩu
           </button>
@@ -95,12 +116,12 @@ const handleSubmit = async (e) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Địa chỉ email
+                  Địa chỉ
                 </label>
                 <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  type="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   className="h-8 p-1 pl-3 mt-1 w-120 rounded-md border border-gray-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition duration-150 ease-in-out"
                 />
               </div>
@@ -135,17 +156,7 @@ const handleSubmit = async (e) => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Ngày sinh
-                </label>
-                <input
-                  type="date"
-                  value={formData.ngaySinh}
-                  onChange={(e) => setFormData({ ...formData, ngaySinh: e.target.value })}
-                  className="h-8 p-1 pl-3 mt-1 w-120 rounded-md border border-gray-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition duration-150 ease-in-out"
-                />
-              </div>
+
 
               <button
                 type="submit"

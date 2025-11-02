@@ -214,7 +214,7 @@ export const getAllBusSchedules = async (req, res) => {
     const schedules = await BusSchedule.find()
       .populate({ path: "bus_id", select: "license_plate capacity status" })
       .populate({ path: "driver_id", select: "name phone role" })
-      .populate({ path: "route_id", select: "name start_point end_point path" });
+      .populate({ path: "route_id", select: "name " });
 
     res.status(200).json(schedules);
   } catch (error) {
