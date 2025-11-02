@@ -13,6 +13,32 @@ export const getAllUser = async (req, res) => {
 };
 
 
+
+export const getDrivers = async (req, res) => {
+  try {
+    const drivers = await User.find({ role: "driver" });
+    res.json(drivers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getParents = async (req, res) => {
+  try {
+    const parents = await User.find({ role: "parent" });
+    res.json(parents);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+
+
+
+
+
 export const createUser = async (req, res) => {
   try {
     

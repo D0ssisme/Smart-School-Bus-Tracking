@@ -71,7 +71,7 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete }) => { // 
       </div>
       <div className="space-y-2 text-sm text-gray-700">
         <p><span className="font-medium text-gray-900">Tài xế:</span> {bus.driver}</p>
-        <p><span className="font-medium text-gray-900">Sĩ số:</span> {bus.passengers} / 40</p>
+        <p><span className="font-medium text-gray-900">sức chứa:</span> 40</p>
         <div className="flex items-center">
           <Clock size={15} className="text-gray-500 mr-2 flex-shrink-0" />
           <span className="font-medium text-gray-900">{bus.startTime} - {bus.endTime}</span>

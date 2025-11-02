@@ -26,8 +26,8 @@ const userSchema = new mongoose.Schema({
     required: true
   },
   driverInfo: {
-    licenseNumber: String,
-    vehiclePlate: String
+    licenseNumber: String
+   
   },
   parentInfo: {
     address: {

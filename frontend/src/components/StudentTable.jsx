@@ -1,5 +1,6 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
+import { getAllParentStudent } from "@/api/parentstudentApi";
 
 function StudentTable({ students, onEdit, onDelete }) {
     return (

@@ -1,5 +1,5 @@
 import express from "express";
-import { createUser, deleteUser, getAllUser, updateUser } from "../controllers/userControllers.js";
+import { createUser, deleteUser, getAllUser, updateUser,getDrivers,getParents } from "../controllers/userControllers.js";
 import { verifyToken } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
@@ -15,5 +15,8 @@ router.put("/:id", verifyToken, updateUser);
 
 // 🧩 Xóa user theo id
 router.delete("/:id", verifyToken, deleteUser);
+
+router.get("/driver", getDrivers);
+router.get("/parent", getParents);
 
 export default router;
