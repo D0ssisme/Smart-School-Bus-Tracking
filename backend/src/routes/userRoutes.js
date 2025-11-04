@@ -14,7 +14,7 @@ router.post("/", createUser);
 router.put("/:id", verifyToken, updateUser);
 
 // 🧩 Xóa user theo id
-router.delete("/:id", verifyToken, deleteUser);
+router.delete("/:id", deleteUser);
 
 router.get("/driver", getDrivers);
 router.get("/parent", getParents);

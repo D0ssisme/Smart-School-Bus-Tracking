@@ -1,11 +1,19 @@
+
+//frontend/src/pages/StudentManager.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentTable from "../components/StudentTable";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import AddStudentModal from "../components/AddStudentModal";
 import ToastService from "@/lib/toastService";
 import { getAllParentStudent } from "@/api/parentstudentApi";
+import { getParentsApi } from "@/api/userApi";
+import { getRoutesApi } from "@/api/routeApi";
+import { createStudent, deleteStudent } from "@/api/studentApi";
+import { createParentStudent } from "@/api/parentstudentApi";
+import { createStudentRouteAssignment, getAllStudentRouteAssignments } from "@/api/studentrouteassignmentApi";
+import { getRoutesByIdApi } from "@/api/routestopApi";
 import { GraduationCap, UserPlus, Filter, Search, TrendingUp, BookOpen, Users, Award } from "lucide-react";
+import Swal from 'sweetalert2';
 
 function StudentManager() {
     const navigate = useNavigate();
@@ -14,27 +22,92 @@ function StudentManager() {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterClass, setFilterClass] = useState("all");
 
+    // Modal states
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [parents, setParents] = useState([]);
+    const [routes, setRoutes] = useState([]);
+
     useEffect(() => {
         fetchStudents();
+        fetchParentsAndRoutes();
     }, []);
+
+
 
     const fetchStudents = async () => {
         try {
             setLoading(true);
-            const response = await getAllParentStudent();
 
-            const transformedData = response.map(item => ({
-                id: item.student_id._id,
-                MaHS: item.student_id.student_id,
-                HoTen: item.student_id.name,
-                Lop: item.student_id.grade,
-                parent_id: item.parent_id._id,
-                parent_name: item.parent_id.name,
-                MaPhuHuynh: item.parent_id.userId,
-                active: item.active,
-                createdAt: item.createdAt
-            }));
+            // Gọi song song cả 2 API
+            const [parentStudentData, routeAssignmentsData] = await Promise.all([
+                getAllParentStudent(),
+                getAllStudentRouteAssignments()
+            ]);
 
+            console.log("📊 Parent-Student Data:", parentStudentData);
+            console.log("📊 Route Assignments Data:", routeAssignmentsData);
+
+            // Tạo Map để tra cứu nhanh route assignments theo student_id
+            const routeAssignmentsMap = new Map();
+            routeAssignmentsData.forEach(assignment => {
+                const studentId = assignment?.student_id?._id;
+                if (studentId) {
+                    routeAssignmentsMap.set(studentId, assignment);
+                } else {
+                    console.warn("⚠️ Missing student_id in route assignment:", assignment);
+                }
+            });
+
+            console.log("🗺️ Route Assignments Map:", routeAssignmentsMap);
+
+            // Transform data và merge thông tin điểm đón/trả
+            const transformedData = parentStudentData
+                .map(item => {
+                    const studentObj = item.student_id;
+                    const parentObj = item.parent_id;
+
+                    // Nếu thiếu student_id hoặc parent_id thì cảnh báo và bỏ qua
+                    if (!studentObj?._id || !parentObj?._id) {
+                        console.warn("⚠️ Missing student or parent in item:", item);
+                        return null;
+                    }
+
+                    const studentId = studentObj._id;
+                    const routeAssignment = routeAssignmentsMap.get(studentId);
+
+                    console.log(`🔍 Student ${studentObj.name}:`, {
+                        studentId,
+                        routeAssignment,
+                        pickupStop: routeAssignment?.pickup_stop_id?.name,
+                        dropoffStop: routeAssignment?.dropoff_stop_id?.name
+                    });
+
+                    return {
+                        id: studentId,
+                        MaHS: studentObj.student_id,
+                        HoTen: studentObj.name,
+                        Lop: studentObj.grade,
+                        parent_id: parentObj._id,
+                        parent_name: parentObj.name,
+                        MaPhuHuynh: parentObj.userId,
+                        active: item.active,
+                        createdAt: item.createdAt,
+
+                        // Thông tin điểm đón/trả
+                        Diemdon: routeAssignment?.pickup_stop_id?.name || 'Chưa có',
+                        Diemtra: routeAssignment?.dropoff_stop_id?.name || 'Chưa có',
+                        pickupStop: routeAssignment?.pickup_stop_id?.name || 'Chưa có',
+                        dropoffStop: routeAssignment?.dropoff_stop_id?.name || 'Chưa có',
+                        routeName: routeAssignment?.route_id?.name || 'Chưa phân tuyến',
+                        pickupStopId: routeAssignment?.pickup_stop_id?._id,
+                        dropoffStopId: routeAssignment?.dropoff_stop_id?._id,
+                        routeId: routeAssignment?.route_id?._id,
+                        routeAssignmentId: routeAssignment?._id
+                    };
+                })
+                .filter(Boolean); // loại bỏ các phần tử null
+
+            console.log("✅ Final Transformed Data:", transformedData);
             setStudents(transformedData);
         } catch (error) {
             console.error("Error fetching students:", error);
@@ -44,22 +117,130 @@ function StudentManager() {
         }
     };
 
-    const handleDeleteStudent = async (id) => {
-        if (confirm("Bạn có chắc muốn xóa học sinh này?")) {
-            const loadingToast = ToastService.loading("Đang xóa học sinh...");
 
-            try {
-                // TODO: Gọi API delete khi có
-                // await deleteStudent(id);
 
-                setStudents(students.filter(s => s.id !== id));
-                ToastService.update(loadingToast, "Xóa học sinh thành công!", "success");
-            } catch (error) {
-                console.error("Error deleting student:", error);
-                ToastService.update(loadingToast, "Xóa học sinh thất bại!", "error");
-            }
+
+
+
+
+
+
+
+
+    const fetchParentsAndRoutes = async () => {
+        try {
+            const [parentsData, routesData] = await Promise.all([
+                getParentsApi(),
+                getRoutesApi()
+            ]);
+            setParents(parentsData);
+            setRoutes(routesData);
+        } catch (error) {
+            console.error('Error fetching parents and routes:', error);
+            ToastService.error("Không thể tải dữ liệu phụ huynh và tuyến đường");
         }
     };
+
+    const handleAddStudent = async (formData) => {
+        const loadingToast = ToastService.loading("Đang thêm học sinh...");
+
+        try {
+            // 1. Tạo student mới
+            const studentPayload = {
+                name: formData.name,
+                grade: formData.class
+            };
+
+            const response = await createStudent(studentPayload);
+            console.log("✅ Student created:", response);
+
+            // 2. Tạo relationship parent-student
+            const relationPayload = {
+                parent_id: formData.parentId,
+                student_id: response.student._id, // ← Sửa chỗ này: thêm .student
+                active: true
+            };
+
+            const assignmentPayload = {
+                student_id: response.student._id,
+                route_id: formData.routeId,
+                pickup_stop_id: formData.pickupStopId,
+                dropoff_stop_id: formData.dropoffStopId
+            };
+
+            console.log("📤 Sending parent-student payload:", relationPayload);
+            const result = await createParentStudent(relationPayload);
+            console.log("✅ Parent-Student relationship created:", result);
+
+            console.log("📤 Sending student-route assignment payload:", assignmentPayload);
+            const assignmentResult = await createStudentRouteAssignment(assignmentPayload);
+            console.log("✅ Student-Route assignment created:", assignmentResult);
+
+            ToastService.update(loadingToast, "Thêm học sinh thành công!", "success");
+            setIsModalOpen(false);
+
+            // Refresh danh sách học sinh
+            await fetchStudents();
+        } catch (error) {
+            console.error('❌ Error adding student:', error);
+            console.error('Error response:', error.response?.data);
+            const errorMsg = error.response?.data?.message || "Không thể thêm học sinh. Vui lòng thử lại!";
+            ToastService.update(loadingToast, errorMsg, "error");
+        }
+    };
+
+
+    const handleDeleteStudent = async (id) => {
+        // Tìm thông tin học sinh từ state
+        const student = students.find(s => s.id === id);
+
+        Swal.fire({
+            title: "Bạn có chắc muốn xóa?",
+            html: `
+            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                <p style="margin: 0; font-size: 16px;">
+                    <strong>👤 Học sinh:</strong> ${student?.HoTen || 'N/A'}
+                </p>
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+                    <strong>📚 Lớp:</strong> ${student?.Lop || 'N/A'}
+                </p>
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+                    <strong>🆔 Mã HS:</strong> ${student?.MaHS || 'N/A'}
+                </p>
+            </div>
+           
+            <p style="color: #d33; font-weight: bold; margin-top: 16px;">⚠️ Không thể hoàn tác!</p>
+        `,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Xóa",
+            cancelButtonText: "Hủy",
+            width: 550
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                const loadingToast = ToastService.loading("Đang xóa học sinh...");
+
+                try {
+                    // Gọi API xóa học sinh
+                    await deleteStudent(id);
+
+                    // Cập nhật UI - xóa học sinh khỏi danh sách
+                    setStudents(students.filter(s => s.id !== id));
+
+                    ToastService.update(loadingToast, "Xóa học sinh và các liên kết thành công!", "success");
+
+                } catch (error) {
+                    console.error("Error deleting student:", error);
+                    const errorMsg = error.response?.data?.message || "Xóa học sinh thất bại!";
+                    ToastService.update(loadingToast, errorMsg, "error");
+                }
+            }
+        });
+    };
+
+
 
     const handleEditStudent = (student) => {
         navigate(`/students/edit/${student.id}`);
@@ -186,7 +367,7 @@ function StudentManager() {
                     </div>
 
                     <button
-                        onClick={() => navigate("/students/create")}
+                        onClick={() => setIsModalOpen(true)}
                         className="flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                     >
                         <UserPlus size={20} /> Thêm học sinh
@@ -284,6 +465,15 @@ function StudentManager() {
                     />
                 )}
             </div>
+
+            {/* Add Student Modal */}
+            <AddStudentModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={handleAddStudent}
+                parents={parents}
+                routes={routes}
+            />
         </div>
     );
 }
