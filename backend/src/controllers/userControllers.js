@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import bcrypt from "bcryptjs";
+import ParentStudent from "../models/ParentStudent.js";
 
 // 📌 Lấy danh sách tất cả user
 export const getAllUser = async (req, res) => {
@@ -41,12 +42,12 @@ export const getParents = async (req, res) => {
 
 export const createUser = async (req, res) => {
   try {
-    
+
     const { name, password, phoneNumber, role, driverInfo, parentInfo } = req.body;
 
-   
+
     if (!name || !password || !role || !phoneNumber) {
-      
+
       return res.status(400).json({ message: "Thiếu thông tin bắt buộc!" });
     }
 
@@ -67,10 +68,10 @@ export const createUser = async (req, res) => {
     res.status(201).json({
       message: "✅ Tạo người dùng thành công!",
       user: {
-        userId: newUser.userId, 
+        userId: newUser.userId,
         name: newUser.name,
         role: newUser.role,
-        phoneNumber: newUser.phoneNumber, 
+        phoneNumber: newUser.phoneNumber,
         createdAt: newUser.createdAt,
       },
     });
@@ -108,26 +109,37 @@ export const updateUser = async (req, res) => {
 };
 
 // 📌 Xóa user
+
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const deletedUser = await User.findByIdAndDelete(id);
+    // Tìm user trước
+    const user = await User.findById(id);
 
-    if (!deletedUser) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng để xóa!" });
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy user!" });
     }
 
-    res.status(200).json({
-      message: "🗑️ Xóa người dùng thành công!",
-      user: {
-        user_id: deletedUser.user_id,
-        name: deletedUser.name,
-        role: deletedUser.role,
-      },
-    });
+    // Kiểm tra role nếu là parent
+    if (user.role === "parent") {
+      // Tìm trong ParentStudent xem có học sinh nào liên kết không
+      const relation = await ParentStudent.findOne({ parent_id: id }); // ✅ Sửa field name
+
+      if (relation) {
+        return res.status(400).json({
+          message: "Không thể xóa vì phụ huynh còn đang có con liên kết!",
+        });
+      }
+    }
+
+    // Nếu không có vấn đề -> Xóa
+    await User.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "🗑️ Xóa user thành công!" });
+
   } catch (error) {
     console.error("❌ Lỗi khi xóa user:", error);
-    res.status(500).json({ message: "Lỗi server khi xóa user!", error: error.message });
+    res.status(500).json({ message: "Lỗi server khi xóa!", error: error.message });
   }
 };

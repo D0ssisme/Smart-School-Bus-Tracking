@@ -3,9 +3,12 @@ import { useNavigate } from "react-router-dom";
 import AccountTable from "../components/AccountTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getParentsApi, getDriversApi } from "@/api/userApi";
+import AddUserModal from "@/components/AddUserModal";
+import { getParentsApi, getDriversApi, createUserApi, deleteUserApi } from "@/api/userApi";
 import ToastService from "@/lib/toastService";
 import { Users, UserPlus, Filter, Search, TrendingUp, Shield } from "lucide-react";
+
+import Swal from 'sweetalert2';
 
 function AccountManager() {
     const navigate = useNavigate();
@@ -13,6 +16,7 @@ function AccountManager() {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterRole, setFilterRole] = useState("all");
     const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false); // ← Thêm state cho modal
 
     useEffect(() => {
         fetchUsers();
@@ -41,24 +45,137 @@ function AccountManager() {
         }
     };
 
-    const handleDeleteUser = async (id) => {
-        if (confirm("Bạn có chắc muốn xóa tài khoản này?")) {
-            const loadingToast = ToastService.loading("Đang xóa người dùng...");
+    // ← Thêm hàm xử lý tạo user
+    const handleCreateUser = async (userData) => {
+        const loadingToast = ToastService.loading("Đang tạo người dùng...");
 
-            try {
-                // TODO: Gọi API xóa user
-                // await deleteUserApi(id);
+        try {
+            const response = await createUserApi(userData);
+            console.log("✅ User created:", response);
 
-                setTimeout(() => {
-                    setUsers(users.filter(u => u._id !== id));
-                    ToastService.update(loadingToast, "Xóa người dùng thành công!", "success");
-                }, 1000);
-            } catch (error) {
-                console.error('Error deleting user:', error);
-                ToastService.update(loadingToast, "Không thể xóa người dùng. Vui lòng thử lại!", "error");
-            }
+            ToastService.update(loadingToast, "Tạo người dùng thành công!", "success");
+
+            // Refresh danh sách
+            await fetchUsers();
+
+        } catch (error) {
+            console.error("❌ Error creating user:", error);
+            const errorMsg = error.response?.data?.message || "Không thể tạo người dùng. Vui lòng thử lại!";
+            ToastService.update(loadingToast, errorMsg, "error");
+            throw error; // Để modal xử lý lỗi
         }
     };
+
+
+    const handleDeleteUser = async (id) => {
+        // Tìm thông tin user từ state
+        const user = users.find(u => u._id === id);
+
+        // Hiển thị role bằng tiếng Việt
+        const roleDisplay = {
+            'parent': 'Phụ huynh',
+            'driver': 'Tài xế',
+            'admin': 'Quản trị viên'
+        };
+
+        Swal.fire({
+            title: "Xác nhận xóa người dùng",
+            html: `
+            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #dc3545;">
+                <p style="margin: 0; font-size: 16px;">
+                    <strong>👤 Họ tên:</strong> ${user?.name || 'N/A'}
+                </p>
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+                    <strong>🆔 Mã người dùng:</strong> ${user?.userId || 'N/A'}
+                </p>
+                
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+                    <strong>📞 Số điện thoại:</strong> ${user?.phoneNumber || 'N/A'}
+                </p>
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+                    <strong>👔 Vai trò:</strong> <span style="background: #e7f3ff; padding: 2px 8px; border-radius: 4px; color: #0066cc;">${roleDisplay[user?.role] || user?.role || 'N/A'}</span>
+                </p>
+            </div>
+            <p style="color: #d33; font-weight: bold; margin-top: 16px;">⚠️ Hành động này sẽ không thể hoàn tác!</p>
+        `,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Xóa",
+            cancelButtonText: "Hủy",
+            width: 550
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                const loadingToast = ToastService.loading("Đang xóa người dùng...");
+
+                try {
+                    // Gọi API xóa user
+                    await deleteUserApi(id);
+
+                    // Cập nhật UI
+                    setUsers(prevUsers => prevUsers.filter(user => user._id !== id));
+
+                    ToastService.update(loadingToast, `Đã xóa người dùng ${user?.name}!`, "success");
+
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+
+                    // Kiểm tra nếu là lỗi phụ huynh còn liên kết với học sinh
+                    if (error.response?.status === 400 &&
+                        error.response?.data?.message?.includes("còn đang có con liên kết")) {
+
+                        ToastService.update(loadingToast, "", "error");
+
+                        // Hiển thị thông báo đặc biệt với SweetAlert2
+                        Swal.fire({
+                            title: "Không thể xóa!",
+                            html: `
+                            <div style="text-align: left;">
+                                <div style="background: #ffe5e5; padding: 12px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #dc3545;">
+                                    <p style="margin: 0; font-size: 15px;">
+                                        <strong>👤 ${user?.name}</strong> (${user?.userId})
+                                    </p>
+                                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">
+                                        ${roleDisplay[user?.role] || user?.role}
+                                    </p>
+                                </div>
+                                <p><strong>⚠️ Phụ huynh này đang liên kết với học sinh!</strong></p>
+                                <p style="margin-top: 12px; color: #666;">
+                                    Bạn cần xóa các học sinh liên kết trước khi xóa phụ huynh này.
+                                </p>
+                                <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-top: 16px; border-left: 4px solid #ffc107;">
+                                    <p style="margin: 0; font-size: 14px;">
+                                        💡 <strong>Hướng dẫn:</strong><br/>
+                                        1. Vào trang <strong>Quản lý học sinh</strong><br/>
+                                        2. Tìm các học sinh của phụ huynh <strong>${user?.name}</strong><br/>
+                                        3. Xóa hoặc chuyển học sinh sang phụ huynh khác<br/>
+                                        4. Quay lại xóa phụ huynh
+                                    </p>
+                                </div>
+                            </div>
+                        `,
+                            icon: "error",
+                            confirmButtonText: "Đã hiểu",
+                            confirmButtonColor: "#3085d6",
+                            width: 600
+                        });
+
+                    } else {
+                        // Các lỗi khác
+                        const errorMsg = error.response?.data?.message || "Không thể xóa người dùng. Vui lòng thử lại!";
+                        ToastService.update(loadingToast, errorMsg, "error");
+                    }
+                }
+            }
+        });
+    };
+
+
+
+
+
+
 
     const handleEditUser = (user) => {
         navigate(`/accounts/edit/${user._id}`);
@@ -176,8 +293,9 @@ function AccountManager() {
                         </div>
                     </div>
 
+                    {/* ← Sửa button này */}
                     <button
-                        onClick={() => navigate("/accounts/create")}
+                        onClick={() => setIsModalOpen(true)}
                         className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                     >
                         <UserPlus size={20} /> Thêm người dùng
@@ -269,6 +387,13 @@ function AccountManager() {
                     </button>
                 </div>
             )}
+
+            {/* ← Thêm Modal component */}
+            <AddUserModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleCreateUser}
+            />
         </div>
     );
 }
