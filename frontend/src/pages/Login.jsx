@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth"; // ✅ dùng context thay vì axios
+import Swal from "sweetalert2";
 
 function Login() {
   const navigate = useNavigate();
-  const { login, loading } = useAuth(); // ✅ lấy login() & loading từ context
+  const { login, loading } = useAuth();
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
@@ -14,14 +15,40 @@ function Login() {
     e.preventDefault();
     setError("");
 
-    const res = await login(phoneNumber, password); // ✅ gọi login từ context
+    const res = await login(phoneNumber, password);
     if (res.success) {
+
+      // ✅ BƯỚC 2: THÊM TOAST THÀNH CÔNG TẠI ĐÂY
+      Swal.fire({
+        toast: true,
+        position: "bottom-end",
+        icon: "success",
+        title: "Đăng nhập thành công!", // Sửa lại title
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        didOpen: (toast) => {
+          toast.onmouseenter = Swal.stopTimer;
+          toast.onmouseleave = Swal.resumeTimer;
+        },
+      });
+
       // Có thể điều hướng theo role
       if (res.role === "admin") navigate("/dashboard");
       else if (res.role === "driver") navigate("/contact");
       else navigate("/dashboard");
+
     } else {
       setError(res.message);
+      // Bạn cũng có thể dùng toast cho lỗi nếu muốn
+      // Swal.fire({
+      //   toast: true,
+      //   position: "bottom-end",
+      //   icon: "error",
+      //   title: res.message || "Đăng nhập thất bại!",
+      //   timer: 2000,
+      //   ...
+      // });
     }
   };
 

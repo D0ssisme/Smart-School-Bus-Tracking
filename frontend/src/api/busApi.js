@@ -1,5 +1,5 @@
 import axios from "axios";
-const API_URL = "http://localhost:8080/api/bus"; 
+const API_URL = "http://localhost:8080/api/bus";
 export const getAllBuses = async () => {
     const res = await axios.get("http://localhost:8080/api/bus");
     return res.data; // vì response là mảng [] nên trả về luôn
@@ -7,11 +7,8 @@ export const getAllBuses = async () => {
 //src/api/busApi.js
 
 
-export const createBusApi = async (busData) => {
-    const res = await axios.post(API_URL, {
-        license_plate: busData.plate,
-        capacity: busData.capacity,
-        status: busData.status || "active"
-    });
-    return res.data;
+// Ví dụ trong busApi.js
+export const createBusApi = async (data) => {
+    const response = await axios.post(API_URL, data);
+    return response.data; // ← Xem cái này trả về gì
 };

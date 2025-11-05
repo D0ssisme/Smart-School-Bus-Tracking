@@ -1,6 +1,8 @@
 import User from '../models/User.js';
 import bcrypt from "bcryptjs";
 import ParentStudent from "../models/ParentStudent.js";
+import BusSchedule from "../models/BusSchedule.js";
+
 
 // 📌 Lấy danh sách tất cả user
 export const getAllUser = async (req, res) => {
@@ -109,7 +111,6 @@ export const updateUser = async (req, res) => {
 };
 
 // 📌 Xóa user
-
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -124,13 +125,36 @@ export const deleteUser = async (req, res) => {
     // Kiểm tra role nếu là parent
     if (user.role === "parent") {
       // Tìm trong ParentStudent xem có học sinh nào liên kết không
-      const relation = await ParentStudent.findOne({ parent_id: id }); // ✅ Sửa field name
+      const relation = await ParentStudent.findOne({ parent_id: id });
 
       if (relation) {
         return res.status(400).json({
           message: "Không thể xóa vì phụ huynh còn đang có con liên kết!",
         });
       }
+    }
+
+    // Kiểm tra role nếu là driver
+    if (user.role === "driver") {
+      // Tìm trong BusSchedule xem driver có đang được phân công không
+      const schedule = await BusSchedule.findOne({
+        driver_id: id,
+       
+      });
+
+      if (schedule) {
+        return res.status(400).json({
+          message: "Không thể xóa vì tài xế đang được phân công trong lịch trình!",
+        });
+      }
+
+      // Hoặc nếu muốn check tất cả lịch (kể cả đã hoàn thành)
+      // const scheduleCount = await BusSchedule.countDocuments({ driver_id: id });
+      // if (scheduleCount > 0) {
+      //   return res.status(400).json({
+      //     message: `Không thể xóa vì tài xế có ${scheduleCount} lịch trình liên quan!`,
+      //   });
+      // }
     }
 
     // Nếu không có vấn đề -> Xóa

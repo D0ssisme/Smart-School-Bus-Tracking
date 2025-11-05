@@ -75,29 +75,30 @@ function AccountManager() {
         const roleDisplay = {
             'parent': 'Phụ huynh',
             'driver': 'Tài xế',
-            'admin': 'Quản trị viên'
+            'admin': 'Quản trị viên',
+            'manager': 'Quản lý'
         };
 
         Swal.fire({
             title: "Xác nhận xóa người dùng",
             html: `
-            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #dc3545;">
-                <p style="margin: 0; font-size: 16px;">
-                    <strong>👤 Họ tên:</strong> ${user?.name || 'N/A'}
-                </p>
-                <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
-                    <strong>🆔 Mã người dùng:</strong> ${user?.userId || 'N/A'}
-                </p>
-                
-                <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
-                    <strong>📞 Số điện thoại:</strong> ${user?.phoneNumber || 'N/A'}
-                </p>
-                <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
-                    <strong>👔 Vai trò:</strong> <span style="background: #e7f3ff; padding: 2px 8px; border-radius: 4px; color: #0066cc;">${roleDisplay[user?.role] || user?.role || 'N/A'}</span>
-                </p>
-            </div>
-            <p style="color: #d33; font-weight: bold; margin-top: 16px;">⚠️ Hành động này sẽ không thể hoàn tác!</p>
-        `,
+        <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #dc3545;">
+            <p style="margin: 0; font-size: 16px;">
+                <strong>👤 Họ tên:</strong> ${user?.name || 'N/A'}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+                <strong>🆔 Mã người dùng:</strong> ${user?.userId || 'N/A'}
+            </p>
+            
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+                <strong>📞 Số điện thoại:</strong> ${user?.phoneNumber || 'N/A'}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+                <strong>👔 Vai trò:</strong> <span style="background: #e7f3ff; padding: 2px 8px; border-radius: 4px; color: #0066cc;">${roleDisplay[user?.role] || user?.role || 'N/A'}</span>
+            </p>
+        </div>
+        <p style="color: #d33; font-weight: bold; margin-top: 16px;">⚠️ Hành động này sẽ không thể hoàn tác!</p>
+    `,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#d33",
@@ -121,56 +122,91 @@ function AccountManager() {
                 } catch (error) {
                     console.error('Error deleting user:', error);
 
-                    // Kiểm tra nếu là lỗi phụ huynh còn liên kết với học sinh
-                    if (error.response?.status === 400 &&
-                        error.response?.data?.message?.includes("còn đang có con liên kết")) {
+                    const errorMessage = error.response?.data?.message || "";
 
+                    // ========== XỬ LÝ LỖI PHỤ HUYNH ==========
+                    if (error.response?.status === 400 && errorMessage.includes("còn đang có con liên kết")) {
                         ToastService.update(loadingToast, "", "error");
 
-                        // Hiển thị thông báo đặc biệt với SweetAlert2
                         Swal.fire({
-                            title: "Không thể xóa!",
+                            title: "Không thể xóa phụ huynh!",
                             html: `
-                            <div style="text-align: left;">
-                                <div style="background: #ffe5e5; padding: 12px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #dc3545;">
-                                    <p style="margin: 0; font-size: 15px;">
-                                        <strong>👤 ${user?.name}</strong> (${user?.userId})
-                                    </p>
-                                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">
-                                        ${roleDisplay[user?.role] || user?.role}
-                                    </p>
-                                </div>
-                                <p><strong>⚠️ Phụ huynh này đang liên kết với học sinh!</strong></p>
-                                <p style="margin-top: 12px; color: #666;">
-                                    Bạn cần xóa các học sinh liên kết trước khi xóa phụ huynh này.
+                        <div style="text-align: left;">
+                            <div style="background: #ffe5e5; padding: 12px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #dc3545;">
+                                <p style="margin: 0; font-size: 15px;">
+                                    <strong>👤 ${user?.name}</strong> (${user?.userId})
                                 </p>
-                                <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-top: 16px; border-left: 4px solid #ffc107;">
-                                    <p style="margin: 0; font-size: 14px;">
-                                        💡 <strong>Hướng dẫn:</strong><br/>
-                                        1. Vào trang <strong>Quản lý học sinh</strong><br/>
-                                        2. Tìm các học sinh của phụ huynh <strong>${user?.name}</strong><br/>
-                                        3. Xóa hoặc chuyển học sinh sang phụ huynh khác<br/>
-                                        4. Quay lại xóa phụ huynh
-                                    </p>
-                                </div>
+                                <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">
+                                    ${roleDisplay[user?.role] || user?.role}
+                                </p>
                             </div>
-                        `,
+                            <p><strong>⚠️ Phụ huynh này đang liên kết với học sinh!</strong></p>
+                            <p style="margin-top: 12px; color: #666;">
+                                Bạn cần xóa các học sinh liên kết trước khi xóa phụ huynh này.
+                            </p>
+                            <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-top: 16px; border-left: 4px solid #ffc107;">
+                                <p style="margin: 0; font-size: 14px;">
+                                    💡 <strong>Hướng dẫn:</strong><br/>
+                                    1. Vào trang <strong>Quản lý học sinh</strong><br/>
+                                    2. Tìm các học sinh của phụ huynh <strong>${user?.name}</strong><br/>
+                                    3. Xóa hoặc chuyển học sinh sang phụ huynh khác<br/>
+                                    4. Quay lại xóa phụ huynh
+                                </p>
+                            </div>
+                        </div>
+                    `,
                             icon: "error",
                             confirmButtonText: "Đã hiểu",
                             confirmButtonColor: "#3085d6",
                             width: 600
                         });
+                    }
+                    // ========== XỬ LÝ LỖI TÀI XẾ ==========
+                    else if (error.response?.status === 400 && errorMessage.includes("đang được phân công")) {
+                        ToastService.update(loadingToast, "", "error");
 
-                    } else {
-                        // Các lỗi khác
-                        const errorMsg = error.response?.data?.message || "Không thể xóa người dùng. Vui lòng thử lại!";
+                        Swal.fire({
+                            title: "Không thể xóa tài xế!",
+                            html: `
+                        <div style="text-align: left;">
+                            <div style="background: #ffe5e5; padding: 12px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #dc3545;">
+                                <p style="margin: 0; font-size: 15px;">
+                                    <strong>🚗 ${user?.name}</strong> (${user?.userId})
+                                </p>
+                                <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">
+                                    ${roleDisplay[user?.role] || user?.role}
+                                </p>
+                            </div>
+                            <p><strong>⚠️ Tài xế này đang được phân công trong lịch trình!</strong></p>
+                            <p style="margin-top: 12px; color: #666;">
+                                Bạn cần hủy hoặc chuyển lịch trình trước khi xóa tài xế này.
+                            </p>
+                            <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-top: 16px; border-left: 4px solid #ffc107;">
+                                <p style="margin: 0; font-size: 14px;">
+                                    💡 <strong>Hướng dẫn:</strong><br/>
+                                    1. Vào trang <strong>Quản lý xe bus</strong> hoặc <strong>Lịch trình</strong><br/>
+                                    2. Tìm các lịch trình của tài xế <strong>${user?.name}</strong><br/>
+                                    3. Hủy lịch hoặc phân công tài xế khác<br/>
+                                    4. Quay lại xóa tài xế
+                                </p>
+                            </div>
+                        </div>
+                    `,
+                            icon: "error",
+                            confirmButtonText: "Đã hiểu",
+                            confirmButtonColor: "#3085d6",
+                            width: 600
+                        });
+                    }
+                    // ========== CÁC LỖI KHÁC ==========
+                    else {
+                        const errorMsg = errorMessage || "Không thể xóa người dùng. Vui lòng thử lại!";
                         ToastService.update(loadingToast, errorMsg, "error");
                     }
                 }
             }
         });
     };
-
 
 
 

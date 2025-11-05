@@ -80,13 +80,17 @@ export const loginUser = async (req, res) => {
     res.status(200).json({
       message: "✅ Đăng nhập thành công!",
       user: {
+        _id: user._id,                      // ✅ thêm _id
         userId: user.userId,
         name: user.name,
         phoneNumber: user.phoneNumber,
         role: user.role,
+        driverInfo: user.driverInfo || {},  // ✅ thêm driverInfo (nếu có)
+        parentInfo: user.parentInfo || {},  // 👈 tương tự nếu là parent
       },
       token,
     });
+
   } catch (error) {
     console.error("❌ Lỗi đăng nhập:", error);
     res.status(500).json({ message: "Lỗi server khi đăng nhập!", error: error.message });

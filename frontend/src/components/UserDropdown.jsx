@@ -2,16 +2,53 @@ import { useState } from "react";
 import { User, ChevronDown, LogOut, Settings } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth"; // ✅ dùng context để gọi logout()
+import Swal from "sweetalert2";
+import ToastService from "@/lib/toastService";
 
 export default function UserDropdown() {
     const [open, setOpen] = useState(false);
     const { user, logout } = useAuth(); // ✅ lấy user & logout từ context
     const navigate = useNavigate();
 
+
+
+
+
     const handleLogout = () => {
-        logout(); // xoá token, xoá user
-        navigate("/"); // điều hướng về trang login
+        Swal.fire({
+            title: "Bạn có chắc muốn đăng xuất?",
+            text: "Phiên đăng nhập hiện tại sẽ kết thúc.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Đăng xuất",
+            cancelButtonText: "Hủy",
+            reverseButtons: true,
+            confirmButtonColor: "#d33", // Nút đỏ bạn vừa thêm
+        }).then((result) => {
+            if (result.isConfirmed) {
+                logout(); // Gọi hàm logout từ context
+                navigate("/"); // Điều hướng về trang login
+
+                // THAY ĐỔI CỤM NÀY: Chuyển từ modal sang toast
+                Swal.fire({
+                    toast: true, // Bật chế độ toast
+                    position: "bottom-end", // Vị trí góc dưới bên phải
+                    icon: "success",
+                    title: "Đã đăng xuất!",
+                    timer: 2000, // Tăng time 1 chút cho toast
+                    timerProgressBar: true, // Hiển thị thanh thời gian
+                    showConfirmButton: false,
+
+                    // Thêm cái này để toast không bị ảnh hưởng bởi click
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                });
+            }
+        });
     };
+
 
     return (
         <div className="relative">

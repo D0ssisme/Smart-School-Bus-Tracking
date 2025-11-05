@@ -4,6 +4,63 @@ import Bus from '../models/Bus.js';
 import User from '../models/User.js';
 import Route from '../models/Route.js';
 
+
+// READ BY DRIVER ID
+export const getBusScheduleByDriverId = async (req, res) => {
+  try {
+    const { driver_id } = req.params;
+
+    if (!driver_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu driver_id trong request params"
+      });
+    }
+
+    const schedules = await BusSchedule.find({ driver_id })
+      .populate({
+        path: "bus_id",
+        select: "license_plate capacity status"
+      })
+      .populate({
+        path: "route_id",
+        select: "name",
+        populate: [
+          { path: "start_point", select: "name" },
+          { path: "end_point", select: "name" }
+        ]
+      })
+      .populate({
+        path: "driver_id",
+        select: "name phone role"
+      });
+
+    if (schedules.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Không tìm thấy lịch trình nào cho tài xế ID '${driver_id}'`
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      total: schedules.length,
+      data: schedules
+    });
+
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy BusSchedule theo driver_id:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server!",
+      error: error.message
+    });
+  }
+};
+
+
+
+
 export const createBusSchedule = async (req, res) => {
   try {
     const { bus_id, driver_id, route_id, start_time, end_time } = req.body;

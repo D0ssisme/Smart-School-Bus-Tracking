@@ -4,7 +4,7 @@ import {
   getAllBusSchedules,
   getBusScheduleById,
   updateBusSchedule,
-  deleteBusSchedule
+  deleteBusSchedule,getBusScheduleByDriverId
 } from "../controllers/BusScheduleControllers.js";
 
 const router = express.Router();
@@ -14,5 +14,6 @@ router.get("/", getAllBusSchedules);
 router.get("/:id", getBusScheduleById);
 router.put("/:id", updateBusSchedule);
 router.delete("/:id", deleteBusSchedule);
+router.get('/driver/:driver_id', getBusScheduleByDriverId);
 
 export default router;
