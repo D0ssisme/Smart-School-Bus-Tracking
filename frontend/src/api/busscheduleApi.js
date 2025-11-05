@@ -7,13 +7,24 @@ export const getAllBuschedule = async () => {
 };
 
 export const createBusScheduleApi = async (scheduleData) => {
-    const res = await axios.post(API_URL, {
-        bus_id: scheduleData.busId,
-        driver_id: scheduleData.driverId,
-        route_id: scheduleData.routeId,
-        start_time: scheduleData.startTime,
-        end_time: scheduleData.endTime,
-        status: scheduleData.status || "scheduled"
-    });
+    console.log("📤 Sending to /busschedule:", scheduleData);
+
+    // ✅ Gửi thẳng, không transform
+    const res = await axios.post(API_URL, scheduleData);
     return res.data;
 };
+
+export const updateBusScheduleApi = async (id, scheduleData) => {
+    const res = await axios.put(`${API_URL}/${id}`, scheduleData);
+    return res.data;
+};
+
+export const deleteBusScheduleApi = async (id) => {
+    const res = await axios.delete(`${API_URL}/${id}`);
+    return res.data;
+};   
+
+export const getBusScheduleByDriverIdApi = async (driverId) => {
+    const res = await axios.get(`${API_URL}/driver/${driverId}`);
+    return res.data;
+}
