@@ -4,6 +4,9 @@ import {
   getAllStudentBusAssignments,
   getStudentBusAssignmentById,
   updateStudentBusAssignment,
+  deleteStudentBusAssignment,
+  
+  
 
 } from "../controllers/StudentBusAssignmentController.js";
 
@@ -20,6 +23,9 @@ router.get("/:id", getStudentBusAssignmentById);
 
 // 🟠 Cập nhật
 router.put("/:id", updateStudentBusAssignment);
+
+router.delete("/:id", deleteStudentBusAssignment);
+
 
 
 

@@ -63,7 +63,7 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete }) => {
               <div className="my-1 h-px bg-gray-100" />
               <button onClick={handleDeleteClick} className="group flex w-full items-center rounded-md px-3 py-2 text-sm text-red-600 font-medium hover:bg-red-50 hover:text-red-700">
                 <Trash2 size={16} className="mr-3" />
-                Xoá xe
+                Xoá lịch trình
               </button>
             </div>
           )}
