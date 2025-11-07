@@ -1,9 +1,143 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import NotificationCard from "../components/NotificationCard";
-import { getAllNotifications } from "@/api/notificationApi";
+import CreateNotificationModal from '@/components/CreateNotificationModal';
+import { getAllNotifications, createNotification } from "@/api/notificationApi";
 import ToastService from "@/lib/toastService";
-import { Bell, BellPlus, Filter, Search, TrendingUp, AlertCircle, Info, CheckCircle, Megaphone } from "lucide-react";
+import { Bell, BellPlus, Filter, Search, TrendingUp, AlertCircle, Info, CheckCircle, Megaphone, Edit2, Trash2, Calendar, Users } from "lucide-react";
+
+// NotificationCard Component
+function NotificationCard({ notification, onEdit, onDelete }) {
+    const getTypeStyle = (type) => {
+        switch (type) {
+            case 'alert':
+                return 'bg-red-50 border-red-200 text-red-700';
+            case 'info':
+                return 'bg-blue-50 border-blue-200 text-blue-700';
+            case 'success':
+                return 'bg-green-50 border-green-200 text-green-700';
+            case 'announcement':
+                return 'bg-purple-50 border-purple-200 text-purple-700';
+            default:
+                return 'bg-gray-50 border-gray-200 text-gray-700';
+        }
+    };
+
+    const getTypeIcon = (type) => {
+        switch (type) {
+            case 'alert':
+                return <AlertCircle size={20} className="text-red-600" />;
+            case 'info':
+                return <Info size={20} className="text-blue-600" />;
+            case 'success':
+                return <CheckCircle size={20} className="text-green-600" />;
+            case 'announcement':
+                return <Megaphone size={20} className="text-purple-600" />;
+            default:
+                return <Bell size={20} className="text-gray-600" />;
+        }
+    };
+
+    const getTypeLabel = (type) => {
+        switch (type) {
+            case 'alert':
+                return 'Cảnh báo';
+            case 'info':
+                return 'Thông tin';
+            case 'success':
+                return 'Thành công';
+            case 'announcement':
+                return 'Thông báo chung';
+            default:
+                return 'Khác';
+        }
+    };
+
+    return (
+        <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3 flex-1">
+                    <div className={`p-2 rounded-lg ${getTypeStyle(notification.type)}`}>
+                        {getTypeIcon(notification.type)}
+                    </div>
+                    <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${getTypeStyle(notification.type)}`}>
+                                {getTypeLabel(notification.type)}
+                            </span>
+                            {notification.createdAt && (
+                                <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <Calendar size={14} />
+                                    {new Date(notification.createdAt).toLocaleDateString('vi-VN')}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-gray-800 font-medium mb-1">{notification.message}</p>
+
+                        {/* Hiển thị thông tin người nhận */}
+                        {notification.receiver_id && (
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <p className="text-sm text-gray-600 flex items-center gap-1">
+                                    <Users size={14} />
+                                    <span className="font-medium">Người nhận:</span>
+                                    <span className="text-gray-800">
+                                        {notification.receiver_id.name || 'N/A'}
+                                    </span>
+                                </p>
+
+                                {notification.receiver_id.role && (
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${notification.receiver_id.role === 'parent'
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : notification.receiver_id.role === 'driver'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-gray-100 text-gray-700'
+                                        }`}>
+                                        {notification.receiver_id.role === 'parent'
+                                            ? '👨‍👩‍👧 Phụ huynh'
+                                            : notification.receiver_id.role === 'driver'
+                                                ? '🚗 Tài xế'
+                                                : notification.receiver_id.role === 'admin'
+                                                    ? '👔 Quản trị viên'
+                                                    : '👤 ' + notification.receiver_id.role
+                                        }
+                                    </span>
+                                )}
+
+                                {notification.receiver_id.phoneNumber && (
+                                    <span className="text-xs text-gray-500">
+                                        📞 {notification.receiver_id.phoneNumber}
+                                    </span>
+                                )}
+                            </div>
+                        )}
+
+                        {notification.recipientCount && (
+                            <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                                <Users size={14} />
+                                Gửi đến {notification.recipientCount} người
+                            </p>
+                        )}
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => onEdit(notification)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Chỉnh sửa"
+                    >
+                        <Edit2 size={18} />
+                    </button>
+                    <button
+                        onClick={() => onDelete(notification._id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Xóa"
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 function Notifications() {
     const navigate = useNavigate();
@@ -11,6 +145,7 @@ function Notifications() {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterType, setFilterType] = useState("all");
     const [loading, setLoading] = useState(true);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     useEffect(() => {
         fetchNotifications();
@@ -169,7 +304,7 @@ function Notifications() {
                     </div>
 
                     <button
-                        onClick={() => navigate("/notifications/create")}
+                        onClick={() => setIsCreateModalOpen(true)}
                         className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                     >
                         <BellPlus size={20} /> Tạo thông báo
@@ -271,6 +406,15 @@ function Notifications() {
                     )}
                 </div>
             </div>
+
+            {/* Create Notification Modal */}
+            <CreateNotificationModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onNotificationCreated={() => {
+                    fetchNotifications();
+                }}
+            />
         </div>
     );
 }

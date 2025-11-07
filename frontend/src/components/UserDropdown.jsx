@@ -23,28 +23,31 @@ export default function UserDropdown() {
             confirmButtonText: "Đăng xuất",
             cancelButtonText: "Hủy",
             reverseButtons: true,
-            confirmButtonColor: "#d33", // Nút đỏ bạn vừa thêm
+            confirmButtonColor: "#d33",
         }).then((result) => {
             if (result.isConfirmed) {
-                logout(); // Gọi hàm logout từ context
-                navigate("/"); // Điều hướng về trang login
+                // ✅ Tắt ngay modal, không chờ animation
+                Swal.close();
 
-                // THAY ĐỔI CỤM NÀY: Chuyển từ modal sang toast
-                Swal.fire({
-                    toast: true, // Bật chế độ toast
-                    position: "bottom-end", // Vị trí góc dưới bên phải
-                    icon: "success",
-                    title: "Đã đăng xuất!",
-                    timer: 2000, // Tăng time 1 chút cho toast
-                    timerProgressBar: true, // Hiển thị thanh thời gian
-                    showConfirmButton: false,
+                logout(); // Gọi logout từ context
+                navigate("/"); // Chuyển trang ngay lập tức
 
-                    // Thêm cái này để toast không bị ảnh hưởng bởi click
-                    didOpen: (toast) => {
-                        toast.onmouseenter = Swal.stopTimer;
-                        toast.onmouseleave = Swal.resumeTimer;
-                    }
-                });
+                // ✅ Hiện toast sau khi logout
+                setTimeout(() => {
+                    Swal.fire({
+                        toast: true,
+                        position: "bottom-end",
+                        icon: "success",
+                        title: "Đã đăng xuất!",
+                        timer: 1500,
+                        showConfirmButton: false,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.onmouseenter = Swal.stopTimer;
+                            toast.onmouseleave = Swal.resumeTimer;
+                        },
+                    });
+                }, 10); // một chút để toast render sau khi route đổi
             }
         });
     };

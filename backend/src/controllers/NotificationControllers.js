@@ -36,6 +36,17 @@ export const getNotificationById = async (req, res) => {
   }
 };
 
+export const getNotificationsByReceiver = async (req, res) => {
+  try {
+    const { receiver_id } = req.params;
+    const notifications = await Notification.find({ receiver_id })
+      .populate("receiver_id", "name role");
+    res.json(notifications);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // 🟠 Cập nhật
 export const updateNotification = async (req, res) => {
   try {
