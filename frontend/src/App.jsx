@@ -21,6 +21,9 @@ import StudentFormPage from "./pages/StudentFormPage";
 import AccountManager from "./pages/AccountManager";
 import DriverLayout from "./components/DriverLayout";
 import DriverDashboard from "./pages/DriverDashboard";
+import ParentLayout from "./components/Parentlayout";
+import ParentTracking from "./pages/ParentTracking"; 
+import ParentNotification from "./pages/ParentNotification";
 
 const Page = ({ children }) => (
   <motion.div
@@ -61,6 +64,22 @@ function App() {
               <DriverLayout>
                 <Page><DriverDashboard /></Page>
               </DriverLayout>
+            }
+          />
+          <Route
+            path="/parent/tracking"
+            element={
+              <ParentLayout>
+                <Page><ParentTracking/></Page>
+              </ParentLayout>
+            }
+          />
+          <Route
+            path="/parent/notifications"
+            element={
+              <ParentLayout>
+                <Page><ParentNotification/></Page>
+              </ParentLayout>
             }
           />
           <Route
