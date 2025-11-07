@@ -21,7 +21,7 @@ import StudentFormPage from "./pages/StudentFormPage";
 import AccountManager from "./pages/AccountManager";
 import DriverLayout from "./components/DriverLayout";
 import DriverDashboard from "./pages/DriverDashboard";
-import ParentLayout from "./components/Parentlayout";
+import ParentLayout from "./components/ParentLayout";
 import ParentTracking from "./pages/ParentTracking"; 
 import ParentNotification from "./pages/ParentNotification";
 
