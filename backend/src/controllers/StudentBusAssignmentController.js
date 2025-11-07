@@ -37,7 +37,7 @@ export const getStudentBusAssignmentById = async (req, res) => {
     const assignment = await StudentBusAssignment.findById(req.params.id)
       .populate("student_id", "name grade")
       .populate({
-        path: "schedule_id",
+        path: "schedule_id",  
         populate: [
           { path: "bus_id", select: "license_plate capacity" },
           { path: "driver_id", select: "name phone" },
@@ -67,3 +67,12 @@ export const updateStudentBusAssignment = async (req, res) => {
   }
 };
 
+export const deleteStudentBusAssignment = async (req, res) => {
+  try {
+    const deleted = await StudentBusAssignment.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Không tìm thấy bản ghi!" });
+    res.status(200).json({ message: "Xóa bản ghi thành công!" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
