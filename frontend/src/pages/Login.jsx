@@ -1,3 +1,5 @@
+
+//src/pages/Login.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth"; // ✅ dùng context thay vì axios
@@ -36,7 +38,7 @@ function Login() {
       // Có thể điều hướng theo role
       if (res.role === "admin") navigate("/dashboard");
       else if (res.role === "driver") navigate("/contact");
-      else navigate("/dashboard");
+      else navigate("/parent/tracking");
 
     } else {
       setError(res.message);

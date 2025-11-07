@@ -1,6 +1,10 @@
 import axios from "axios";
 
 const API_URL = "http://localhost:8080/api/user";
+export const getAllUsersApi = async () => {
+    const res = await axios.get(`${API_URL}`);
+    return res.data; // danh sách tất cả người dùng
+}
 
 export const getDriversApi = async () => {
     const res = await axios.get(`${API_URL}/driver`);

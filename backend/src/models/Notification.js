@@ -20,6 +20,10 @@ const notificationSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  isRead: {
+    type: Boolean,
+    default: false, // 👈 đây chính là chỗ mặc định "chưa đọc"
+  },
 });
 
 export default mongoose.model("Notification", notificationSchema);
