@@ -4,9 +4,11 @@ import CreateNotificationModal from '@/components/CreateNotificationModal';
 import { getAllNotifications, createNotification } from "@/api/notificationApi";
 import ToastService from "@/lib/toastService";
 import { Bell, BellPlus, Filter, Search, TrendingUp, AlertCircle, Info, CheckCircle, Megaphone, Edit2, Trash2, Calendar, Users } from "lucide-react";
+import Pagination from "@/components/Pagination";
 
 // NotificationCard Component
 function NotificationCard({ notification, onEdit, onDelete }) {
+
     const getTypeStyle = (type) => {
         switch (type) {
             case 'alert':
@@ -146,6 +148,8 @@ function Notifications() {
     const [filterType, setFilterType] = useState("all");
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const notificationsPerPage = 1; // 👉 số thông báo mỗi trang
 
     useEffect(() => {
         fetchNotifications();
@@ -197,6 +201,24 @@ function Notifications() {
         const matchType = filterType === "all" || n.type === filterType;
         return matchSearch && matchType;
     });
+
+    // 👉 Reset về trang 1 khi filter/search thay đổi
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterType]);
+
+    // 👉 Tính toán phân trang sau khi đã filter
+    const totalPages = Math.ceil(filteredNotifications.length / notificationsPerPage) || 1;
+    const indexOfLast = currentPage * notificationsPerPage;
+    const indexOfFirst = indexOfLast - notificationsPerPage;
+    const currentNotifications = filteredNotifications.slice(indexOfFirst, indexOfLast);
+
+    // 👉 Hàm đổi trang
+    const handlePageChange = (pageNumber) => {
+        if (pageNumber >= 1 && pageNumber <= totalPages) {
+            setCurrentPage(pageNumber);
+        }
+    };
 
     // Statistics
     const alertCount = notifications.filter(n => n.type === 'alert').length;
@@ -394,7 +416,7 @@ function Notifications() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {filteredNotifications.map((notification) => (
+                            {currentNotifications.map((notification) => (
                                 <NotificationCard
                                     key={notification._id}
                                     notification={notification}
@@ -405,6 +427,15 @@ function Notifications() {
                         </div>
                     )}
                 </div>
+
+                {/* ✅ Phân trang */}
+                {filteredNotifications.length > 0 && totalPages > 1 && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                )}
             </div>
 
             {/* Create Notification Modal */}

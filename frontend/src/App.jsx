@@ -24,7 +24,9 @@ import DriverDashboard from "./pages/DriverDashboard";
 import ParentLayout from "./components/ParentLayout";
 import ParentTracking from "./pages/ParentTracking"; 
 import ParentNotification from "./pages/ParentNotification";
-
+import DriverSchedule from "./pages/DriverSchedule";
+import DriverReport from "./pages/DriverReport";
+import Report from "./pages/Report";
 const Page = ({ children }) => (
   <motion.div
     initial={{ opacity: 0, x: 40 }}
@@ -63,6 +65,22 @@ function App() {
             element={
               <DriverLayout>
                 <Page><DriverDashboard /></Page>
+              </DriverLayout>
+            }
+          />
+          <Route
+            path="/driver/schedule"
+            element={
+              <DriverLayout>
+                <Page><DriverSchedule /></Page>
+              </DriverLayout>
+            }
+          />
+          <Route
+            path="/driver/report"
+            element={
+              <DriverLayout>
+                <Page><DriverReport /></Page>
               </DriverLayout>
             }
           />
@@ -188,6 +206,14 @@ function App() {
             element={
               <Layout>
                 <Page><StudentManager /></Page>
+              </Layout>
+            }
+          />
+           <Route
+            path="/report"
+            element={
+              <Layout>
+                <Page><Report /></Page>
               </Layout>
             }
           />
