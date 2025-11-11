@@ -15,6 +15,7 @@ export const getAllParentStudent = async (req, res) => {
     }
 };
 
+
 // 🟢 Tạo mới quan hệ phụ huynh - học sinh
 export const createParentStudent = async (req, res) => {
     try {

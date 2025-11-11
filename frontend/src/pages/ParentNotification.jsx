@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
 import { Bell, AlertCircle, Info, CheckCircle, Clock, Search, Filter } from "lucide-react";
+import { getAllNotifications } from "@/api/notificationApi";
+import { toast } from "react-hot-toast";
 
 export default function ParentNotifications() {
     const [notifications, setNotifications] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterType, setFilterType] = useState("all");
     const [loading, setLoading] = useState(true);
+
+    // Lấy thông tin user đang đăng nhập
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUserId = currentUser._id || currentUser.id;
 
     useEffect(() => {
         fetchNotifications();
@@ -14,81 +20,70 @@ export default function ParentNotifications() {
     const fetchNotifications = async () => {
         try {
             setLoading(true);
-            // TODO: Thay bằng API thực
-            // const data = await getParentNotificationsApi();
-            
-            // Mock data cho phụ huynh
-            const mockData = [
-                {
-                    _id: "1",
-                    type: "alert",
-                    title: "Xe buýt sắp đến",
-                    message: "Xe buýt Bus 01 sẽ đến điểm đón của con em bạn trong vòng 5 phút nữa. Vui lòng chuẩn bị sẵn sàng.",
-                    time: new Date(Date.now() - 5 * 60000).toISOString(),
-                    isRead: false
-                },
-                {
-                    _id: "2",
-                    type: "success",
-                    title: "Học sinh đã được đón",
-                    message: "Con em bạn đã được tài xế Trần Văn B đón an toàn lúc 7:12 AM.",
-                    time: new Date(Date.now() - 25 * 60000).toISOString(),
-                    isRead: true
-                },
-                {
-                    _id: "3",
-                    type: "info",
-                    title: "Thay đổi lịch trình",
-                    message: "Lịch trình xe buýt ngày mai (08/11) sẽ có thay đổi nhỏ do bảo trì đường. Thời gian đón dự kiến chậm 10 phút.",
-                    time: new Date(Date.now() - 60 * 60000).toISOString(),
-                    isRead: true
-                },
-                {
-                    _id: "4",
-                    type: "alert",
-                    title: "Thời tiết xấu",
-                    message: "Dự báo mưa to vào buổi chiều. Xe buýt có thể bị chậm trễ. Vui lòng theo dõi thông tin cập nhật.",
-                    time: new Date(Date.now() - 2 * 3600000).toISOString(),
-                    isRead: false
-                },
-                {
-                    _id: "5",
-                    type: "info",
-                    title: "Nhắc nhở an toàn",
-                    message: "Nhắc nhở học sinh đeo khẩu trang và mang theo nước uống khi đi xe buýt.",
-                    time: new Date(Date.now() - 24 * 3600000).toISOString(),
-                    isRead: true
-                },
-                {
-                    _id: "6",
-                    type: "success",
-                    title: "Học sinh đã về nhà",
-                    message: "Con em bạn đã được trả an toàn tại điểm trả lúc 5:20 PM.",
-                    time: new Date(Date.now() - 26 * 3600000).toISOString(),
-                    isRead: true
-                }
-            ];
 
-            setNotifications(mockData);
+            // Lấy tất cả notifications từ API
+            const allNotifications = await getAllNotifications();
+            console.log("📦 All notifications:", allNotifications);
+            console.log("👤 Current user ID:", currentUserId);
+
+            // Lọc chỉ lấy notifications của user hiện tại
+            const myNotifications = allNotifications
+                .filter(notification => {
+                    const receiverId = notification.receiver_id?._id || notification.receiver_id;
+                    return receiverId?.toString() === currentUserId?.toString();
+                })
+                .map(notification => ({
+                    _id: notification._id,
+                    type: notification.type, // 'alert', 'info', 'reminder'
+                    title: getTitleByType(notification.type),
+                    message: notification.message,
+                    time: notification.timestamp || notification.createdAt,
+                    isRead: notification.isRead || false
+                }))
+                .sort((a, b) => new Date(b.time) - new Date(a.time)); // Sắp xếp mới nhất trước
+
+            console.log("✅ My notifications:", myNotifications);
+            setNotifications(myNotifications);
+
         } catch (error) {
-            console.error('Error fetching notifications:', error);
+            console.error('❌ Error fetching notifications:', error);
+            toast.error('Không thể tải thông báo');
         } finally {
             setLoading(false);
         }
     };
 
+    // Helper function để tạo title dựa vào type
+    const getTitleByType = (type) => {
+        switch (type) {
+            case 'alert':
+                return 'Cảnh báo quan trọng';
+            case 'reminder':
+                return 'Lời nhắc';
+            case 'info':
+            default:
+                return 'Thông tin';
+        }
+    };
+
     const handleMarkAsRead = (id) => {
-        setNotifications(notifications.map(n => 
+        // TODO: Gọi API update notification isRead = true
+        // await updateNotificationApi(id, { isRead: true });
+
+        setNotifications(notifications.map(n =>
             n._id === id ? { ...n, isRead: true } : n
         ));
     };
 
     const handleMarkAllAsRead = () => {
+        // TODO: Gọi API update tất cả notifications isRead = true
+        // await markAllAsReadApi(currentUserId);
+
         setNotifications(notifications.map(n => ({ ...n, isRead: true })));
     };
 
     const filteredNotifications = notifications.filter(n => {
-        const matchSearch = 
+        const matchSearch =
             n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             n.message.toLowerCase().includes(searchTerm.toLowerCase());
         const matchType = filterType === "all" || n.type === filterType;
@@ -98,11 +93,11 @@ export default function ParentNotifications() {
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
     const getNotificationIcon = (type) => {
-        switch(type) {
+        switch (type) {
             case "alert":
                 return <AlertCircle className="text-red-600" size={24} />;
-            case "success":
-                return <CheckCircle className="text-green-600" size={24} />;
+            case "reminder":
+                return <Bell className="text-orange-600" size={24} />;
             case "info":
             default:
                 return <Info className="text-blue-600" size={24} />;
@@ -110,11 +105,11 @@ export default function ParentNotifications() {
     };
 
     const getNotificationStyle = (type) => {
-        switch(type) {
+        switch (type) {
             case "alert":
                 return "border-l-4 border-red-500 bg-red-50";
-            case "success":
-                return "border-l-4 border-green-500 bg-green-50";
+            case "reminder":
+                return "border-l-4 border-orange-500 bg-orange-50";
             case "info":
             default:
                 return "border-l-4 border-blue-500 bg-blue-50";
@@ -203,7 +198,7 @@ export default function ParentNotifications() {
                                 <option value="all">Tất cả</option>
                                 <option value="alert">Cảnh báo</option>
                                 <option value="info">Thông tin</option>
-                                <option value="success">Thành công</option>
+                                <option value="reminder">Nhắc nhở</option>
                             </select>
                         </div>
 
@@ -241,7 +236,7 @@ export default function ParentNotifications() {
                             Không có thông báo
                         </h3>
                         <p className="text-gray-500">
-                            {searchTerm || filterType !== "all" 
+                            {searchTerm || filterType !== "all"
                                 ? "Không tìm thấy thông báo phù hợp"
                                 : "Bạn chưa có thông báo nào"}
                         </p>
@@ -250,9 +245,8 @@ export default function ParentNotifications() {
                     filteredNotifications.map((notification) => (
                         <div
                             key={notification._id}
-                            className={`bg-white rounded-xl shadow-md p-5 transition-all hover:shadow-lg ${
-                                !notification.isRead ? "ring-2 ring-blue-200" : ""
-                            }`}
+                            className={`bg-white rounded-xl shadow-md p-5 transition-all hover:shadow-lg ${!notification.isRead ? "ring-2 ring-blue-200" : ""
+                                }`}
                         >
                             <div className="flex gap-4">
                                 {/* Icon */}
@@ -274,8 +268,8 @@ export default function ParentNotifications() {
                                             {formatTime(notification.time)}
                                         </div>
                                     </div>
-                                    
-                                    <p className="text-gray-600 text-sm mb-3">
+
+                                    <p className="text-gray-600 text-sm mb-3 whitespace-pre-wrap">
                                         {notification.message}
                                     </p>
 
