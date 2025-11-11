@@ -85,7 +85,7 @@ export default function DriverSidebar({ isOpen }) {
                     </span>
                 </Link>
 
-                <Link to="/driver" className={item}>
+                <Link to="/driver/schedule" className={item}>
 
                     <CalendarDays className={icon} />
                     <span
@@ -96,27 +96,7 @@ export default function DriverSidebar({ isOpen }) {
                     </span>
                 </Link>
 
-                <Link to="/driver/students" className={item}>
-                    <Users className={icon} />
-                    <span
-                        className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
-                            }`}
-                    >
-                        Danh sách học sinh
-                    </span>
-                </Link>
-
                 <Link to="/driver/report" className={item}>
-                    <CheckCircle className={icon} />
-                    <span
-                        className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
-                            }`}
-                    >
-                        Báo cáo đón/trả
-                    </span>
-                </Link>
-
-                <Link to="/driver/alert" className={item}>
                     <AlertTriangle className={icon} />
                     <span
                         className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"

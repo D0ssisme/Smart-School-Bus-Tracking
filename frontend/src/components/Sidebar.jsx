@@ -133,7 +133,7 @@ export default function Sidebar({ isOpen }) {
           </span>
         </Link>
 
-        <Link to="/accounts" className={item}>
+        <Link to="/report" className={item}>
           <AlertTriangle className={icon} />
           <span
             className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
