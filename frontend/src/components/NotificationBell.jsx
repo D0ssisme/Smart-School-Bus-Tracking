@@ -1,7 +1,7 @@
-// src/components/NotificationBell.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, Check, Trash2, Eye, Clock } from 'lucide-react';
-import { getNotificationsByReceiver } from '@/api/notificationApi';
+import { getNotificationsByReceiver, markAsRead, markAllAsRead, deleteNotification } from '@/api/notificationApi';
+import { useSocket } from '@/contexts/SocketContext';
 import { toast } from 'react-hot-toast';
 
 const NotificationBell = ({ userId }) => {
@@ -11,14 +11,47 @@ const NotificationBell = ({ userId }) => {
     const [loading, setLoading] = useState(false);
     const dropdownRef = useRef(null);
 
+    const { socket, connected } = useSocket();
+
     useEffect(() => {
         if (userId) {
             fetchNotifications();
-            // Poll for new notifications every 30 seconds
-            const interval = setInterval(fetchNotifications, 30000);
-            return () => clearInterval(interval);
         }
     }, [userId]);
+
+    // 🔥 Lắng nghe notification realtime
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewNotification = (notification) => {
+            console.log("🔔 Received new notification:", notification);
+
+            // Thêm vào đầu danh sách
+            setNotifications(prev => [notification, ...prev]);
+            setUnreadCount(prev => prev + 1);
+
+            // Hiển thị toast
+            toast.success(
+                <div>
+                    <strong>{getNotificationTypeLabel(notification.type)}</strong>
+                    <p className="text-sm">{notification.message}</p>
+                </div>,
+                {
+                    duration: 4000,
+                    icon: getNotificationIcon(notification.type),
+                }
+            );
+
+            // Phát âm thanh (optional)
+            playNotificationSound();
+        };
+
+        socket.on("new_notification", handleNewNotification);
+
+        return () => {
+            socket.off("new_notification", handleNewNotification);
+        };
+    }, [socket]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -34,18 +67,10 @@ const NotificationBell = ({ userId }) => {
         try {
             setLoading(true);
             const data = await getNotificationsByReceiver(userId);
-
-            // Sort by newest first
-            const sortedNotifications = data.sort((a, b) =>
-                new Date(b.createdAt) - new Date(a.createdAt)
-            );
-
-            setNotifications(sortedNotifications);
-
-            // Count unread
-            const unread = sortedNotifications.filter(n => !n.is_read).length;
+            setNotifications(data);
+            // ✅ Sửa từ is_read -> isRead
+            const unread = data.filter(n => !n.isRead).length;
             setUnreadCount(unread);
-
         } catch (error) {
             console.error('Error fetching notifications:', error);
         } finally {
@@ -55,16 +80,14 @@ const NotificationBell = ({ userId }) => {
 
     const handleMarkAsRead = async (notificationId) => {
         try {
-            // TODO: Call API to mark as read
-            // await markNotificationAsRead(notificationId);
-
+            await markAsRead(notificationId);
             setNotifications(prev =>
                 prev.map(n =>
-                    n._id === notificationId ? { ...n, is_read: true } : n
+                    // ✅ Sửa từ is_read -> isRead
+                    n._id === notificationId ? { ...n, isRead: true } : n
                 )
             );
             setUnreadCount(prev => Math.max(0, prev - 1));
-
         } catch (error) {
             console.error('Error marking as read:', error);
             toast.error('Không thể đánh dấu đã đọc');
@@ -73,15 +96,13 @@ const NotificationBell = ({ userId }) => {
 
     const handleMarkAllAsRead = async () => {
         try {
-            // TODO: Call API to mark all as read
-            // await markAllNotificationsAsRead(userId);
-
+            await markAllAsRead(userId);
             setNotifications(prev =>
-                prev.map(n => ({ ...n, is_read: true }))
+                // ✅ Sửa từ is_read -> isRead
+                prev.map(n => ({ ...n, isRead: true }))
             );
             setUnreadCount(0);
             toast.success('Đã đánh dấu tất cả là đã đọc');
-
         } catch (error) {
             console.error('Error marking all as read:', error);
             toast.error('Không thể đánh dấu tất cả');
@@ -90,58 +111,70 @@ const NotificationBell = ({ userId }) => {
 
     const handleDeleteNotification = async (notificationId) => {
         try {
-            // TODO: Call API to delete notification
-            // await deleteNotification(notificationId);
-
+            await deleteNotification(notificationId);
             setNotifications(prev => prev.filter(n => n._id !== notificationId));
             toast.success('Đã xóa thông báo');
-
         } catch (error) {
             console.error('Error deleting notification:', error);
             toast.error('Không thể xóa thông báo');
         }
     };
 
+    const playNotificationSound = () => {
+        // Optional: Phát âm thanh thông báo
+        const audio = new Audio('/notification.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(err => console.log('Cannot play sound:', err));
+    };
+
+    // ✅ Cập nhật theo type mới: "alert", "info", "reminder"
     const getNotificationIcon = (type) => {
         switch (type) {
-            case 'info':
-                return '💡';
-            case 'success':
-                return '✅';
-            case 'warning':
-                return '⚠️';
-            case 'error':
-                return '❌';
-            case 'schedule':
-                return '📅';
-            case 'student':
-                return '👨‍🎓';
-            case 'bus':
-                return '🚌';
-            default:
-                return '🔔';
+            case 'alert': return '⚠️';
+            case 'info': return '💡';
+            case 'reminder': return '🔔';
+            default: return '📢';
         }
     };
 
+    // ✅ Cập nhật theo type mới
     const getNotificationColor = (type) => {
         switch (type) {
-            case 'success':
-                return 'border-green-200 bg-green-50';
-            case 'warning':
-                return 'border-yellow-200 bg-yellow-50';
-            case 'error':
-                return 'border-red-200 bg-red-50';
-            case 'info':
-                return 'border-blue-200 bg-blue-50';
-            default:
-                return 'border-gray-200 bg-gray-50';
+            case 'alert': return 'border-red-200 bg-red-50';
+            case 'info': return 'border-blue-200 bg-blue-50';
+            case 'reminder': return 'border-yellow-200 bg-yellow-50';
+            default: return 'border-gray-200 bg-gray-50';
+        }
+    };
+
+    // ✅ Label cho type mới
+    const getNotificationTypeLabel = (type) => {
+        switch (type) {
+            case 'alert': return 'Cảnh báo';
+            case 'info': return 'Thông tin';
+            case 'reminder': return 'Nhắc nhở';
+            default: return 'Thông báo';
         }
     };
 
     const getTimeAgo = (date) => {
+        if (!date) return "Không xác định";
+
+        // ✅ Xử lý cả timestamp và createdAt
+        let safeDate;
+
+        if (typeof date === 'string') {
+            // Convert "YYYY-MM-DD HH:mm:ss" -> "YYYY-MM-DDTHH:mm:ss"
+            safeDate = new Date(date.replace(" ", "T"));
+        } else {
+            safeDate = new Date(date);
+        }
+
+        if (isNaN(safeDate.getTime())) return "Không xác định";
+
         const now = new Date();
-        const notifDate = new Date(date);
-        const diffMs = now - notifDate;
+        const diffMs = now - safeDate;
+
         const diffMins = Math.floor(diffMs / 60000);
         const diffHours = Math.floor(diffMs / 3600000);
         const diffDays = Math.floor(diffMs / 86400000);
@@ -151,11 +184,7 @@ const NotificationBell = ({ userId }) => {
         if (diffHours < 24) return `${diffHours} giờ trước`;
         if (diffDays < 7) return `${diffDays} ngày trước`;
 
-        return notifDate.toLocaleDateString('vi-VN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
+        return safeDate.toLocaleDateString('vi-VN');
     };
 
     return (
@@ -164,6 +193,7 @@ const NotificationBell = ({ userId }) => {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Thông báo"
             >
                 <Bell
                     className={`w-6 h-6 ${unreadCount > 0 ? 'text-blue-600' : 'text-gray-600'}`}
@@ -176,104 +206,108 @@ const NotificationBell = ({ userId }) => {
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
+
+                {/* Connection indicator */}
+                {connected && (
+                    <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full"></span>
+                )}
             </button>
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden z-50 animate-slideDown">
+                <div className="absolute right-0 mt-2 w-96 max-h-[32rem] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 flex items-center justify-between">
+                    <div className="bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-3 flex justify-between items-center">
+                        <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                            <Bell size={20} />
+                            Thông báo
+                        </h3>
                         <div className="flex items-center gap-2">
-                            <Bell className="text-white" size={20} />
-                            <h3 className="text-white font-bold">Thông báo</h3>
                             {unreadCount > 0 && (
-                                <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full">
-                                    {unreadCount} mới
-                                </span>
+                                <button
+                                    onClick={handleMarkAllAsRead}
+                                    className="text-xs text-white hover:text-blue-100 underline transition-colors"
+                                    title="Đánh dấu tất cả đã đọc"
+                                >
+                                    Đọc hết
+                                </button>
                             )}
-                        </div>
-
-                        {notifications.length > 0 && unreadCount > 0 && (
                             <button
-                                onClick={handleMarkAllAsRead}
-                                className="text-white/80 hover:text-white text-xs font-medium flex items-center gap-1"
+                                onClick={() => setIsOpen(false)}
+                                className="text-white hover:bg-white/20 rounded-full p-1 transition-colors"
+                                aria-label="Đóng"
                             >
-                                <Check size={14} />
-                                Đánh dấu tất cả
+                                <X size={20} />
                             </button>
-                        )}
+                        </div>
                     </div>
 
                     {/* Notifications List */}
-                    <div className="max-h-[500px] overflow-y-auto">
+                    <div className="overflow-y-auto max-h-[28rem]">
                         {loading ? (
-                            <div className="flex items-center justify-center py-12">
-                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
+                            <div className="flex items-center justify-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-600 border-t-transparent"></div>
                             </div>
                         ) : notifications.length === 0 ? (
-                            <div className="text-center py-12 px-6">
+                            <div className="text-center py-12">
                                 <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
                                     <Bell className="text-gray-400" size={32} />
                                 </div>
-                                <p className="text-gray-600 font-medium">Không có thông báo</p>
-                                <p className="text-gray-400 text-sm mt-1">Bạn đã xem hết thông báo</p>
+                                <p className="text-gray-500 font-medium">Không có thông báo</p>
+                                <p className="text-gray-400 text-sm mt-1">Bạn sẽ nhận được thông báo tại đây</p>
                             </div>
                         ) : (
                             <div className="divide-y divide-gray-100">
-                                {notifications.map((notification) => (
+                                {notifications.map(n => (
                                     <div
-                                        key={notification._id}
-                                        className={`p-4 hover:bg-gray-50 transition-colors ${!notification.is_read ? 'bg-blue-50' : ''
+                                        key={n._id}
+                                        className={`p-4 hover:bg-gray-50 transition-colors ${!n.isRead ? 'bg-orange-50/30' : ''
                                             }`}
                                     >
-                                        <div className="flex items-start gap-3">
+                                        <div className="flex gap-3">
                                             {/* Icon */}
-                                            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center border-2 ${getNotificationColor(notification.type)
-                                                }`}>
-                                                <span className="text-lg">
-                                                    {getNotificationIcon(notification.type)}
-                                                </span>
+                                            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-xl ${getNotificationColor(n.type)}`}>
+                                                {getNotificationIcon(n.type)}
                                             </div>
 
                                             {/* Content */}
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-start justify-between gap-2 mb-1">
-                                                    <h4 className={`text-sm font-semibold ${!notification.is_read ? 'text-gray-900' : 'text-gray-700'
-                                                        }`}>
-                                                        {notification.title}
-                                                    </h4>
-
-                                                    {!notification.is_read && (
-                                                        <span className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full"></span>
+                                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${getNotificationColor(n.type)}`}>
+                                                        {getNotificationTypeLabel(n.type)}
+                                                    </span>
+                                                    {!n.isRead && (
+                                                        <span className="flex-shrink-0 w-2 h-2 bg-orange-500 rounded-full mt-1"></span>
                                                     )}
                                                 </div>
 
-                                                <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                                                    {notification.message}
+                                                <p className="text-sm text-gray-800 font-medium mb-1 line-clamp-2">
+                                                    {n.message}
                                                 </p>
 
                                                 <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                                                    <p className="text-xs text-gray-500 flex items-center gap-1">
                                                         <Clock size={12} />
-                                                        {getTimeAgo(notification.createdAt)}
-                                                    </div>
+                                                        {getTimeAgo(n.timestamp || n.createdAt)}
+                                                    </p>
 
+                                                    {/* Actions */}
                                                     <div className="flex items-center gap-1">
-                                                        {!notification.is_read && (
+                                                        {!n.isRead && (
                                                             <button
-                                                                onClick={() => handleMarkAsRead(notification._id)}
-                                                                className="p-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                                                                onClick={() => handleMarkAsRead(n._id)}
+                                                                className="p-1.5 hover:bg-green-100 rounded-full transition-colors group"
                                                                 title="Đánh dấu đã đọc"
                                                             >
-                                                                <Eye size={14} />
+                                                                <Check className="text-gray-400 group-hover:text-green-600 transition-colors" size={16} />
                                                             </button>
                                                         )}
                                                         <button
-                                                            onClick={() => handleDeleteNotification(notification._id)}
-                                                            className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
-                                                            title="Xóa thông báo"
+                                                            onClick={() => handleDeleteNotification(n._id)}
+                                                            className="p-1.5 hover:bg-red-100 rounded-full transition-colors group"
+                                                            title="Xóa"
                                                         >
-                                                            <Trash2 size={14} />
+                                                            <Trash2 className="text-gray-400 group-hover:text-red-600 transition-colors" size={16} />
                                                         </button>
                                                     </div>
                                                 </div>
@@ -287,36 +321,21 @@ const NotificationBell = ({ userId }) => {
 
                     {/* Footer */}
                     {notifications.length > 0 && (
-                        <div className="bg-gray-50 px-4 py-3 text-center border-t">
-                            <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        <div className="border-t border-gray-200 bg-gray-50 px-4 py-2 text-center">
+                            <button
+                                onClick={() => {
+                                    setIsOpen(false);
+                                    // Navigate to notifications page if needed
+                                    // navigate('/notifications');
+                                }}
+                                className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                            >
                                 Xem tất cả thông báo
                             </button>
                         </div>
                     )}
                 </div>
             )}
-
-            <style>{`
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-slideDown {
-          animation: slideDown 0.2s ease-out;
-        }
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-      `}</style>
         </div>
     );
 };
