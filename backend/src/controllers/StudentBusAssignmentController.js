@@ -1,5 +1,43 @@
 import StudentBusAssignment from "../models/StudentBusAssignment.js";
 
+
+// GET BY STUDENT ID
+export const getStudentBusAssignmentByStudentId = async (req, res) => {
+  try {
+    const { student_id } = req.params;
+
+    const assignment = await StudentBusAssignment.findOne({
+      student_id,
+      pickup_status: { $ne: 'dropped' } // Chưa trả học sinh
+    })
+      .populate("student_id", "name grade")
+      .populate({
+        path: "schedule_id",
+        populate: [
+          { path: "bus_id", select: "license_plate capacity" },
+          { path: "driver_id", select: "name phone" },
+          { path: "route_id", select: "name" },
+        ],
+      })
+      .sort({ createdAt: -1 })
+      .limit(1);
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy thông tin học sinh"
+      });
+    }
+
+    res.status(200).json(assignment);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 // CREATE
 export const createStudentBusAssignment = async (req, res) => {
   try {
@@ -37,7 +75,7 @@ export const getStudentBusAssignmentById = async (req, res) => {
     const assignment = await StudentBusAssignment.findById(req.params.id)
       .populate("student_id", "name grade")
       .populate({
-        path: "schedule_id",  
+        path: "schedule_id",
         populate: [
           { path: "bus_id", select: "license_plate capacity" },
           { path: "driver_id", select: "name phone" },

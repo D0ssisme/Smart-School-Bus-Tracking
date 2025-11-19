@@ -12,6 +12,11 @@ export const getStudentBusAssignmentById = async (id) => {
     return res.data;
 };
 
+export const getStudentBusAssignmentByStudentId = async (studentId) => {
+    const res = await axios.get(`${API_URL}/student/${studentId}`);
+    return res.data;
+};
+
 export const deleteStudentBusAssignment = async (assignmentId) => {
     const res = await axios.delete(`${API_URL}/${assignmentId}`);
     return res.data;

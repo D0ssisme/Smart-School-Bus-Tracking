@@ -4,7 +4,35 @@ import RouteStop from "../models/RouteStop.js";
 import Stop from "../models/Stop.js";
 import mongoose from "mongoose";
 
+export const getRouteWithStops = async (req, res) => {
+  try {
+    const { routeId } = req.params;
 
+    const route = await Route.findById(routeId)
+      .populate('start_point')
+      .populate('end_point');
+
+    if (!route) {
+      return res.status(404).json({ message: "Route not found" });
+    }
+
+    // Lấy stops theo thứ tự
+    const routeStops = await RouteStop.find({ route_id: routeId })
+      .populate('stop_id')
+      .sort({ order_number: 1 });
+
+    res.json({
+      ...route.toObject(),
+      stops: routeStops.map(rs => ({
+        ...rs.stop_id.toObject(),
+        order_number: rs.order_number,
+        estimated_arrival: rs.estimated_arrival
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
 
 

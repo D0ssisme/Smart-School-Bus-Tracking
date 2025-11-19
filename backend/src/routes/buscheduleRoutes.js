@@ -4,11 +4,14 @@ import {
   getAllBusSchedules,
   getBusScheduleById,
   updateBusSchedule,
-  deleteBusSchedule,getBusScheduleByDriverId
+  deleteBusSchedule,
+  getBusScheduleByDriverId,
+  getBusScheduleByRouteId
+
 } from "../controllers/BusScheduleControllers.js";
 
 const router = express.Router();
-
+router.get('/by-route/:route_id', getBusScheduleByRouteId);
 router.post("/", createBusSchedule);
 router.get("/", getAllBusSchedules);
 router.get("/:id", getBusScheduleById);

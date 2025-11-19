@@ -4,6 +4,60 @@ import Bus from '../models/Bus.js';
 import User from '../models/User.js';
 import Route from '../models/Route.js';
 
+// READ BY ROUTE ID
+export const getBusScheduleByRouteId = async (req, res) => {
+  try {
+    const { route_id } = req.params;
+
+    if (!route_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu route_id trong request params"
+      });
+    }
+
+    // Tìm schedule đang active cho route này
+    const schedule = await BusSchedule.findOne({
+      route_id,
+      status: { $in: ['scheduled', 'in_progress'] }
+    })
+      .populate({
+        path: "bus_id",
+        select: "license_plate capacity status"
+      })
+      .populate({
+        path: "route_id",
+        select: "name",
+        populate: [
+          { path: "start_point", select: "name" },
+          { path: "end_point", select: "name" }
+        ]
+      })
+      .populate({
+        path: "driver_id",
+        select: "name phoneNumber role"
+      });
+
+    if (!schedule) {
+      return res.status(404).json({
+        success: false,
+        message: `Không tìm thấy lịch trình đang hoạt động cho route '${route_id}'`
+      });
+    }
+
+    res.status(200).json(schedule);
+
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy BusSchedule theo route_id:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server!",
+      error: error.message
+    });
+  }
+};
+
+
 
 // READ BY DRIVER ID
 export const getBusScheduleByDriverId = async (req, res) => {
