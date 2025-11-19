@@ -1,4 +1,4 @@
-import { LayoutDashboard, Bus, Users, BellRing, Route, GraduationCap, AlertTriangle, UserCog, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, Bus, Users, BellRing, Route, GraduationCap, AlertTriangle, UserCog, LifeBuoy,Calendar  } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Sidebar({ isOpen }) {
@@ -85,6 +85,15 @@ export default function Sidebar({ isOpen }) {
         </Link>
 
         <Link to="/buses" className={item}>
+          <Calendar className={icon} />
+          <span
+            className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
+              }`}
+          >
+            Lịch trình xe
+          </span>
+        </Link>
+        <Link to="/busmanager" className={item}>
           <Bus className={icon} />
           <span
             className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"

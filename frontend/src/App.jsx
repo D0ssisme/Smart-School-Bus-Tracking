@@ -30,6 +30,7 @@ import ParentNotification from "./pages/ParentNotification";
 import DriverSchedule from "./pages/DriverSchedule";
 import DriverReport from "./pages/DriverReport";
 import Report from "./pages/Report";
+import BusManager from "./pages/BusManager";
 
 const Page = ({ children }) => (
   <motion.div
@@ -61,6 +62,14 @@ function AppRoutes() {
             element={
               <Layout>
                 <Page><Dashboard /></Page>
+              </Layout>
+            }
+          />
+          <Route
+            path="/busmanager"
+            element={
+              <Layout>
+                <Page><BusManager /></Page>
               </Layout>
             }
           />

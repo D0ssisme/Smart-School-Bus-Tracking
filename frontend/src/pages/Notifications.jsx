@@ -149,7 +149,7 @@ function Notifications() {
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const notificationsPerPage = 1; // 👉 số thông báo mỗi trang
+    const notificationsPerPage = 20; // 👉 số thông báo mỗi trang
 
     useEffect(() => {
         fetchNotifications();
