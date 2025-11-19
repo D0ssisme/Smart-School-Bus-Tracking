@@ -4,9 +4,9 @@ import { getStudentsByParent } from "@/api/parentstudentApi";
 import { getAllStudentRouteAssignments } from "@/api/studentrouteassignmentApi";
 import { getStopsApi } from "@/api/stopApi";
 import { useSocket } from "@/contexts/SocketContext";
+import BusTrackingMap from "@/components/BusTrackingMap";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-
 
 export default function ParentTracking() {
   const [students, setStudents] = useState([]);
@@ -305,58 +305,24 @@ export default function ParentTracking() {
           {/* Map Section */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              {/* Map Placeholder */}
-              <div className="relative bg-gradient-to-br from-blue-100 to-blue-200 h-96 flex items-center justify-center">
-                {!busLocation ? (
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-                    <p className="text-blue-600 font-medium">Đang tải vị trí xe...</p>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <div className="bg-blue-500 rounded-full p-6 inline-block mb-4 animate-pulse">
-                      <MapPin className="text-white" size={48} />
-                    </div>
-                    <p className="text-blue-800 font-bold text-xl">🚌 Xe đang di chuyển</p>
-                    <p className="text-blue-600 text-sm mt-2">
-                      📍 Vị trí: {busLocation.latitude?.toFixed(6)}, {busLocation.longitude?.toFixed(6)}
-                    </p>
-                    <p className="text-blue-500 text-xs mt-1">
-                      ⏰ Cập nhật: {new Date(busLocation.timestamp).toLocaleTimeString('vi-VN')}
-                    </p>
-
-                    {/* Bus Info */}
-                    {busInfo && (
-                      <div className="mt-4 inline-block bg-white/90 rounded-lg px-4 py-2">
-                        <p className="text-sm text-gray-600">Xe bus</p>
-                        <p className="text-lg font-bold text-blue-800">
-                          {busInfo.bus_id?.license_plate || 'N/A'}
-                        </p>
-                        {busInfo.driver_id && (
-                          <p className="text-xs text-gray-500">
-                            Tài xế: {busInfo.driver_id.name}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Bus Icon Animation */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="relative">
-                    <div className="bg-white rounded-lg shadow-lg p-3 animate-bounce">
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="text-blue-600">
-                        <rect x="4" y="6" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.3" />
-                        <rect x="6" y="8" width="5" height="4" rx="1" fill="white" />
-                        <rect x="13" y="8" width="5" height="4" rx="1" fill="white" />
-                        <circle cx="8" cy="18" r="2" stroke="currentColor" strokeWidth="2" fill="white" />
-                        <circle cx="16" cy="18" r="2" stroke="currentColor" strokeWidth="2" fill="white" />
-                      </svg>
-                    </div>
-                    <div className="absolute inset-0 bg-blue-400 rounded-lg animate-ping opacity-30"></div>
-                  </div>
-                </div>
+              {/* Real Leaflet Map */}
+              <div className="h-96">
+                <BusTrackingMap
+                  busLocation={busLocation}
+                  pickupStop={selectedStudent?.pickup_stop_location ? {
+                    _id: selectedStudent.pickup_stop_id,
+                    name: selectedStudent.pickup_stop_name,
+                    address: selectedStudent.pickup_stop_address,
+                    location: selectedStudent.pickup_stop_location
+                  } : null}
+                  dropoffStop={selectedStudent?.dropoff_stop_location ? {
+                    _id: selectedStudent.dropoff_stop_id,
+                    name: selectedStudent.dropoff_stop_name,
+                    address: selectedStudent.dropoff_stop_address,
+                    location: selectedStudent.dropoff_stop_location
+                  } : null}
+                  busInfo={busInfo}
+                />
               </div>
 
               {/* Status Bar - Realtime */}
