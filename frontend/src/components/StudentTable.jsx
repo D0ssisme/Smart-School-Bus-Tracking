@@ -5,7 +5,7 @@ import Pagination from "@/components/Pagination"; // ✅ import đúng component
 
 function StudentTable({ students, onEdit, onDelete }) {
   const [currentPage, setCurrentPage] = useState(1);
-  const studentsPerPage = 1; // 👉 số học sinh mỗi trang (bạn có thể đổi)
+  const studentsPerPage = 10; // 👉 số học sinh mỗi trang (bạn có thể đổi)
 
   // 👉 Tính toán phân trang
   const totalPages = Math.ceil(students.length / studentsPerPage);

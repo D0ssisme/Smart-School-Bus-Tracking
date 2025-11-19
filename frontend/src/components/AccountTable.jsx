@@ -5,7 +5,7 @@ import { roleLabels } from "@/lib/mockData";
 
 function AccountTable({ users, onEdit, onDelete, loading }) {
   const [currentPage, setCurrentPage] = useState(1);
-  const accountPerPage = 1; // 👉 số account mỗi trang
+  const accountPerPage = 10; // 👉 số account mỗi trang
 
   // Tính vị trí phân trang
   const totalPages = Math.ceil(users.length / accountPerPage);
