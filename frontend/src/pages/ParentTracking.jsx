@@ -1,19 +1,21 @@
-//src/pages/ParentTracking.jsx
 import { useEffect, useState } from "react";
 import { MapPin, Navigation, Clock, User, Phone, AlertCircle, ChevronDown } from "lucide-react";
 import { getStudentsByParent } from "@/api/parentstudentApi";
 import { getAllStudentRouteAssignments } from "@/api/studentrouteassignmentApi";
 import { getStopsApi } from "@/api/stopApi";
+import { useSocket } from "@/contexts/SocketContext";
+import axios from "axios";
 import { toast } from "react-hot-toast";
+
 
 export default function ParentTracking() {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [busLocation, setBusLocation] = useState({
-    lat: 10.8231,
-    lng: 106.6297
-  });
+  const [busLocation, setBusLocation] = useState(null);
+  const [busInfo, setBusInfo] = useState(null);
+  const [studentStatus, setStudentStatus] = useState(null);
+  const { socket } = useSocket();
 
   // Lấy thông tin parent đang đăng nhập
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -75,9 +77,6 @@ export default function ParentTracking() {
           );
         }
 
-        console.log(`📍 Pickup stop for ${student.name}:`, pickupStop);
-        console.log(`📍 Dropoff stop for ${student.name}:`, dropoffStop);
-
         return {
           _id: studentId,
           student_id: student.student_id || 'N/A',
@@ -86,10 +85,8 @@ export default function ParentTracking() {
           class: student.class,
 
           // ⭐ Thông tin route
-          route_id: routeAssignment?.route_id || null,
-          route_name: routeAssignment?.route_id?.name ||
-            routeAssignment?.route_id?.route_id ||
-            'Chưa phân công',
+          route_id: routeAssignment?.route_id?._id || routeAssignment?.route_id,
+          route_name: routeAssignment?.route_id?.name || 'Chưa phân công',
 
           // ⭐ Thông tin pickup stop
           pickup_stop_id: pickupStop?._id,
@@ -120,33 +117,118 @@ export default function ParentTracking() {
 
     } catch (error) {
       console.error('❌ Error fetching students:', error);
-      console.error('Error details:', error.response?.data || error.message);
       toast.error('Không thể tải danh sách học sinh');
     } finally {
       setLoading(false);
     }
   };
 
-  // Giả lập cập nhật vị trí real-time
+  // 🔥 Fetch bus location khi chọn học sinh
   useEffect(() => {
-    const interval = setInterval(() => {
-      setBusLocation(prev => ({
-        lat: prev.lat + (Math.random() - 0.5) * 0.001,
-        lng: prev.lng + (Math.random() - 0.5) * 0.001
-      }));
-    }, 3000);
+    if (selectedStudent?.route_id) {
+      fetchBusInfoByRoute(selectedStudent.route_id);
+      fetchStudentStatus(selectedStudent._id);
+    }
+  }, [selectedStudent]);
 
-    return () => clearInterval(interval);
-  }, []);
+  // Lấy thông tin xe bus theo route
+  const fetchBusInfoByRoute = async (routeId) => {
+    try {
+      // 1. Tìm schedule đang active cho route này
+      const scheduleRes = await axios.get(`http://localhost:8080/api/busschedule/by-route/${routeId}`);
+      const schedule = scheduleRes.data;
+
+      if (!schedule) {
+        console.log('⚠️ No active schedule for this route');
+        return;
+      }
+
+      setBusInfo(schedule);
+
+      // 2. Lấy vị trí xe bus
+      const busId = schedule.bus_id?._id || schedule.bus_id;
+      const locationRes = await axios.get(`http://localhost:8080/api/bus-locations/${busId}`);
+
+      setBusLocation(locationRes.data);
+      console.log('📍 Bus location loaded:', locationRes.data);
+
+    } catch (error) {
+      console.error('❌ Error fetching bus info:', error);
+      toast.error('Không thể tải thông tin xe bus');
+    }
+  };
+
+  // Lấy trạng thái học sinh
+  const fetchStudentStatus = async (studentId) => {
+    try {
+      // Tìm assignment của học sinh
+      const res = await axios.get(`http://localhost:8080/api/studentbusassignments/student/${studentId}`);
+      setStudentStatus(res.data);
+      console.log('👨‍🎓 Student status:', res.data);
+    } catch (error) {
+      console.error('Error fetching student status:', error);
+    }
+  };
+
+  // 🔥 Listen realtime bus location updates
+  useEffect(() => {
+    if (!socket || !busInfo?.bus_id) return;
+
+    const busId = busInfo.bus_id._id || busInfo.bus_id;
+
+    const handleLocationUpdate = (data) => {
+      console.log('🚌 Location update:', data);
+      setBusLocation(prev => ({
+        ...prev,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        timestamp: data.timestamp
+      }));
+
+      // Refresh student status khi xe di chuyển
+      if (selectedStudent?._id) {
+        fetchStudentStatus(selectedStudent._id);
+      }
+    };
+
+    socket.on(`bus_location_${busId}`, handleLocationUpdate);
+
+    return () => {
+      socket.off(`bus_location_${busId}`, handleLocationUpdate);
+    };
+  }, [socket, busInfo, selectedStudent]);
+
+  // Tính khoảng cách đến điểm đón
+  const calculateDistance = () => {
+    if (!busLocation || !selectedStudent?.pickup_stop_location) return null;
+
+    const R = 6371; // Bán kính trái đất (km)
+    const lat1 = busLocation.latitude;
+    const lon1 = busLocation.longitude;
+    const lat2 = selectedStudent.pickup_stop_location.coordinates[1];
+    const lon2 = selectedStudent.pickup_stop_location.coordinates[0];
+
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
+  const distance = calculateDistance();
+  const estimatedTime = distance ? Math.ceil(distance / 0.4 * 60) : null; // 24km/h = 0.4km/min
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case "on_way":
-        return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">🚌 Đang trên đường</span>;
-      case "arrived":
-        return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">📍 Đã đến điểm đón</span>;
-      case "picked_up":
+      case "picked":
         return <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">✅ Đã đón học sinh</span>;
+      case "dropped":
+        return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">📍 Đã trả học sinh</span>;
+      case "pending":
+        return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">🚌 Đang trên đường</span>;
       default:
         return <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-semibold">⏸️ Chưa có thông tin</span>;
     }
@@ -225,18 +307,40 @@ export default function ParentTracking() {
             <div className="bg-white rounded-xl shadow-md overflow-hidden">
               {/* Map Placeholder */}
               <div className="relative bg-gradient-to-br from-blue-100 to-blue-200 h-96 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="bg-blue-500 rounded-full p-6 inline-block mb-4 animate-pulse">
-                    <MapPin className="text-white" size={48} />
+                {!busLocation ? (
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+                    <p className="text-blue-600 font-medium">Đang tải vị trí xe...</p>
                   </div>
-                  <p className="text-blue-800 font-semibold text-lg">Bản đồ theo dõi real-time</p>
-                  <p className="text-blue-600 text-sm mt-2">
-                    Vị trí: {busLocation.lat.toFixed(6)}, {busLocation.lng.toFixed(6)}
-                  </p>
-                  <p className="text-blue-500 text-xs mt-1">
-                    Cập nhật mỗi 3 giây
-                  </p>
-                </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="bg-blue-500 rounded-full p-6 inline-block mb-4 animate-pulse">
+                      <MapPin className="text-white" size={48} />
+                    </div>
+                    <p className="text-blue-800 font-bold text-xl">🚌 Xe đang di chuyển</p>
+                    <p className="text-blue-600 text-sm mt-2">
+                      📍 Vị trí: {busLocation.latitude?.toFixed(6)}, {busLocation.longitude?.toFixed(6)}
+                    </p>
+                    <p className="text-blue-500 text-xs mt-1">
+                      ⏰ Cập nhật: {new Date(busLocation.timestamp).toLocaleTimeString('vi-VN')}
+                    </p>
+
+                    {/* Bus Info */}
+                    {busInfo && (
+                      <div className="mt-4 inline-block bg-white/90 rounded-lg px-4 py-2">
+                        <p className="text-sm text-gray-600">Xe bus</p>
+                        <p className="text-lg font-bold text-blue-800">
+                          {busInfo.bus_id?.license_plate || 'N/A'}
+                        </p>
+                        {busInfo.driver_id && (
+                          <p className="text-xs text-gray-500">
+                            Tài xế: {busInfo.driver_id.name}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Bus Icon Animation */}
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -255,36 +359,58 @@ export default function ParentTracking() {
                 </div>
               </div>
 
-              {/* Status Bar */}
-              <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Navigation className="animate-pulse" size={24} />
-                    <div>
-                      <p className="font-semibold">Đang di chuyển đến điểm đón</p>
-                      <p className="text-xs text-blue-100">Cập nhật lần cuối: {new Date().toLocaleTimeString('vi-VN')}</p>
+              {/* Status Bar - Realtime */}
+              {busLocation && (
+                <div className="p-4 bg-gradient-to-r from-green-600 to-green-700 text-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                      <div>
+                        <p className="font-semibold">🔴 LIVE - Theo dõi trực tiếp</p>
+                        <p className="text-xs text-green-100">
+                          Cập nhật: {new Date(busLocation.timestamp).toLocaleTimeString('vi-VN')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold">LIVE</p>
+                      <p className="text-xs text-green-100">Realtime</p>
                     </div>
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Distance Info */}
+            {distance !== null && (
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-blue-600 font-medium mb-1">Khoảng cách đến điểm đón</p>
+                    <p className="text-3xl font-bold text-blue-800">{distance.toFixed(2)} km</p>
+                  </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold">7:15 AM</p>
-                    <p className="text-xs text-blue-100">Dự kiến đến</p>
+                    <p className="text-sm text-blue-600 font-medium mb-1">Thời gian dự kiến</p>
+                    <p className="text-3xl font-bold text-blue-800">~{estimatedTime} phút</p>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Quick Alert */}
-            <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
-              <div className="bg-green-100 rounded-full p-2">
-                <AlertCircle className="text-green-600" size={20} />
+            {/* Alert based on distance */}
+            {distance !== null && distance < 1 && (
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
+                <div className="bg-green-100 rounded-full p-2">
+                  <AlertCircle className="text-green-600" size={20} />
+                </div>
+                <div>
+                  <p className="font-semibold text-green-800">Xe sắp đến rồi!</p>
+                  <p className="text-sm text-green-700 mt-1">
+                    Xe buýt đang rất gần điểm đón, vui lòng chuẩn bị.
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-green-800">Xe đang đến gần!</p>
-                <p className="text-sm text-green-700 mt-1">
-                  Xe buýt đang cách điểm đón khoảng 2.5km, dự kiến đến trong 10 phút nữa.
-                </p>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Info Section */}
@@ -297,7 +423,7 @@ export default function ParentTracking() {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-800">Thông tin học sinh</h3>
-                  <p className="text-xs text-gray-500">Chi tiết học sinh và xe</p>
+                  <p className="text-xs text-gray-500">Chi tiết học sinh và tuyến</p>
                 </div>
               </div>
 
@@ -309,7 +435,7 @@ export default function ParentTracking() {
 
                 <div className="pb-3 border-b">
                   <label className="text-xs text-gray-500">Mã học sinh</label>
-                  <p className="font-semibold text-gray-800 font-mono text-sm">{selectedStudent.student_id || 'N/A'}</p>
+                  <p className="font-semibold text-gray-800 font-mono text-sm">{selectedStudent.student_id}</p>
                 </div>
 
                 <div className="pb-3 border-b">
@@ -317,42 +443,24 @@ export default function ParentTracking() {
                   <p className="font-semibold text-gray-800">{selectedStudent.grade || selectedStudent.class || 'N/A'}</p>
                 </div>
 
-                {/* ⭐ HIỂN THỊ TUYẾN ĐƯỜNG */}
                 <div className="pb-3 border-b">
                   <label className="text-xs text-gray-500">Tuyến đường</label>
-                  <p className="font-semibold text-gray-800">
-                    {selectedStudent.route_name}
-                  </p>
-                  {selectedStudent.route_id?.route_id && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Mã: {selectedStudent.route_id.route_id}
-                    </p>
-                  )}
+                  <p className="font-semibold text-gray-800">{selectedStudent.route_name}</p>
                 </div>
 
-                {/* ⭐ HIỂN THỊ ĐIỂM ĐÓN */}
                 <div className="pb-3 border-b">
                   <label className="text-xs text-gray-500">📍 Điểm đón</label>
-                  <p className="font-semibold text-gray-800 text-sm">
-                    {selectedStudent.pickup_stop_name}
-                  </p>
+                  <p className="font-semibold text-gray-800 text-sm">{selectedStudent.pickup_stop_name}</p>
                   {selectedStudent.pickup_stop_address && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {selectedStudent.pickup_stop_address}
-                    </p>
+                    <p className="text-xs text-gray-500 mt-1">{selectedStudent.pickup_stop_address}</p>
                   )}
                 </div>
 
-                {/* ⭐ HIỂN THỊ ĐIỂM TRẢ */}
                 <div>
                   <label className="text-xs text-gray-500">📍 Điểm trả</label>
-                  <p className="font-semibold text-gray-800 text-sm">
-                    {selectedStudent.dropoff_stop_name}
-                  </p>
+                  <p className="font-semibold text-gray-800 text-sm">{selectedStudent.dropoff_stop_name}</p>
                   {selectedStudent.dropoff_stop_address && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {selectedStudent.dropoff_stop_address}
-                    </p>
+                    <p className="text-xs text-gray-500 mt-1">{selectedStudent.dropoff_stop_address}</p>
                   )}
                 </div>
               </div>
@@ -367,32 +475,33 @@ export default function ParentTracking() {
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <span className="text-sm text-gray-700">Trạng thái</span>
-                  {getStatusBadge(selectedStudent.status || 'on_way')}
+                  <span className="text-sm text-gray-700">Trạng thái đón</span>
+                  {getStatusBadge(studentStatus?.pickup_status || 'pending')}
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-700">Thời gian dự kiến</span>
-                  <span className="font-bold text-gray-800">7:15 AM</span>
+                  <span className="text-sm text-gray-700">Trạng thái trả</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${studentStatus?.dropoff_status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                    {studentStatus?.dropoff_status === 'completed' ? '✅ Hoàn thành' : '⏳ Chưa hoàn thành'}
+                  </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="text-sm text-gray-700">Khoảng cách</span>
-                  <span className="font-bold text-green-800">~2.5 km</span>
-                </div>
+                {distance !== null && (
+                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                    <span className="text-sm text-gray-700">Khoảng cách</span>
+                    <span className="font-bold text-green-800">~{distance.toFixed(2)} km</span>
+                  </div>
+                )}
               </div>
 
-              {/* Student Stats */}
               <div className="mt-4 pt-4 border-t">
-                <p className="text-xs text-gray-500 mb-2">Hoạt động gần đây</p>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600">Trạng thái hoạt động</span>
-                    <span className={`px-2 py-1 rounded-full font-semibold ${selectedStudent.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                      {selectedStudent.active ? 'Đang hoạt động' : 'Tạm ngưng'}
-                    </span>
-                  </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600">Trạng thái tuyến</span>
+                  <span className={`px-2 py-1 rounded-full font-semibold ${selectedStudent.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                    {selectedStudent.active ? 'Đang hoạt động' : 'Tạm ngưng'}
+                  </span>
                 </div>
               </div>
             </div>

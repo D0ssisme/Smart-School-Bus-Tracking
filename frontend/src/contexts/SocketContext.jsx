@@ -16,12 +16,9 @@ export const SocketProvider = ({ children, userId }) => {
     const [connected, setConnected] = useState(false);
 
     useEffect(() => {
-        // Chỉ kết nối khi có userId
         if (!userId) return;
 
-        // Kết nối socket
         const newSocket = io('http://localhost:8080', {
-            query: { userId }, // Gửi userId lên server
             transports: ['websocket'],
             reconnection: true,
             reconnectionAttempts: 5,
@@ -31,6 +28,9 @@ export const SocketProvider = ({ children, userId }) => {
         newSocket.on('connect', () => {
             console.log('✅ Socket connected:', newSocket.id);
             setConnected(true);
+
+            // Register user
+            newSocket.emit('register_user', userId);
         });
 
         newSocket.on('disconnect', () => {
@@ -44,14 +44,33 @@ export const SocketProvider = ({ children, userId }) => {
 
         setSocket(newSocket);
 
-        // Cleanup khi unmount
         return () => {
             newSocket.close();
         };
     }, [userId]);
 
+    // ⭐ Function để subscribe bus location
+    const subscribeToBus = (busId) => {
+        if (socket && connected) {
+            socket.emit('subscribe_bus', busId);
+            console.log(`📍 Subscribed to bus ${busId}`);
+        }
+    };
+
+    const unsubscribeFromBus = (busId) => {
+        if (socket && connected) {
+            socket.emit('unsubscribe_bus', busId);
+            console.log(`🚫 Unsubscribed from bus ${busId}`);
+        }
+    };
+
     return (
-        <SocketContext.Provider value={{ socket, connected }}>
+        <SocketContext.Provider value={{
+            socket,
+            connected,
+            subscribeToBus,
+            unsubscribeFromBus
+        }}>
             {children}
         </SocketContext.Provider>
     );

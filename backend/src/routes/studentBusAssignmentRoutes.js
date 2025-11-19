@@ -5,13 +5,15 @@ import {
   getStudentBusAssignmentById,
   updateStudentBusAssignment,
   deleteStudentBusAssignment,
+  getStudentBusAssignmentByStudentId,
+  
   
   
 
 } from "../controllers/StudentBusAssignmentController.js";
 
 const router = express.Router();
-
+router.get('/student/:student_id', getStudentBusAssignmentByStudentId);
 // 🟢 Tạo mới
 router.post("/", createStudentBusAssignment);
 

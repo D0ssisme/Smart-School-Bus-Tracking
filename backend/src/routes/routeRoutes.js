@@ -1,6 +1,7 @@
 import express from "express";
 import {
     createRouteAuto,
+    getRouteWithStops,
     getAllRoutes,
     getRouteById,
     createRoute,
@@ -11,7 +12,7 @@ import {
 const router = express.Router();
 // ✅ Endpoint mới: tự động tạo tuyến đường theo danh sách stop
 router.post("/auto", createRouteAuto);
-
+router.get('/:routeId/with-stops', getRouteWithStops);
 router.get("/", getAllRoutes);
 router.get("/:id", getRouteById);
 router.post("/", createRoute);
