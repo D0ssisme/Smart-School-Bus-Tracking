@@ -27,10 +27,10 @@ const StudentListPage = () => {
     try {
       setLoading(true);
 
-      // 1. Tìm thông tin schedule từ busData
+      // 1. Tìm schedule từ busData
       let foundSchedule = null;
       for (const route of busData) {
-        const schedule = route.buses.find(b => (b._id || b.id).toString() === busId);
+        const schedule = route.buses.find(b => (b._id || b.id)?.toString() === busId?.toString());
         if (schedule) {
           foundSchedule = {
             ...schedule,
@@ -52,48 +52,57 @@ const StudentListPage = () => {
       // 2. Load assignments
       const [busAssignments, routeAssignments] = await Promise.all([
         getAllStudentBusAssignments(),
-        getAllStudentRouteAssignments()
+        getAllStudentRouteAssignments(),
       ]);
 
-      console.log("📦 All bus assignments:", busAssignments);
-      console.log("🗺️ All route assignments:", routeAssignments);
+      console.log("📦 Bus assignments:", busAssignments);
+      console.log("🗺️ Route assignments:", routeAssignments);
 
-      // 3. Lọc học sinh thuộc SCHEDULE này
-      const studentsInThisSchedule = busAssignments.filter(assignment => {
-        const assignmentScheduleId = assignment.schedule_id?._id || assignment.schedule_id;
-        return assignmentScheduleId.toString() === busId.toString();
+      // 3. Lọc học sinh thuộc schedule này (CHỐNG NULL)
+      const studentsInThisSchedule = busAssignments.filter((assignment) => {
+        const scheduleId = assignment.schedule_id?._id || assignment.schedule_id;
+        const busScheduleId = busId?._id || busId;
+
+        return scheduleId?.toString() === busScheduleId?.toString();
       });
 
       console.log("👥 Students in this schedule:", studentsInThisSchedule);
 
-      // 4. Kết hợp thông tin từ 2 API
-      const transformedStudents = studentsInThisSchedule.map(busAssignment => {
+      // 4. Kết hợp 2 API thành danh sách học sinh hoàn chỉnh
+      const transformedStudents = studentsInThisSchedule.map((busAssignment) => {
         const student = busAssignment.student_id;
 
-        // Tìm route assignment để lấy pickup/dropoff stops
-        const routeAssignment = routeAssignments.find(ra => {
+        const studentId = student?._id || student;
+        const scheduleRouteId = foundSchedule.routeId?._id || foundSchedule.routeId;
+
+        // Tìm route assignment phù hợp
+        const routeAssignment = routeAssignments.find((ra) => {
           const raStudentId = ra.student_id?._id || ra.student_id;
-          const studentId = student?._id || student;
           const raRouteId = ra.route_id?._id || ra.route_id;
 
           return (
             raStudentId?.toString() === studentId?.toString() &&
-            raRouteId?.toString() === foundSchedule.routeId?.toString()
+            raRouteId?.toString() === scheduleRouteId?.toString()
           );
         });
 
         return {
           _id: busAssignment._id,
-          student_object_id: student?._id || student,
-          student_id: student?.student_id || 'N/A',
-          name: student?.name || 'Không rõ',
-          grade: student?.grade || 'N/A',
-          pickup_point: routeAssignment?.pickup_stop_id?.name ||
+          student_object_id: studentId,
+          student_id: student?.student_id || "N/A",
+          name: student?.name || "Không rõ",
+          grade: student?.grade || "N/A",
+
+          pickup_point:
+            routeAssignment?.pickup_stop_id?.name ||
             routeAssignment?.pickup_stop_id?.address ||
-            'Chưa xác định',
-          dropoff_point: routeAssignment?.dropoff_stop_id?.name ||
+            "Chưa xác định",
+
+          dropoff_point:
+            routeAssignment?.dropoff_stop_id?.name ||
             routeAssignment?.dropoff_stop_id?.address ||
-            'Chưa xác định',
+            "Chưa xác định",
+
           pickup_status: busAssignment.pickup_status,
           dropoff_status: busAssignment.dropoff_status,
           active: routeAssignment?.active ?? true
@@ -104,8 +113,8 @@ const StudentListPage = () => {
       setStudentList(transformedStudents);
 
     } catch (error) {
-      console.error('❌ Error fetching students:', error);
-      toast.error('Không thể tải danh sách học sinh');
+      console.error("❌ Error fetching students:", error);
+      toast.error("Không thể tải danh sách học sinh");
     } finally {
       setLoading(false);
     }

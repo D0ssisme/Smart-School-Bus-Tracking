@@ -9,6 +9,7 @@ export const getRoutesApi = async () => {
     return res.data; // danh sách các route
 };
 
+
 // Gửi request để tự động tạo route kèm stops
 export const createRouteAutoApi = async (routeData) => {
   const res = await axios.post(`${API_URL}/auto`, routeData);

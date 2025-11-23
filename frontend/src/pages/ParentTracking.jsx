@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { MapPin, Navigation, Clock, User, Phone, AlertCircle, ChevronDown } from "lucide-react";
+import { MapPin, Navigation, Clock, User, Phone, AlertCircle, ChevronDown, Bus } from "lucide-react";
 import { getStudentsByParent } from "@/api/parentstudentApi";
 import { getAllStudentRouteAssignments } from "@/api/studentrouteassignmentApi";
 import { getStopsApi } from "@/api/stopApi";
 import { useSocket } from "@/contexts/SocketContext";
-import BusTrackingMap from "@/components/BusTrackingMap";
+import BusTrackingMapEnhanced from "@/components/BusTrackingMapEnhanced";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
@@ -15,9 +15,10 @@ export default function ParentTracking() {
   const [busLocation, setBusLocation] = useState(null);
   const [busInfo, setBusInfo] = useState(null);
   const [studentStatus, setStudentStatus] = useState(null);
+  const [routeStops, setRouteStops] = useState([]);
+  const [allStops, setAllStops] = useState([]);
   const { socket } = useSocket();
 
-  // Lấy thông tin parent đang đăng nhập
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const parentId = currentUser._id || currentUser.id;
 
@@ -28,8 +29,6 @@ export default function ParentTracking() {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-
-      // 1. Lấy danh sách học sinh của parent
       const studentsData = await getStudentsByParent(parentId);
       console.log("👨‍👩‍👧‍👦 Students of parent:", studentsData);
 
@@ -39,21 +38,20 @@ export default function ParentTracking() {
         return;
       }
 
-      // 2. Lấy route assignments và stops song song
-      const [routeAssignments, allStops] = await Promise.all([
+      const [routeAssignments, stopsData] = await Promise.all([
         getAllStudentRouteAssignments(),
         getStopsApi()
       ]);
 
       console.log("🚏 Route assignments:", routeAssignments);
-      console.log("📍 All stops:", allStops);
+      console.log("📍 All stops:", stopsData);
 
-      // 3. Transform data - kết hợp thông tin
+      setAllStops(stopsData);
+
       const transformedStudents = studentsData.map(item => {
         const student = item.student_id || item;
         const studentId = student._id || student;
 
-        // Tìm route assignment của student này
         const routeAssignment = routeAssignments.find(ra => {
           const raStudentId = ra.student_id?._id || ra.student_id;
           return raStudentId?.toString() === studentId?.toString();
@@ -61,7 +59,6 @@ export default function ParentTracking() {
 
         console.log(`🔍 Route assignment for ${student.name}:`, routeAssignment);
 
-        // Lấy thông tin stops
         let pickupStop = null;
         let dropoffStop = null;
 
@@ -69,12 +66,15 @@ export default function ParentTracking() {
           const pickupStopId = routeAssignment.pickup_stop_id?._id || routeAssignment.pickup_stop_id;
           const dropoffStopId = routeAssignment.dropoff_stop_id?._id || routeAssignment.dropoff_stop_id;
 
-          pickupStop = allStops.find(stop =>
+          pickupStop = stopsData.find(stop =>
             (stop._id?.toString() === pickupStopId?.toString())
           );
-          dropoffStop = allStops.find(stop =>
+          dropoffStop = stopsData.find(stop =>
             (stop._id?.toString() === dropoffStopId?.toString())
           );
+
+          console.log(`  📍 Pickup stop (${pickupStopId}):`, pickupStop);
+          console.log(`  📍 Dropoff stop (${dropoffStopId}):`, dropoffStop);
         }
 
         return {
@@ -83,27 +83,19 @@ export default function ParentTracking() {
           name: student.name || 'Không rõ',
           grade: student.grade,
           class: student.class,
-
-          // ⭐ Thông tin route
           route_id: routeAssignment?.route_id?._id || routeAssignment?.route_id,
           route_name: routeAssignment?.route_id?.name || 'Chưa phân công',
-
-          // ⭐ Thông tin pickup stop
+          route_full: routeAssignment?.route_id,
           pickup_stop_id: pickupStop?._id,
           pickup_stop_name: pickupStop?.name || 'Chưa xác định',
           pickup_stop_address: pickupStop?.address || '',
           pickup_stop_location: pickupStop?.location,
-
-          // ⭐ Thông tin dropoff stop
           dropoff_stop_id: dropoffStop?._id,
           dropoff_stop_name: dropoffStop?.name || 'Chưa xác định',
           dropoff_stop_address: dropoffStop?.address || '',
           dropoff_stop_location: dropoffStop?.location,
-
           active: routeAssignment?.active !== false,
           status: 'on_way',
-
-          // Lưu assignment để dùng sau
           routeAssignment: routeAssignment
         };
       });
@@ -123,18 +115,153 @@ export default function ParentTracking() {
     }
   };
 
-  // 🔥 Fetch bus location khi chọn học sinh
   useEffect(() => {
-    if (selectedStudent?.route_id) {
-      fetchBusInfoByRoute(selectedStudent.route_id);
-      fetchStudentStatus(selectedStudent._id);
-    }
-  }, [selectedStudent]);
+    if (selectedStudent) {
+      console.log('🎯 Selected student changed:', selectedStudent);
+      buildRouteStops(selectedStudent);
 
-  // Lấy thông tin xe bus theo route
+      if (selectedStudent.route_id) {
+        fetchBusInfoByRoute(selectedStudent.route_id);
+      }
+
+      if (selectedStudent._id) {
+        fetchStudentStatus(selectedStudent._id);
+      }
+    }
+  }, [selectedStudent, allStops]);
+
+  const buildRouteStops = async (student) => {
+    console.log('🏗️ Building route stops for student:', student.name);
+
+    if (student.route_full?.stops && Array.isArray(student.route_full.stops)) {
+      console.log('✅ Using stops from route_full:', student.route_full.stops);
+      setRouteStops(student.route_full.stops);
+      return;
+    }
+
+    if (student.route_id) {
+      console.log('📡 Fetching route stops from API:', student.route_id);
+      try {
+        const response = await axios.get(`http://localhost:8080/api/route/${student.route_id}`);
+        console.log('📦 Full API Response:', JSON.stringify(response.data, null, 2));
+
+        if (response.data && response.data.stops && response.data.stops.length > 0) {
+          console.log(`📊 Found ${response.data.stops.length} stops in API response`);
+
+          const transformedStops = response.data.stops.map((stopData, index) => {
+            console.log(`🔍 Processing stop ${index + 1}:`, stopData);
+
+            const stopInfo = stopData.stop_id || stopData;
+
+            return {
+              stop_id: {
+                _id: stopInfo._id,
+                name: stopInfo.name,
+                address: stopInfo.address,
+                location: stopInfo.location
+              },
+              order: stopData.order_number || index + 1,
+              estimated_arrival_time: stopData.estimated_arrival || null
+            };
+          });
+
+          console.log('✅ Transformed stops from API:', transformedStops);
+          setRouteStops(transformedStops);
+          return;
+        } else {
+          console.log('⚠️ API response has no stops or empty stops array');
+        }
+      } catch (error) {
+        console.log('⚠️ API fetch failed, using fallback:', error.message);
+        console.log('Error details:', error.response?.data || error);
+      }
+    }
+
+    if (student.pickup_stop_id && student.dropoff_stop_id) {
+      console.log('🔨 Building route from pickup & dropoff stops');
+
+      const pickupStopData = allStops.find(s => s._id?.toString() === student.pickup_stop_id?.toString());
+      const dropoffStopData = allStops.find(s => s._id?.toString() === student.dropoff_stop_id?.toString());
+
+      if (pickupStopData && dropoffStopData) {
+        const constructedStops = [
+          {
+            stop_id: pickupStopData,
+            order: 1,
+            estimated_arrival_time: null
+          },
+          {
+            stop_id: dropoffStopData,
+            order: 2,
+            estimated_arrival_time: null
+          }
+        ];
+
+        console.log('✅ Constructed route stops:', constructedStops);
+        setRouteStops(constructedStops);
+        return;
+      }
+    }
+
+    console.log('🔍 Using all assignments fallback');
+    buildRouteStopsFromAllAssignments(student.route_id);
+  };
+
+  const buildRouteStopsFromAllAssignments = async (routeId) => {
+    try {
+      const allAssignments = await getAllStudentRouteAssignments();
+
+      const sameRouteAssignments = allAssignments.filter(assignment => {
+        const assignmentRouteId = assignment.route_id?._id || assignment.route_id;
+        return assignmentRouteId?.toString() === routeId?.toString();
+      });
+
+      console.log(`📦 Found ${sameRouteAssignments.length} assignments for this route`);
+
+      if (sameRouteAssignments.length === 0) {
+        setRouteStops([]);
+        return;
+      }
+
+      const uniqueStopsMap = new Map();
+
+      sameRouteAssignments.forEach(assignment => {
+        const pickupStopId = assignment.pickup_stop_id?._id || assignment.pickup_stop_id;
+        const dropoffStopId = assignment.dropoff_stop_id?._id || assignment.dropoff_stop_id;
+
+        if (pickupStopId) {
+          const stopData = allStops.find(s => s._id?.toString() === pickupStopId?.toString());
+          if (stopData && !uniqueStopsMap.has(pickupStopId.toString())) {
+            uniqueStopsMap.set(pickupStopId.toString(), stopData);
+          }
+        }
+
+        if (dropoffStopId) {
+          const stopData = allStops.find(s => s._id?.toString() === dropoffStopId?.toString());
+          if (stopData && !uniqueStopsMap.has(dropoffStopId.toString())) {
+            uniqueStopsMap.set(dropoffStopId.toString(), stopData);
+          }
+        }
+      });
+
+      const constructedStops = Array.from(uniqueStopsMap.values()).map((stop, index) => ({
+        stop_id: stop,
+        order: index + 1,
+        estimated_arrival_time: null
+      }));
+
+      console.log(`✅ Built ${constructedStops.length} unique stops from assignments:`, constructedStops);
+      setRouteStops(constructedStops);
+
+    } catch (error) {
+      console.error('❌ Error building route stops:', error);
+      setRouteStops([]);
+    }
+  };
+
   const fetchBusInfoByRoute = async (routeId) => {
     try {
-      // 1. Tìm schedule đang active cho route này
+      console.log(`🚌 Fetching bus info for route: ${routeId}`);
       const scheduleRes = await axios.get(`http://localhost:8080/api/busschedule/by-route/${routeId}`);
       const schedule = scheduleRes.data;
 
@@ -143,34 +270,32 @@ export default function ParentTracking() {
         return;
       }
 
+      console.log('✅ Schedule found:', schedule);
       setBusInfo(schedule);
 
-      // 2. Lấy vị trí xe bus
       const busId = schedule.bus_id?._id || schedule.bus_id;
+      console.log(`📍 Fetching location for bus: ${busId}`);
+
       const locationRes = await axios.get(`http://localhost:8080/api/bus-locations/${busId}`);
+      console.log('✅ Bus location:', locationRes.data);
 
       setBusLocation(locationRes.data);
-      console.log('📍 Bus location loaded:', locationRes.data);
 
     } catch (error) {
-      console.error('❌ Error fetching bus info:', error);
-      toast.error('Không thể tải thông tin xe bus');
+      console.log('ℹ️ Bus info not available:', error.message);
     }
   };
 
-  // Lấy trạng thái học sinh
   const fetchStudentStatus = async (studentId) => {
     try {
-      // Tìm assignment của học sinh
       const res = await axios.get(`http://localhost:8080/api/studentbusassignments/student/${studentId}`);
       setStudentStatus(res.data);
       console.log('👨‍🎓 Student status:', res.data);
     } catch (error) {
-      console.error('Error fetching student status:', error);
+      console.log('ℹ️ No student assignment found');
     }
   };
 
-  // 🔥 Listen realtime bus location updates
   useEffect(() => {
     if (!socket || !busInfo?.bus_id) return;
 
@@ -185,7 +310,6 @@ export default function ParentTracking() {
         timestamp: data.timestamp
       }));
 
-      // Refresh student status khi xe di chuyển
       if (selectedStudent?._id) {
         fetchStudentStatus(selectedStudent._id);
       }
@@ -198,11 +322,10 @@ export default function ParentTracking() {
     };
   }, [socket, busInfo, selectedStudent]);
 
-  // Tính khoảng cách đến điểm đón
   const calculateDistance = () => {
     if (!busLocation || !selectedStudent?.pickup_stop_location) return null;
 
-    const R = 6371; // Bán kính trái đất (km)
+    const R = 6371;
     const lat1 = busLocation.latitude;
     const lon1 = busLocation.longitude;
     const lat2 = selectedStudent.pickup_stop_location.coordinates[1];
@@ -219,18 +342,18 @@ export default function ParentTracking() {
   };
 
   const distance = calculateDistance();
-  const estimatedTime = distance ? Math.ceil(distance / 0.4 * 60) : null; // 24km/h = 0.4km/min
+  const estimatedTime = distance ? Math.ceil(distance / 0.4 * 60) : null;
 
   const getStatusBadge = (status) => {
     switch (status) {
       case "picked":
-        return <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">✅ Đã đón học sinh</span>;
+        return <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">✅ Đã đón</span>;
       case "dropped":
-        return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">📍 Đã trả học sinh</span>;
+        return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">📍 Đã trả</span>;
       case "pending":
-        return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">🚌 Đang trên đường</span>;
+        return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">🚌 Đang đi</span>;
       default:
-        return <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-semibold">⏸️ Chưa có thông tin</span>;
+        return <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-semibold">⏸️ Chưa rõ</span>;
     }
   };
 
@@ -264,228 +387,219 @@ export default function ParentTracking() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen p-6">
-      {/* Header with Student Selector */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          📍 Theo dõi học sinh
+    <div className="bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="bg-white border-b shadow-sm px-4 py-4">
+        <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <MapPin className="text-blue-600" size={24} />
+          Theo dõi xe buýt học sinh 
         </h1>
-        <p className="text-gray-600 mb-4">Xem vị trí xe buýt theo thời gian thực</p>
-
-        {/* Student Selector */}
-        <div className="bg-white rounded-xl shadow-md p-4">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Chọn học sinh để theo dõi:
-          </label>
-          <div className="relative">
-            <select
-              value={selectedStudent?._id || ''}
-              onChange={(e) => {
-                const student = students.find(s => s._id === e.target.value);
-                setSelectedStudent(student);
-              }}
-              className="w-full px-4 py-3 pr-10 border-2 border-gray-200 rounded-lg outline-none focus:border-blue-500 appearance-none cursor-pointer bg-gray-50 hover:bg-white transition-colors font-medium text-gray-800"
-            >
-              {students.map(student => (
-                <option key={student._id} value={student._id}>
-                  {student.name} - {student.grade || student.class || 'N/A'}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Bạn có {students.length} học sinh trong hệ thống
-          </p>
-        </div>
       </div>
 
-      {selectedStudent && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Map Section */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              {/* Real Leaflet Map */}
-              <div className="h-96">
-                <BusTrackingMap
+      <div className="p-4">
+        {selectedStudent && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Left Side - Map Section */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Live Status Banner */}
+              {busLocation && (
+                <div className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <span className="font-semibold text-sm">🔴 LIVE - Đang theo dõi</span>
+                  </div>
+                  <span className="text-xs">
+                    {new Date(busLocation.timestamp).toLocaleTimeString('vi-VN')}
+                  </span>
+                </div>
+              )}
+
+              {/* Debug Info */}
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-3 text-xs">
+                <p className="font-bold text-blue-800 mb-1">ℹ️ Thông tin tuyến:</p>
+                <p>• Số điểm dừng: <span className="font-bold">{routeStops?.length || 0}</span></p>
+                <p>• Vị trí xe bus: <span className="font-bold">{busLocation ? '✅ Đang hoạt động' : '❌ Chưa khởi hành'}</span></p>
+                <p>• Điểm đón: <span className="font-bold">{selectedStudent?.pickup_stop_name}</span></p>
+                <p>• Điểm trả: <span className="font-bold">{selectedStudent?.dropoff_stop_name}</span></p>
+              </div>
+
+              {/* Map Container */}
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full" style={{ height: '60vh' }}>
+                <BusTrackingMapEnhanced
                   busLocation={busLocation}
-                  pickupStop={selectedStudent?.pickup_stop_location ? {
+                  pickupStop={selectedStudent?.pickup_stop_location && selectedStudent?.pickup_stop_id ? {
                     _id: selectedStudent.pickup_stop_id,
                     name: selectedStudent.pickup_stop_name,
                     address: selectedStudent.pickup_stop_address,
                     location: selectedStudent.pickup_stop_location
                   } : null}
-                  dropoffStop={selectedStudent?.dropoff_stop_location ? {
+                  dropoffStop={selectedStudent?.dropoff_stop_location && selectedStudent?.dropoff_stop_id ? {
                     _id: selectedStudent.dropoff_stop_id,
                     name: selectedStudent.dropoff_stop_name,
                     address: selectedStudent.dropoff_stop_address,
                     location: selectedStudent.dropoff_stop_location
                   } : null}
                   busInfo={busInfo}
+                  routeStops={routeStops}
                 />
               </div>
 
-              {/* Status Bar - Realtime */}
-              {busLocation && (
-                <div className="p-4 bg-gradient-to-r from-green-600 to-green-700 text-white">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                      <div>
-                        <p className="font-semibold">🔴 LIVE - Theo dõi trực tiếp</p>
-                        <p className="text-xs text-green-100">
-                          Cập nhật: {new Date(busLocation.timestamp).toLocaleTimeString('vi-VN')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold">LIVE</p>
-                      <p className="text-xs text-green-100">Realtime</p>
-                    </div>
+              {/* Distance & Time Cards */}
+              {distance !== null && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg p-4">
+                    <p className="text-xs text-blue-600 font-medium mb-1">Khoảng cách</p>
+                    <p className="text-2xl font-bold text-blue-800">{distance.toFixed(2)} km</p>
+                    <p className="text-xs text-blue-600 mt-1">đến điểm đón</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-lg p-4">
+                    <p className="text-xs text-purple-600 font-medium mb-1">Thời gian dự kiến</p>
+                    <p className="text-2xl font-bold text-purple-800">~{estimatedTime} phút</p>
+                    <p className="text-xs text-purple-600 mt-1">sẽ đến điểm đón</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Alert */}
+              {distance !== null && distance < 1 && (
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 flex items-center gap-3">
+                  <div className="bg-green-500 rounded-full p-2">
+                    <AlertCircle className="text-white" size={24} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-green-800 text-lg">⚡ Xe sắp đến rồi!</p>
+                    <p className="text-sm text-green-700 mt-1">
+                      Xe buýt đang rất gần điểm đón. Vui lòng chuẩn bị sẵn sàng.
+                    </p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Distance Info */}
-            {distance !== null && (
-              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-blue-600 font-medium mb-1">Khoảng cách đến điểm đón</p>
-                    <p className="text-3xl font-bold text-blue-800">{distance.toFixed(2)} km</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-blue-600 font-medium mb-1">Thời gian dự kiến</p>
-                    <p className="text-3xl font-bold text-blue-800">~{estimatedTime} phút</p>
-                  </div>
+            {/* Right Sidebar - Student Selection & Info */}
+            <div className="lg:col-span-1 space-y-4">
+              {/* Student Selector */}
+              <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-lg shadow-xl p-5 border-2 border-indigo-400">
+                <label className="block text-sm font-bold text-white mb-3 flex items-center gap-2">
+                  <User className="text-white" size={18} />
+                  Chọn học sinh theo dõi:
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedStudent?._id || ''}
+                    onChange={(e) => {
+                      const student = students.find(s => s._id === e.target.value);
+                      console.log('👤 Student selected:', student);
+                      setSelectedStudent(student);
+                    }}
+                    className="w-full px-4 py-3 pr-10 border-2 border-white rounded-lg outline-none focus:ring-4 focus:ring-yellow-300 appearance-none cursor-pointer bg-white hover:bg-gray-50 transition-all font-bold text-gray-800 shadow-md"
+                  >
+                    {students.map(student => (
+                      <option key={student._id} value={student._id}>
+                        {student.name} - {student.grade || student.class || 'N/A'}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none" size={20} />
                 </div>
-              </div>
-            )}
-
-            {/* Alert based on distance */}
-            {distance !== null && distance < 1 && (
-              <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
-                <div className="bg-green-100 rounded-full p-2">
-                  <AlertCircle className="text-green-600" size={20} />
-                </div>
-                <div>
-                  <p className="font-semibold text-green-800">Xe sắp đến rồi!</p>
-                  <p className="text-sm text-green-700 mt-1">
-                    Xe buýt đang rất gần điểm đón, vui lòng chuẩn bị.
+                <div className="mt-3 bg-white/20 backdrop-blur-sm rounded-lg p-2 border border-white/30">
+                  <p className="text-xs text-white font-medium">
+                    🚌 Tuyến: <span className="font-bold">{selectedStudent?.route_name}</span>
                   </p>
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Info Section */}
-          <div className="space-y-6">
-            {/* Student Info Card */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-blue-100 rounded-full p-3">
-                  <User className="text-blue-600" size={24} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-800">Thông tin học sinh</h3>
-                  <p className="text-xs text-gray-500">Chi tiết học sinh và tuyến</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="pb-3 border-b">
-                  <label className="text-xs text-gray-500">Học sinh</label>
-                  <p className="font-semibold text-gray-800">{selectedStudent.name}</p>
-                </div>
-
-                <div className="pb-3 border-b">
-                  <label className="text-xs text-gray-500">Mã học sinh</label>
-                  <p className="font-semibold text-gray-800 font-mono text-sm">{selectedStudent.student_id}</p>
-                </div>
-
-                <div className="pb-3 border-b">
-                  <label className="text-xs text-gray-500">Lớp</label>
-                  <p className="font-semibold text-gray-800">{selectedStudent.grade || selectedStudent.class || 'N/A'}</p>
-                </div>
-
-                <div className="pb-3 border-b">
-                  <label className="text-xs text-gray-500">Tuyến đường</label>
-                  <p className="font-semibold text-gray-800">{selectedStudent.route_name}</p>
-                </div>
-
-                <div className="pb-3 border-b">
-                  <label className="text-xs text-gray-500">📍 Điểm đón</label>
-                  <p className="font-semibold text-gray-800 text-sm">{selectedStudent.pickup_stop_name}</p>
-                  {selectedStudent.pickup_stop_address && (
-                    <p className="text-xs text-gray-500 mt-1">{selectedStudent.pickup_stop_address}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-500">📍 Điểm trả</label>
-                  <p className="font-semibold text-gray-800 text-sm">{selectedStudent.dropoff_stop_name}</p>
-                  {selectedStudent.dropoff_stop_address && (
-                    <p className="text-xs text-gray-500 mt-1">{selectedStudent.dropoff_stop_address}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Status Card */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Clock className="text-blue-600" size={20} />
-                Trạng thái hiện tại
-              </h3>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <span className="text-sm text-gray-700">Trạng thái đón</span>
-                  {getStatusBadge(studentStatus?.pickup_status || 'pending')}
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-700">Trạng thái trả</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${studentStatus?.dropoff_status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                    {studentStatus?.dropoff_status === 'completed' ? '✅ Hoàn thành' : '⏳ Chưa hoàn thành'}
-                  </span>
-                </div>
-
-                {distance !== null && (
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <span className="text-sm text-gray-700">Khoảng cách</span>
-                    <span className="font-bold text-green-800">~{distance.toFixed(2)} km</span>
+              {/* Student Info */}
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg shadow-xl p-5 border-2 border-slate-600">
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-slate-600">
+                  <div className="bg-blue-500 rounded-full p-2">
+                    <User className="text-white" size={20} />
                   </div>
-                )}
-              </div>
+                  <h3 className="font-bold text-white text-lg">Thông tin học sinh</h3>
+                </div>
 
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Trạng thái tuyến</span>
-                  <span className={`px-2 py-1 rounded-full font-semibold ${selectedStudent.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                    {selectedStudent.active ? 'Đang hoạt động' : 'Tạm ngưng'}
-                  </span>
+                <div className="space-y-3 text-sm">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                    <label className="text-xs text-blue-300 uppercase font-semibold">Học sinh</label>
+                    <p className="font-bold text-white text-lg mt-1">{selectedStudent.name}</p>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                    <label className="text-xs text-blue-300 uppercase font-semibold">Lớp</label>
+                    <p className="font-bold text-white text-base mt-1">{selectedStudent.grade || selectedStudent.class || 'N/A'}</p>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                    <label className="text-xs text-blue-300 uppercase font-semibold">Tuyến</label>
+                    <p className="font-bold text-white text-base mt-1">{selectedStudent.route_name}</p>
+                  </div>
+
+                  <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-3 border-2 border-green-400">
+                    <label className="text-xs text-green-300 uppercase font-semibold flex items-center gap-1">
+                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                      Điểm đón
+                    </label>
+                    <p className="font-bold text-white text-sm mt-1">{selectedStudent.pickup_stop_name}</p>
+                  </div>
+
+                  <div className="bg-red-500/20 backdrop-blur-sm rounded-lg p-3 border-2 border-red-400">
+                    <label className="text-xs text-red-300 uppercase font-semibold flex items-center gap-1">
+                      <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></span>
+                      Điểm trả
+                    </label>
+                    <p className="font-bold text-white text-sm mt-1">{selectedStudent.dropoff_stop_name}</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Emergency Contact */}
-            <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl shadow-md p-6 border border-red-200">
-              <h3 className="font-bold text-red-800 mb-2">🚨 Liên hệ khẩn cấp</h3>
-              <p className="text-sm text-red-700 mb-3">
-                Gặp sự cố hoặc cần hỗ trợ?
-              </p>
-              <button className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-                <Phone size={18} />
-                Hotline: 1900-xxxx
-              </button>
+              {/* Status */}
+              <div className="bg-white rounded-lg shadow-lg p-4">
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b-2 border-gray-200">
+                  <Clock className="text-blue-600" size={20} />
+                  <h3 className="font-bold text-gray-800">Trạng thái</h3>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <span className="text-xs text-gray-700">Đón</span>
+                    {getStatusBadge(studentStatus?.pickup_status || 'pending')}
+                  </div>
+
+                  <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <span className="text-xs text-gray-700">Trả</span>
+                    {getStatusBadge(studentStatus?.dropoff_status || 'pending')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bus Info */}
+              {busInfo && (
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-lg shadow-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Bus size={20} />
+                    <h3 className="font-bold">Xe buýt</h3>
+                  </div>
+                  <p className="text-lg font-bold mb-1">{busInfo.bus_id?.license_plate}</p>
+                  {busInfo.driver_id && (
+                    <p className="text-sm opacity-90">👨‍✈️ {busInfo.driver_id.name}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Emergency */}
+              <div className="bg-gradient-to-br from-red-500 to-orange-600 text-white rounded-lg shadow-lg p-4">
+                <h3 className="font-bold mb-2 flex items-center gap-2">
+                  <Phone size={18} />
+                  Khẩn cấp
+                </h3>
+                <button className="w-full bg-white text-red-600 font-bold py-2 px-4 rounded-lg hover:bg-red-50 transition-colors">
+                  Gọi: 1900-1412
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
