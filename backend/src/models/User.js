@@ -18,7 +18,8 @@ const userSchema = new mongoose.Schema({
   },
   phoneNumber: {
     type: String,
-    required: true // Bắt buộc phải có
+    required: true, // Bắt buộc phải có
+    unique: true
   },
   role: {
     type: String,
@@ -27,14 +28,14 @@ const userSchema = new mongoose.Schema({
   },
   driverInfo: {
     licenseNumber: String
-   
+
   },
   parentInfo: {
     address: {
       type: String,
       trim: true // Nên có trim để loại bỏ khoảng trắng thừa
     }
-    
+
 
   },
   createdAt: {

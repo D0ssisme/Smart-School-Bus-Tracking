@@ -12,3 +12,12 @@ export const createBusApi = async (data) => {
     const response = await axios.post(API_URL, data);
     return response.data; // ← Xem cái này trả về gì
 };
+
+export const updateBusApi = async (busId, data) => {
+    const response = await axios.put(`${API_URL}/${busId}`, data);
+    return response.data;
+};
+export const deleteBusApi = async (busId) => {
+    const response = await axios.delete(`${API_URL}/${busId}`);
+    return response.data;
+};
