@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Filter, Bus as BusIcon, Search, AlertCircle, CheckCircle, XCircle, Wrench, Edit2, Trash2, Users } from 'lucide-react';
+import { Plus, Filter, Search, CheckCircle, XCircle, Wrench, Edit2, Trash2, Users, Truck } from 'lucide-react';
 
-// Mock API functions - thay bằng API thực của bạn
-const mockBusData = [
-  { _id: '1', bus_id: 'BUS001', license_plate: '51B-12345', capacity: 45, status: 'active', createdAt: '2024-01-15' },
-  { _id: '2', bus_id: 'BUS002', license_plate: '51B-67890', capacity: 40, status: 'active', createdAt: '2024-01-20' },
-  { _id: '3', bus_id: 'BUS003', license_plate: '51B-11111', capacity: 35, status: 'repair', createdAt: '2024-02-01' },
-  { _id: '4', bus_id: 'BUS004', license_plate: '51B-22222', capacity: 50, status: 'inactive', createdAt: '2024-02-10' },
-  { _id: '5', bus_id: 'BUS005', license_plate: '51B-33333', capacity: 45, status: 'active', createdAt: '2024-02-15' },
-];
+const BusIcon = Truck;
 
-const BusCard = ({ bus, onEdit, onDelete, onViewDetails }) => {
+// ========================================
+// 🔥 IMPORT API - sử dụng alias @ từ project
+// ========================================
+import { getAllBuses, createBusApi, updateBusApi, deleteBusApi } from '@/api/busApi';
+
+const BusCard = ({ bus, onEdit, onDelete }) => {
   const statusConfig = {
     active: {
       label: 'Đang hoạt động',
@@ -47,13 +45,13 @@ const BusCard = ({ bus, onEdit, onDelete, onViewDetails }) => {
       <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 relative overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <pattern id="bus-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <circle cx="20" cy="20" r="1" fill="white" />
+            <pattern id={`bus-pattern-${bus._id}`} x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+              <circle cx="20" cy="20" r="1" fill="white"/>
             </pattern>
-            <rect width="100%" height="100%" fill="url(#bus-pattern)" />
+            <rect width="100%" height="100%" fill={`url(#bus-pattern-${bus._id})`}/>
           </svg>
         </div>
-
+        
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
@@ -129,6 +127,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
     capacity: '',
     status: 'active'
   });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -148,9 +147,23 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(formData);
+  const handleSubmit = async () => {
+    if (!formData.license_plate || !formData.capacity) {
+      alert('⚠️ Vui lòng điền đầy đủ thông tin!');
+      return;
+    }
+
+    if (formData.capacity < 1) {
+      alert('⚠️ Sức chứa phải lớn hơn 0!');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -165,7 +178,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <div className="p-6 space-y-4">
           {/* Biển số xe */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -177,7 +190,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
               onChange={(e) => setFormData({ ...formData, license_plate: e.target.value })}
               placeholder="VD: 51B-12345"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
+              disabled={saving}
             />
           </div>
 
@@ -193,7 +206,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
               placeholder="VD: 45"
               min="1"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
+              disabled={saving}
             />
           </div>
 
@@ -206,6 +219,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={saving}
             >
               <option value="active">Đang hoạt động</option>
               <option value="inactive">Ngừng hoạt động</option>
@@ -218,18 +232,21 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors"
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
+              disabled={saving}
             >
               Hủy
             </button>
             <button
-              type="submit"
-              className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl"
+              type="button"
+              onClick={handleSubmit}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+              disabled={saving}
             >
-              {initialData ? 'Cập nhật' : 'Thêm xe'}
+              {saving ? 'Đang xử lý...' : (initialData ? 'Cập nhật' : 'Thêm xe')}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
@@ -242,13 +259,26 @@ const BusManager = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBus, setEditingBus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch data từ API
+  const fetchBuses = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getAllBuses();
+      console.log('✅ Fetched buses:', data);
+      setBuses(data);
+    } catch (err) {
+      console.error('❌ Error fetching buses:', err);
+      setError('Không thể tải dữ liệu xe bus. Vui lòng thử lại!');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setBuses(mockBusData);
-      setLoading(false);
-    }, 500);
+    fetchBuses();
   }, []);
 
   const handleOpenAddModal = () => {
@@ -266,39 +296,65 @@ const BusManager = () => {
     setEditingBus(null);
   };
 
-  const handleSaveBus = (data) => {
-    if (editingBus) {
-      // Update existing bus
-      setBuses(buses.map(bus =>
-        bus._id === editingBus._id
-          ? { ...bus, ...data }
-          : bus
-      ));
-      alert('✅ Cập nhật xe bus thành công!');
-    } else {
-      // Add new bus
-      const newBus = {
-        _id: Date.now().toString(),
-        bus_id: `BUS${String(buses.length + 1).padStart(3, '0')}`,
-        ...data,
-        createdAt: new Date().toISOString()
-      };
-      setBuses([...buses, newBus]);
-      alert('✅ Thêm xe bus thành công!');
+  const handleSaveBus = async (data) => {
+    try {
+      if (editingBus) {
+        // Update existing bus
+        console.log('🔄 Updating bus:', editingBus._id, data);
+        const updatedBus = await updateBusApi(editingBus._id, data);
+        
+        setBuses(buses.map(bus => 
+          bus._id === editingBus._id 
+            ? { ...bus, ...data }
+            : bus
+        ));
+        
+        alert('✅ Cập nhật xe bus thành công!');
+      } else {
+        // Add new bus
+        console.log('➕ Creating new bus:', data);
+        const newBus = await createBusApi(data);
+        console.log('✅ API response:', newBus);
+        
+        // Refresh data từ server để có bus_id mới
+        await fetchBuses();
+        
+        alert('✅ Thêm xe bus thành công!');
+      }
+      handleCloseModal();
+    } catch (err) {
+      console.error('❌ Error saving bus:', err);
+      alert('❌ Có lỗi xảy ra! ' + (err.response?.data?.message || err.message));
     }
-    handleCloseModal();
   };
 
-  const handleDeleteBus = (bus) => {
-    if (confirm(`Bạn có chắc muốn xóa xe ${bus.license_plate} (${bus.bus_id})?`)) {
-      setBuses(buses.filter(b => b._id !== bus._id));
-      alert('✅ Đã xóa xe bus!');
+  const handleDeleteBus = async (bus) => {
+    const confirmDelete = window.confirm(
+      `⚠️ Bạn có chắc muốn xóa xe ${bus.license_plate} (${bus.bus_id})?\n\nHành động này không thể hoàn tác!`
+    );
+    
+    if (confirmDelete) {
+      try {
+        console.log('🗑️ Deleting bus:', bus._id);
+        await deleteBusApi(bus._id);
+        
+        setBuses(buses.filter(b => b._id !== bus._id));
+        alert('✅ Đã xóa xe bus thành công!');
+      } catch (err) {
+        console.error('❌ Error deleting bus:', err);
+        
+        if (err.response?.status === 400 && err.response?.data?.message?.includes('lịch trình')) {
+          alert('❌ Không thể xóa xe bus này!\n\nXe đang được sử dụng trong lịch trình. Vui lòng xóa lịch trình trước.');
+        } else {
+          alert('❌ Có lỗi xảy ra khi xóa xe bus! ' + (err.response?.data?.message || err.message));
+        }
+      }
     }
   };
 
   const filteredBuses = buses.filter(bus => {
     const statusMatch = filterStatus === 'all' || bus.status === filterStatus;
-    const searchMatch =
+    const searchMatch = 
       bus.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bus.bus_id.toLowerCase().includes(searchTerm.toLowerCase());
     return statusMatch && searchMatch;
@@ -314,6 +370,26 @@ const BusManager = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Đang tải dữ liệu xe bus...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen flex items-center justify-center p-6">
+        <div className="text-center max-w-md">
+          <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <XCircle className="text-red-600" size={32} />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Lỗi tải dữ liệu</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={fetchBuses}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+          >
+            Thử lại
+          </button>
         </div>
       </div>
     );
@@ -435,7 +511,11 @@ const BusManager = () => {
             <BusIcon className="text-gray-400" size={48} />
           </div>
           <h3 className="text-xl font-semibold text-gray-700 mb-2">Không tìm thấy xe bus</h3>
-          <p className="text-gray-500">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+          <p className="text-gray-500">
+            {buses.length === 0 
+              ? 'Chưa có xe bus nào. Nhấn nút "Thêm xe bus" để bắt đầu!' 
+              : 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'}
+          </p>
         </div>
       )}
 
