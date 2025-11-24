@@ -373,7 +373,7 @@ const BusManagementPage = () => {
                 <BusIcon className="text-white" size={40} />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white mb-1">Quản lý xe bus</h1>
+                <h1 className="text-3xl font-bold text-white mb-1">Quản lý lịch trình xe bus</h1>
                 <p className="text-blue-100">Theo dõi và điều phối xe bus trường học</p>
               </div>
             </div>
@@ -427,7 +427,7 @@ const BusManagementPage = () => {
             onClick={handleOpenAddModal}
             className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
           >
-            <Plus size={20} /> Thêm xe mới
+            <Plus size={20} /> Thêm lịch trình
           </button>
         </div>
       </div>
@@ -483,7 +483,7 @@ const BusManagementPage = () => {
       />
 
       {/* ✅ Cập nhật ConfirmDeleteModal với scheduleInfo */}
-     
+
     </div>
   );
 };
