@@ -27,15 +27,7 @@ function Login() {
               <h2 className="text-xl font-bold text-blue-900 text-center">
                 Đăng nhập
               </h2>
-              <p className="mt-2 text-sm text-gray-600 text-center">
-                Chưa có tài khoản?{" "}
-                <a
-                  href="#"
-                  className="font-semibold text-blue-900 hover:underline"
-                >
-                  Đăng ký
-                </a>
-              </p>
+              
 
               <form className="mt-6 space-y-4">
                 <div>
@@ -43,12 +35,11 @@ function Login() {
                     htmlFor="email"
                     className="block text-sm font-medium text-blue-900"
                   >
-                    Email
+                    Số điện thoại
                   </label>
                   <input
-                    id="email"
-                    type="email"
-                    placeholder="name@company.com"
+                    id="phone"
+                    type="string"
                     className="w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-lg focus:ring-blue-900 focus:border-blue-900"
                     required
                   />
@@ -100,18 +91,6 @@ function Login() {
                   <span className="w-full border-t border-gray-300"></span>
                 </div>
 
-                {/* Login with Google */}
-                <button
-                  type="button"
-                  className="flex items-center justify-center w-full px-4 py-2 space-x-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  <img
-                    src="https://www.svgrepo.com/show/475656/google-color.svg"
-                    alt="Google"
-                    className="w-5 h-5"
-                  />
-                  <span>Đăng nhập với Google</span>
-                </button>
               </form>
             </div>
           </div>

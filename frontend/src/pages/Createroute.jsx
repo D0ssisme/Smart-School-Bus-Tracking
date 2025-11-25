@@ -8,13 +8,11 @@ function RoutingMap({ routeInfo, activeInput, onSelectLocation }) {
   const map = useMap();
   const [routingControl, setRoutingControl] = useState(null);
 
-  // Xử lý click chọn vị trí
   useEffect(() => {
     if (!map) return;
 
     const handleClick = async (e) => {
-      if (!activeInput) return; // ❗ Chưa chọn input thì bỏ qua
-
+      if (!activeInput) return; 
       const { lat, lng } = e.latlng;
       try {
         const res = await fetch(
