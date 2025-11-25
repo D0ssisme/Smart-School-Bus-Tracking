@@ -91,7 +91,6 @@ const CheckinPage = () => {
     <div className="bg-white p-6 min-h-full rounded-lg">
       <Toaster position="bottom-right" />
       <div className="mb-4">
-        {/* --- THAY ĐỔI Ở ĐÂY --- */}
         <Link to="/buses" className="flex items-center text-sm text-gray-500 hover:text-gray-800">
           <ChevronLeft size={18} className="mr-1" />
           Quay lại Quản lý xe bus

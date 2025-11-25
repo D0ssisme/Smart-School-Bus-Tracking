@@ -4,6 +4,7 @@ import AccountTable from "../components/AccountTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import AddUserModal from "@/components/AddUserModal";
+import EditUserModal from "@/components/EditUserModal"; // ← Import EditUserModal
 import { getParentsApi, getDriversApi, createUserApi, deleteUserApi } from "@/api/userApi";
 import ToastService from "@/lib/toastService";
 import { Users, UserPlus, Filter, Search, TrendingUp, Shield } from "lucide-react";
@@ -16,7 +17,9 @@ function AccountManager() {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterRole, setFilterRole] = useState("all");
     const [loading, setLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false); // ← Thêm state cho modal
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false); // ← State cho edit modal
+    const [selectedUserId, setSelectedUserId] = useState(null); // ← State lưu user ID cần edit
 
     useEffect(() => {
         fetchUsers();
@@ -45,7 +48,6 @@ function AccountManager() {
         }
     };
 
-    // ← Thêm hàm xử lý tạo user
     const handleCreateUser = async (userData) => {
         const loadingToast = ToastService.loading("Đang tạo người dùng...");
 
@@ -62,16 +64,24 @@ function AccountManager() {
             console.error("❌ Error creating user:", error);
             const errorMsg = error.response?.data?.message || "Không thể tạo người dùng. Vui lòng thử lại!";
             ToastService.update(loadingToast, errorMsg, "error");
-            throw error; // Để modal xử lý lỗi
+            throw error;
         }
     };
 
+    // ← Hàm xử lý mở edit modal
+    const handleEditUser = (user) => {
+        setSelectedUserId(user._id);
+        setIsEditModalOpen(true);
+    };
+
+    // ← Hàm xử lý sau khi update thành công
+    const handleUpdateUser = async () => {
+        await fetchUsers(); // Refresh danh sách
+    };
 
     const handleDeleteUser = async (id) => {
-        // Tìm thông tin user từ state
         const user = users.find(u => u._id === id);
 
-        // Hiển thị role bằng tiếng Việt
         const roleDisplay = {
             'parent': 'Phụ huynh',
             'driver': 'Tài xế',
@@ -111,12 +121,8 @@ function AccountManager() {
                 const loadingToast = ToastService.loading("Đang xóa người dùng...");
 
                 try {
-                    // Gọi API xóa user
                     await deleteUserApi(id);
-
-                    // Cập nhật UI
                     setUsers(prevUsers => prevUsers.filter(user => user._id !== id));
-
                     ToastService.update(loadingToast, `Đã xóa người dùng ${user?.name}!`, "success");
 
                 } catch (error) {
@@ -124,7 +130,6 @@ function AccountManager() {
 
                     const errorMessage = error.response?.data?.message || "";
 
-                    // ========== XỬ LÝ LỖI PHỤ HUYNH ==========
                     if (error.response?.status === 400 && errorMessage.includes("còn đang có con liên kết")) {
                         ToastService.update(loadingToast, "", "error");
 
@@ -161,7 +166,6 @@ function AccountManager() {
                             width: 600
                         });
                     }
-                    // ========== XỬ LÝ LỖI TÀI XẾ ==========
                     else if (error.response?.status === 400 && errorMessage.includes("đang được phân công")) {
                         ToastService.update(loadingToast, "", "error");
 
@@ -198,7 +202,6 @@ function AccountManager() {
                             width: 600
                         });
                     }
-                    // ========== CÁC LỖI KHÁC ==========
                     else {
                         const errorMsg = errorMessage || "Không thể xóa người dùng. Vui lòng thử lại!";
                         ToastService.update(loadingToast, errorMsg, "error");
@@ -206,15 +209,6 @@ function AccountManager() {
                 }
             }
         });
-    };
-
-
-
-
-
-
-    const handleEditUser = (user) => {
-        navigate(`/accounts/edit/${user._id}`);
     };
 
     const filteredUsers = users.filter(user => {
@@ -245,14 +239,12 @@ function AccountManager() {
         <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen p-6">
             {/* Header Banner với illustration */}
             <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl shadow-2xl overflow-hidden mb-6">
-                {/* Background pattern */}
                 <div className="absolute inset-0 opacity-10">
                     <div className="absolute inset-0" style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
                     }}></div>
                 </div>
 
-                {/* User illustration SVG */}
                 <div className="absolute right-8 top-1/2 transform -translate-y-1/2 opacity-20 hidden lg:block">
                     <svg width="200" height="120" viewBox="0 0 200 120" fill="none">
                         <circle cx="60" cy="40" r="25" fill="white" opacity="0.9" />
@@ -280,7 +272,6 @@ function AccountManager() {
                             </div>
                         </div>
 
-                        {/* Quick stats */}
                         <div className="hidden md:flex gap-4">
                             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
                                 <div className="text-white/70 text-xs mb-1">Tổng số</div>
@@ -329,7 +320,6 @@ function AccountManager() {
                         </div>
                     </div>
 
-                    {/* ← Sửa button này */}
                     <button
                         onClick={() => setIsModalOpen(true)}
                         className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
@@ -424,11 +414,22 @@ function AccountManager() {
                 </div>
             )}
 
-            {/* ← Thêm Modal component */}
+            {/* Add User Modal */}
             <AddUserModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleCreateUser}
+            />
+
+            {/* ← Edit User Modal */}
+            <EditUserModal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setSelectedUserId(null);
+                }}
+                onSave={handleUpdateUser}
+                userId={selectedUserId}
             />
         </div>
     );

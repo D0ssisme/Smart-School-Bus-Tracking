@@ -21,8 +21,25 @@ export const createUserApi = async (userData) => {
     return res.data; 
 };
 
+export const updateUserApi = async (userId, updatedData) => {
+    const res = await axios.put(`${API_URL}/${userId}`, updatedData);
+    return res.data; 
+}
+
 export const deleteUserApi = async (userId) => {
     const res = await axios.delete(`${API_URL}/${userId}`);
     return res.data; 
 };
-
+// userApi.js
+export const getUserByIdApi = async (userId) => {
+  try {
+    const response = await axios.get(`${API_URL}/users/${userId}`);
+    console.log("📌 API Response:", response.data);
+    
+    // ✅ Trả về response.data.user (vì API wrap trong object)
+    return response.data.user;
+  } catch (error) {
+    console.error("❌ Error fetching user by ID:", error);
+    throw error;
+  }
+};

@@ -10,7 +10,6 @@ function RoutingMap({ routeInfo, activeInput, onSelectLocation }) {
   const map = useMap();
   const [routingControl, setRoutingControl] = useState(null);
 
-  // Xử lý click chọn vị trí
   useEffect(() => {
     if (!map) return;
 

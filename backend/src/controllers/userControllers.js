@@ -16,7 +16,6 @@ export const getAllUser = async (req, res) => {
 };
 
 
-
 export const getDrivers = async (req, res) => {
   try {
     const drivers = await User.find({ role: "driver" });
@@ -35,8 +34,42 @@ export const getParents = async (req, res) => {
   }
 };
 
+// userController.js
+export const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    // ✅ Không select -password để giữ lại các trường khác
+    const user = await User.findById(id);
 
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+    }
+
+    // ✅ Tạo object response không bao gồm password
+    const userResponse = {
+      _id: user._id,
+      userId: user.userId,
+      name: user.name,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      driverInfo: user.driverInfo || {},
+      parentInfo: user.parentInfo || {},
+      createdAt: user.createdAt
+    };
+
+    res.status(200).json({
+      message: "✅ Lấy thông tin người dùng thành công!",
+      user: userResponse
+    });
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy thông tin user:", error);
+    res.status(500).json({ 
+      message: "Lỗi hệ thống khi lấy thông tin user!", 
+      error: error.message 
+    });
+  }
+};
 
 
 

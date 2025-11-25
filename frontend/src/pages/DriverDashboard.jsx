@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '@/contexts/AuthContext'; // Import Auth Context
 import { getBusScheduleByDriverIdApi } from '@/api/busscheduleApi'; // API lấy schedule của driver
+import { getCountStudentByScheduleId } from '@/api/studentbusassignmentApi';
 import {
     Bus,
     MapPin,
@@ -42,69 +43,83 @@ export default function DriverDashboard() {
         }
     }, [user]);
 
-    const fetchDriverData = async () => {
-        try {
-            setLoading(true);
+const fetchDriverData = async () => {
+    try {
+        setLoading(true);
 
-            // 1. Set thông tin driver từ user context
-            setDriverInfo({
-                name: user.name || "Tài xế",
-                driverId: user.userId || "N/A",
-                licenseNumber: user.driverInfo?.licenseNumber || "N/A"
-            });
-            console.log("🚗 Logged in driver:", user);
+        // 1. Set thông tin driver từ user context
+        setDriverInfo({
+            name: user.name || "Tài xế",
+            driverId: user.userId || "N/A",
+            licenseNumber: user.driverInfo?.licenseNumber || "N/A"
+        });
+        console.log("🚗 Logged in driver:", user);
 
-            // 2. Lấy ID và ngày
-            const driverId = user._id || user.userId; // fallback nếu thiếu _id
-            const today = new Date().toISOString().split('T')[0];
+        // 2. Lấy ID và ngày
+        const driverId = user._id || user.userId; // fallback nếu thiếu _id
+        const today = new Date().toISOString().split('T')[0];
 
-            const schedulesResponse = await getBusScheduleByDriverIdApi(driverId, today);
-            const schedules = schedulesResponse?.data || []; // Lấy ra mảng data
+        const schedulesResponse = await getBusScheduleByDriverIdApi(driverId, today);
+        const schedules = schedulesResponse?.data || []; // Lấy ra mảng data
 
-            console.log("📅 Driver schedules:", schedules);
+        console.log("📅 Driver schedules:", schedules);
 
-            if (!Array.isArray(schedules)) {
-                console.error("❌ API did not return an array:", schedules);
-                setTodaySchedules([]);
-                return;
-            }
-
-            // 3. Transform dữ liệu
-            const transformedSchedules = schedules.map(schedule => ({
-                id: schedule._id,
-                scheduleId: schedule.schedule_id || schedule._id,
-                route: schedule.route_id?.name || "Chưa có tuyến",  // ✅ sửa chỗ này
-                busPlate: schedule.bus_id?.license_plate || "N/A",   // ✅ sửa chỗ này
-                busId: schedule.bus_id?._id,
-                routeId: schedule.route_id?._id,
-                startTime: schedule.start_time || "N/A",             // ✅ sửa chỗ này
-                endTime: schedule.end_time || "N/A",
-                status: schedule.status || "scheduled",
-                studentsCount: schedule.studentsCount || 0,
-                stops: schedule.route_id?.stops?.map(stop => stop.name) || []
-            }));
-
-            setTodaySchedules(transformedSchedules);
-
-            // 4. Tính toán statistics
-            setStats({
-                totalTripsToday: transformedSchedules.length,
-                completedTrips: transformedSchedules.filter(s => s.status === "completed").length,
-                upcomingTrips: transformedSchedules.filter(s => s.status === "scheduled").length,
-                totalStudents: transformedSchedules.reduce((sum, s) => sum + s.studentsCount, 0)
-            });
-
-        } catch (error) {
-            console.error("❌ Error fetching driver data:", {
-                message: error?.message,
-                response: error?.response?.data,
-                stack: error?.stack,
-            });
-            setTodaySchedules([]); // fallback
-        } finally {
-            setLoading(false);
+        if (!Array.isArray(schedules)) {
+            console.error("❌ API did not return an array:", schedules);
+            setTodaySchedules([]);
+            return;
         }
-    };
+
+        // 3. Transform dữ liệu và lấy số lượng học sinh cho từng schedule
+        const transformedSchedules = await Promise.all(
+            schedules.map(async (schedule) => {
+                let studentsCount = 0;
+                
+                // Gọi API đếm học sinh cho schedule này
+                try {
+                    const countResponse = await getCountStudentByScheduleId(schedule._id);
+                    studentsCount = countResponse?.studentCount || 0;
+                } catch (error) {
+                    console.error(`❌ Error getting student count for schedule ${schedule._id}:`, error);
+                }
+
+                return {
+                    id: schedule._id,
+                    scheduleId: schedule.schedule_id || schedule._id,
+                    route: schedule.route_id?.name || "Chưa có tuyến",
+                    busPlate: schedule.bus_id?.license_plate || "N/A",
+                    busId: schedule.bus_id?._id,
+                    routeId: schedule.route_id?._id,
+                    startTime: schedule.start_time || "N/A",
+                    endTime: schedule.end_time || "N/A",
+                    status: schedule.status || "scheduled",
+                    studentsCount: studentsCount, // ✅ Dữ liệu thực từ API
+                    stops: schedule.route_id?.stops?.map(stop => stop.name) || []
+                };
+            })
+        );
+
+        setTodaySchedules(transformedSchedules);
+
+        // 4. Tính toán statistics
+        setStats({
+            totalTripsToday: transformedSchedules.length,
+            completedTrips: transformedSchedules.filter(s => s.status === "completed").length,
+            upcomingTrips: transformedSchedules.filter(s => s.status === "scheduled").length,
+            totalStudents: transformedSchedules.reduce((sum, s) => sum + s.studentsCount, 0)
+        });
+
+    } catch (error) {
+        console.error("❌ Error fetching driver data:", {
+            message: error?.message,
+            response: error?.response?.data,
+            stack: error?.stack,
+        });
+        setTodaySchedules([]); // fallback
+    } finally {
+        setLoading(false);
+    }
+};
 
     const getCurrentTime = () => {
         return new Date().toLocaleTimeString('vi-VN', {

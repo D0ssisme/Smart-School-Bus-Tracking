@@ -6,7 +6,7 @@ import {
   updateStudentBusAssignment,
   deleteStudentBusAssignment,
   getStudentBusAssignmentByStudentId,
-  
+  getCountStudentByScheduleId
   
   
 
@@ -14,6 +14,8 @@ import {
 
 const router = express.Router();
 router.get('/student/:student_id', getStudentBusAssignmentByStudentId);
+
+router.get('/schedule/:schedule_id/count', getCountStudentByScheduleId);
 // 🟢 Tạo mới
 router.post("/", createStudentBusAssignment);
 

@@ -114,3 +114,24 @@ export const deleteStudentBusAssignment = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// GET COUNT STUDENTS BY SCHEDULE ID
+export const getCountStudentByScheduleId = async (req, res) => {
+  try {
+    const { schedule_id } = req.params;
+    const count = await StudentBusAssignment.countDocuments({
+      schedule_id
+    });
+
+    res.status(200).json({
+      success: true,
+      schedule_id,
+      studentCount: count
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
