@@ -15,10 +15,11 @@ export const getAllParentStudent = async (req, res) => {
     }
 };
 
+
 // 🟢 Tạo mới quan hệ phụ huynh - học sinh
 export const createParentStudent = async (req, res) => {
     try {
-        const { parent_id, student_id, relationshipType } = req.body;
+        const { parent_id, student_id } = req.body;
 
         // kiểm tra tồn tại
         const parent = await User.findById(parent_id);
@@ -35,7 +36,7 @@ export const createParentStudent = async (req, res) => {
         const newRelation = new ParentStudent({
             parent_id,
             student_id,
-            relationshipType,
+       
         });
 
         await newRelation.save();
@@ -73,11 +74,11 @@ export const getStudentsByParent = async (req, res) => {
 export const updateParentStudent = async (req, res) => {
     try {
         const { id } = req.params;
-        const { relationshipType, active } = req.body;
+        const {  active } = req.body;
 
         const updated = await ParentStudent.findByIdAndUpdate(
             id,
-            { relationshipType, active },
+            {  active },
             { new: true }
         );
 

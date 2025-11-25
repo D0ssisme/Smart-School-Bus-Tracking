@@ -1,6 +1,9 @@
+//src/App.jsx
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Toaster } from "react-hot-toast";
+import { useAuth } from "./hooks/useAuth"; // ← Import useAuth
+import { SocketProvider } from "./contexts/SocketContext"; // ← Import SocketProvider
 
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
@@ -21,6 +24,13 @@ import StudentFormPage from "./pages/StudentFormPage";
 import AccountManager from "./pages/AccountManager";
 import DriverLayout from "./components/DriverLayout";
 import DriverDashboard from "./pages/DriverDashboard";
+import ParentLayout from "./components/ParentLayout";
+import ParentTracking from "./pages/ParentTracking";
+import ParentNotification from "./pages/ParentNotification";
+import DriverSchedule from "./pages/DriverSchedule";
+import DriverReport from "./pages/DriverReport";
+import Report from "./pages/Report";
+import BusManager from "./pages/BusManager";
 
 const Page = ({ children }) => (
   <motion.div
@@ -34,7 +44,7 @@ const Page = ({ children }) => (
   </motion.div>
 );
 
-function App() {
+function AppRoutes() {
   const location = useLocation();
 
   return (
@@ -56,11 +66,51 @@ function App() {
             }
           />
           <Route
+            path="/busmanager"
+            element={
+              <Layout>
+                <Page><BusManager /></Page>
+              </Layout>
+            }
+          />
+          <Route
             path="/contact"
             element={
               <DriverLayout>
                 <Page><DriverDashboard /></Page>
               </DriverLayout>
+            }
+          />
+          <Route
+            path="/driver/schedule"
+            element={
+              <DriverLayout>
+                <Page><DriverSchedule /></Page>
+              </DriverLayout>
+            }
+          />
+          <Route
+            path="/driver/report"
+            element={
+              <DriverLayout>
+                <Page><DriverReport /></Page>
+              </DriverLayout>
+            }
+          />
+          <Route
+            path="/parent/tracking"
+            element={
+              <ParentLayout>
+                <Page><ParentTracking /></Page>
+              </ParentLayout>
+            }
+          />
+          <Route
+            path="/parent/notifications"
+            element={
+              <ParentLayout>
+                <Page><ParentNotification /></Page>
+              </ParentLayout>
             }
           />
           <Route
@@ -95,8 +145,8 @@ function App() {
               </Layout>
             }
           />
-          
-          {/* 2. Thêm Route cho trang danh sách sinh viên */}
+
+          {/* Danh sách sinh viên */}
           <Route
             path="/buses/:busId/students"
             element={
@@ -113,7 +163,7 @@ function App() {
               </Layout>
             }
           />
-           <Route
+          <Route
             path="/accounts"
             element={
               <Layout>
@@ -173,6 +223,14 @@ function App() {
             }
           />
           <Route
+            path="/report"
+            element={
+              <Layout>
+                <Page><Report /></Page>
+              </Layout>
+            }
+          />
+          <Route
             path="/students/create"
             element={
               <Layout>
@@ -208,9 +266,17 @@ function App() {
   );
 }
 
-export default () => (
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
-);
+// ✅ Component App chính - Wrap SocketProvider ở đây
+function App() {
+  const { user } = useAuth(); // Lấy thông tin user từ AuthContext
 
+  return (
+    <BrowserRouter>
+      <SocketProvider userId={user?._id}>
+        <AppRoutes />
+      </SocketProvider>
+    </BrowserRouter>
+  );
+}
+
+export default App;

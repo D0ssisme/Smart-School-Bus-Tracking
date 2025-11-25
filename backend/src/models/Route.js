@@ -1,3 +1,4 @@
+//src/models/route.js
 import mongoose from "mongoose";
 import Counter from "./Counter.js";
 
@@ -39,8 +40,7 @@ const routeSchema = new mongoose.Schema(
       },
     },
 
-    // 🔹 Danh sách các điểm dừng — lưu dưới bảng riêng RouteStops
-    // => Không lưu trực tiếp tại đây, chỉ populate khi cần
+  
 
     status: {
       type: String,

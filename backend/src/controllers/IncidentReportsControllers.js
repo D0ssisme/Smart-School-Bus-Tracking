@@ -1,14 +1,100 @@
 import IncidentReport from "../models/IncidentReports.js";
+import mongoose from "mongoose";
+
+export const getIncidentReportByDriverId = async (req, res) => {
+  try {
+    const { driver_id } = req.params;
+
+    console.log('🔍 Fetching incidents for driver:', driver_id);
+
+    if (!driver_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Driver ID is required'
+      });
+    }
+
+    const incidents = await IncidentReport.find({
+      driver_id: driver_id  // Mongoose tự convert
+    })
+      .populate('driver_id', 'name email phone')
+      .populate('bus_id', 'bus_id license_plate capacity')
+      .populate({
+        path: 'schedule_id',
+        select: 'schedule_id route_id departure_time',
+        populate: {
+          path: 'route_id',
+          select: 'name description'
+        }
+      })
+      .sort({ timestamp: -1, createdAt: -1 });
+
+    console.log('✅ Found incidents:', incidents.length);
+
+    return res.status(200).json(incidents);
+
+  } catch (error) {
+    console.error('❌ Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error fetching incident reports',
+      error: error.message
+    });
+  }
+};
+
+
+
+
+
+
 
 // 🟢 CREATE — thêm báo cáo sự cố
 export const createIncidentReport = async (req, res) => {
   try {
-    const { driver_id, bus_id, schedule_id, title, description, location } = req.body;
+    const { driver_id, bus_id, schedule_id, title, description, location, status } = req.body;
 
-    if (!location || !location.coordinates) {
-      return res.status(400).json({ message: "Thiếu tọa độ vị trí (location.coordinates)" });
+    // Validate required fields
+    if (!driver_id || !bus_id || !schedule_id || !title) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu thông tin bắt buộc: driver_id, bus_id, schedule_id, title"
+      });
     }
 
+    // Validate location
+    if (!location || !location.coordinates || location.coordinates.length !== 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu tọa độ vị trí. Format: { type: 'Point', coordinates: [longitude, latitude] }"
+      });
+    }
+
+    // ✅ VALIDATE TỌA ĐỘ HỢP LỆ
+    const [longitude, latitude] = location.coordinates;
+
+    if (typeof longitude !== 'number' || typeof latitude !== 'number') {
+      return res.status(400).json({
+        success: false,
+        message: "Tọa độ phải là số (number)"
+      });
+    }
+
+    if (longitude < -180 || longitude > 180) {
+      return res.status(400).json({
+        success: false,
+        message: `Kinh độ không hợp lệ: ${longitude}. Phải từ -180 đến 180. VD Việt Nam: 102-110`
+      });
+    }
+
+    if (latitude < -90 || latitude > 90) {
+      return res.status(400).json({
+        success: false,
+        message: `Vĩ độ không hợp lệ: ${latitude}. Phải từ -90 đến 90. VD Việt Nam: 8-24`
+      });
+    }
+
+    // Create new incident report
     const newReport = new IncidentReport({
       driver_id,
       bus_id,
@@ -16,15 +102,40 @@ export const createIncidentReport = async (req, res) => {
       title,
       description,
       location,
+      status: status || 'pending'
     });
 
     await newReport.save();
-    res.status(201).json({ message: "Tạo báo cáo thành công ✅", report: newReport });
+
+    // Populate để trả về đầy đủ thông tin
+    const populatedReport = await IncidentReport.findById(newReport._id)
+      .populate('driver_id', 'name phoneNumber userId')
+      .populate('bus_id', 'bus_id license_plate capacity')
+      .populate({
+        path: 'schedule_id',
+        select: 'schedule_id route_id start_time end_time',
+        populate: {
+          path: 'route_id',
+          select: 'name description'
+        }
+      });
+
+    res.status(201).json({
+      success: true,
+      message: "Tạo báo cáo thành công ✅",
+      data: populatedReport
+    });
+
   } catch (error) {
     console.error("❌ Lỗi khi tạo IncidentReport:", error);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+      error: error.message
+    });
   }
 };
+
 
 // 🟡 READ ALL — lấy toàn bộ báo cáo
 export const getAllIncidentReports = async (req, res) => {

@@ -1,11 +1,7 @@
 import mongoose from "mongoose";
 
 const notificationSchema = new mongoose.Schema({
-  sender_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
+
   receiver_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -23,6 +19,10 @@ const notificationSchema = new mongoose.Schema({
   timestamp: {
     type: Date,
     default: Date.now,
+  },
+  isRead: {
+    type: Boolean,
+    default: false, // 👈 đây chính là chỗ mặc định "chưa đọc"
   },
 });
 

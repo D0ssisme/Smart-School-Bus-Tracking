@@ -4,17 +4,128 @@ import Bus from '../models/Bus.js';
 import User from '../models/User.js';
 import Route from '../models/Route.js';
 
+// READ BY ROUTE ID
+export const getBusScheduleByRouteId = async (req, res) => {
+  try {
+    const { route_id } = req.params;
+
+    if (!route_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu route_id trong request params"
+      });
+    }
+
+    // Tìm schedule đang active cho route này
+    const schedule = await BusSchedule.findOne({
+      route_id,
+      status: { $in: ['scheduled', 'in_progress'] }
+    })
+      .populate({
+        path: "bus_id",
+        select: "license_plate capacity status"
+      })
+      .populate({
+        path: "route_id",
+        select: "name",
+        populate: [
+          { path: "start_point", select: "name" },
+          { path: "end_point", select: "name" }
+        ]
+      })
+      .populate({
+        path: "driver_id",
+        select: "name phoneNumber role"
+      });
+
+    if (!schedule) {
+      return res.status(404).json({
+        success: false,
+        message: `Không tìm thấy lịch trình đang hoạt động cho route '${route_id}'`
+      });
+    }
+
+    res.status(200).json(schedule);
+
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy BusSchedule theo route_id:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server!",
+      error: error.message
+    });
+  }
+};
+
+
+
+// READ BY DRIVER ID
+export const getBusScheduleByDriverId = async (req, res) => {
+  try {
+    const { driver_id } = req.params;
+
+    if (!driver_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu driver_id trong request params"
+      });
+    }
+
+    const schedules = await BusSchedule.find({ driver_id })
+      .populate({
+        path: "bus_id",
+        select: "license_plate capacity status"
+      })
+      .populate({
+        path: "route_id",
+        select: "name",
+        populate: [
+          { path: "start_point", select: "name" },
+          { path: "end_point", select: "name" }
+        ]
+      })
+      .populate({
+        path: "driver_id",
+        select: "name phone role"
+      });
+
+    if (schedules.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Không tìm thấy lịch trình nào cho tài xế ID '${driver_id}'`
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      total: schedules.length,
+      data: schedules
+    });
+
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy BusSchedule theo driver_id:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server!",
+      error: error.message
+    });
+  }
+};
+
+
+
+
 export const createBusSchedule = async (req, res) => {
   try {
-    const { bus_id, driver_id, route_id, date, start_time, end_time } = req.body;
+    const { bus_id, driver_id, route_id, start_time, end_time } = req.body;
 
     // ===== VALIDATION =====
 
     // 1. Kiểm tra các trường bắt buộc
-    if (!bus_id || !driver_id || !route_id || !date || !start_time) {
+    if (!bus_id || !driver_id || !route_id || !start_time) {
       return res.status(400).json({
         success: false,
-        message: 'Thiếu thông tin bắt buộc (bus_id, driver_id, route_id, date, start_time)'
+        message: 'Thiếu thông tin bắt buộc (bus_id, driver_id, route_id, start_time)'
       });
     }
 
@@ -83,17 +194,15 @@ export const createBusSchedule = async (req, res) => {
     // 9. Kiểm tra Bus đã có lịch trong thời gian này chưa
     const busConflict = await BusSchedule.findOne({
       bus_id: bus._id,
-      date: new Date(date),
       status: { $in: ['scheduled', 'in_progress'] }
     });
 
     if (busConflict) {
       return res.status(409).json({
         success: false,
-        message: `Xe bus '${bus.license_plate}' đã có lịch vào ngày ${date}`,
+        message: `Xe bus '${bus.license_plate}' đã có lịch vào ngày }`,
         conflict: {
           schedule_id: busConflict.schedule_id,
-          date: busConflict.date,
           start_time: busConflict.start_time
         }
       });
@@ -102,17 +211,17 @@ export const createBusSchedule = async (req, res) => {
     // 10. Kiểm tra Driver đã có lịch trong thời gian này chưa
     const driverConflict = await BusSchedule.findOne({
       driver_id: driver._id,
-      date: new Date(date),
+  
       status: { $in: ['scheduled', 'in_progress'] }
     });
 
     if (driverConflict) {
       return res.status(409).json({
         success: false,
-        message: `Tài xế '${driver.name}' đã có lịch vào ngày ${date}`,
+        message: `Tài xế '${driver.name}' đã có lịch `,
         conflict: {
           schedule_id: driverConflict.schedule_id,
-          date: driverConflict.date,
+         
           start_time: driverConflict.start_time
         }
       });
@@ -124,7 +233,6 @@ export const createBusSchedule = async (req, res) => {
       bus_id: bus._id,
       driver_id: driver._id,
       route_id: route._id,
-      date: new Date(date),
       start_time,
       end_time,
       status: 'scheduled'
@@ -214,7 +322,7 @@ export const getAllBusSchedules = async (req, res) => {
     const schedules = await BusSchedule.find()
       .populate({ path: "bus_id", select: "license_plate capacity status" })
       .populate({ path: "driver_id", select: "name phone role" })
-      .populate({ path: "route_id", select: "name start_point end_point path" });
+      .populate({ path: "route_id", select: "name " });
 
     res.status(200).json(schedules);
   } catch (error) {

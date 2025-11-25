@@ -11,7 +11,7 @@ const router = express.Router();
 
 router.post("/", createRouteStop);
 router.get("/", getAllRouteStops);
-router.get("/route/:routeId", getStopsByRoute);
+router.get("/:routeId", getStopsByRoute);
 router.put("/:id", updateRouteStop);
 router.delete("/:id", deleteRouteStop);
 

@@ -26,7 +26,7 @@ studentSchema.pre('save', async function (next) {
     const counter = await Counter.findOneAndUpdate(
       { name: 'student' },
       { $inc: { seq: 1 } },
-      { new: true, upsert: true } // tạo nếu chưa tồn tại
+      { new: true, upsert: true } 
     );
 
     const nextNumber = counter.seq.toString().padStart(3, '0');

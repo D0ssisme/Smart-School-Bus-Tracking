@@ -1,4 +1,6 @@
 import Student from "../models/Student.js";
+import ParentStudent from "../models/ParentStudent.js";
+import StudentRouteAssignment from "../models/StudentRouteAssignment.js";
 
 // 🟢 Lấy toàn bộ danh sách học sinh
 export const getAllStudents = async (req, res) => {
@@ -78,24 +80,45 @@ export const updateStudent = async (req, res) => {
 };
 
 // 🟢 Xóa học sinh
+// 🟢 Xóa học sinh
 export const deleteStudent = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const deletedStudent =
-      (await Student.findByIdAndDelete(id)) ||
-      (await Student.findOneAndDelete({ student_id: id }));
+    // 1. Tìm học sinh trước
+    const student = await Student.findById(id) || await Student.findOne({ student_id: id });
 
-    if (!deletedStudent) {
+    if (!student) {
       return res.status(404).json({ message: "Không tìm thấy học sinh để xóa!" });
     }
 
+    const studentId = student._id;
+
+    // 2. Xóa liên kết trong bảng ParentStudent
+    const deletedParentRelations = await ParentStudent.deleteMany({ student_id: studentId });
+    console.log(`🗑️ Đã xóa ${deletedParentRelations.deletedCount} liên kết parent-student`);
+
+    // 3. Xóa liên kết trong bảng StudentRouteAssignments
+    const deletedRouteAssignments = await StudentRouteAssignment.deleteMany({ student_id: studentId });
+    console.log(`🗑️ Đã xóa ${deletedRouteAssignments.deletedCount} phân công tuyến đường`);
+
+    // 4. Xóa học sinh
+    const deletedStudent = await Student.findByIdAndDelete(studentId);
+
     res.status(200).json({
-      message: "🗑️ Xóa học sinh thành công!",
+      message: "🗑️ Xóa học sinh và các liên kết thành công!",
       student: deletedStudent,
+      deletedRelations: {
+        parentRelations: deletedParentRelations.deletedCount,
+        routeAssignments: deletedRouteAssignments.deletedCount
+      }
     });
+
   } catch (error) {
     console.error("❌ Lỗi khi xóa học sinh:", error);
-    res.status(500).json({ message: "Lỗi server khi xóa học sinh!" });
+    res.status(500).json({
+      message: "Lỗi server khi xóa học sinh!",
+      error: error.message
+    });
   }
 };

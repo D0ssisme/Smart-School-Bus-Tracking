@@ -16,17 +16,28 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  phoneNumber: String,
+  phoneNumber: {
+    type: String,
+    required: true, // Bắt buộc phải có
+    unique: true
+  },
   role: {
     type: String,
     enum: ['admin', 'parent', 'driver'],
     required: true
   },
   driverInfo: {
-    licenseNumber: String,
-    vehiclePlate: String
+    licenseNumber: String
+
   },
-  parentInfo: {},
+  parentInfo: {
+    address: {
+      type: String,
+      trim: true // Nên có trim để loại bỏ khoảng trắng thừa
+    }
+
+
+  },
   createdAt: {
     type: Date,
     default: Date.now

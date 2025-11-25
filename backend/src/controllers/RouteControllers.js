@@ -4,62 +4,104 @@ import RouteStop from "../models/RouteStop.js";
 import Stop from "../models/Stop.js";
 import mongoose from "mongoose";
 
-
-
-
-
-
-// 🟢 Tạo tuyến tự động
-export const createRouteAuto = async (req, res) => {
+export const getRouteWithStops = async (req, res) => {
   try {
-    const { name, stopIds } = req.body; // stopIds = ["stopId1", "stopId2", ...]
+    const { routeId } = req.params;
 
-    if (!stopIds || stopIds.length < 2)
-      return res.status(400).json({ message: "Cần ít nhất 2 điểm dừng!" });
+    const route = await Route.findById(routeId)
+      .populate('start_point')
+      .populate('end_point');
 
-    // Lấy Stop chi tiết từ DB
-    const stops = await Stop.find({ _id: { $in: stopIds }, status: "active" });
-    if (stops.length !== stopIds.length)
-      return res.status(400).json({ message: "Một số stop không tồn tại hoặc inactive!" });
-
-    // Tạo route mới
-    const route = new Route({
-      name,
-      start_point: stopIds[0],
-      end_point: stopIds[stopIds.length - 1],
-    });
-
-    // 🛣 Call Routing API để lấy path
-    const coordinates = stops.map(s => s.location.coordinates); // [[lng, lat], ...]
-    
-    // Ví dụ: giả lập path trực tiếp theo stop (thực tế gọi API Google/Mapbox)
-    route.path.coordinates = coordinates;
-    
-    await route.save();
-
-    // Tạo RouteStop theo thứ tự
-    const routeStops = [];
-    for (let i = 0; i < stopIds.length; i++) {
-      const rs = new RouteStop({
-        route_id: route._id,
-        stop_id: stopIds[i],
-        order_number: i + 1,
-        estimated_arrival: null, // có thể tính sau
-      });
-      await rs.save();
-      routeStops.push(rs);
+    if (!route) {
+      return res.status(404).json({ message: "Route not found" });
     }
 
-    res.status(201).json({
-      message: "Tạo tuyến đường & RouteStop tự động thành công!",
-      route,
-      routeStops,
+    // Lấy stops theo thứ tự
+    const routeStops = await RouteStop.find({ route_id: routeId })
+      .populate('stop_id')
+      .sort({ order_number: 1 });
+
+    res.json({
+      ...route.toObject(),
+      stops: routeStops.map(rs => ({
+        ...rs.stop_id.toObject(),
+        order_number: rs.order_number,
+        estimated_arrival: rs.estimated_arrival
+      }))
     });
-  } catch (error) {
-    console.error("❌ Lỗi khi tạo tuyến tự động:", error);
-    res.status(500).json({ message: "Lỗi server!", error: error.message });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
+
+
+
+export const createRouteAuto = async (req, res) => {
+    try {
+        let { name, stops } = req.body;
+        // stops = [{ name: "Stop A", address: "...", coordinates: [lng, lat] }, ...]
+
+        if (!stops || stops.length < 2) {
+            return res.status(400).json({ message: "Cần ít nhất 2 điểm dừng!" });
+        }
+
+        const stopIds = [];
+
+        for (let stop of stops) {
+            // Kiểm tra stop đã tồn tại dựa trên tọa độ (hoặc theo name nếu muốn)
+            let existingStop = await Stop.findOne({
+                "location.coordinates": stop.coordinates,
+            });
+
+            if (!existingStop) {
+                // Nếu chưa có thì tạo mới
+                const newStop = new Stop({
+                    name: stop.name,
+                    address: stop.address,
+                    location: {
+                        type: "Point",
+                        coordinates: stop.coordinates,
+                    },
+                });
+                await newStop.save();
+                stopIds.push(newStop._id);
+            } else {
+                stopIds.push(existingStop._id);
+            }
+        }
+
+        // Tạo Route mới
+        const route = new Route({
+            name,
+            start_point: stopIds[0],
+            end_point: stopIds[stopIds.length - 1],
+            path: {
+                coordinates: stops.map((s) => s.coordinates), // giả lập path
+            },
+        });
+        await route.save();
+
+        // Tạo RouteStop theo thứ tự
+        for (let i = 0; i < stopIds.length; i++) {
+            const routeStop = new RouteStop({
+                route_id: route._id,
+                stop_id: stopIds[i],
+                order_number: i + 1,
+            });
+            await routeStop.save();
+        }
+
+        res.status(201).json({
+            message: "Tạo tuyến đường & stop tự động thành công!",
+            route,
+            stopIds,
+        });
+    } catch (error) {
+        console.error("❌ Lỗi khi tạo tuyến tự động:", error);
+        res.status(500).json({ message: "Lỗi server!", error: error.message });
+    }
+};
+
 
 // 🟢 Lấy tất cả tuyến đường
 export const getAllRoutes = async (req, res) => {

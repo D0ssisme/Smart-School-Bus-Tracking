@@ -4,11 +4,18 @@ import {
   getAllStudentBusAssignments,
   getStudentBusAssignmentById,
   updateStudentBusAssignment,
+  deleteStudentBusAssignment,
+  getStudentBusAssignmentByStudentId,
+  getCountStudentByScheduleId
+  
+  
 
 } from "../controllers/StudentBusAssignmentController.js";
 
 const router = express.Router();
+router.get('/student/:student_id', getStudentBusAssignmentByStudentId);
 
+router.get('/schedule/:schedule_id/count', getCountStudentByScheduleId);
 // 🟢 Tạo mới
 router.post("/", createStudentBusAssignment);
 
@@ -20,6 +27,9 @@ router.get("/:id", getStudentBusAssignmentById);
 
 // 🟠 Cập nhật
 router.put("/:id", updateStudentBusAssignment);
+
+router.delete("/:id", deleteStudentBusAssignment);
+
 
 
 
