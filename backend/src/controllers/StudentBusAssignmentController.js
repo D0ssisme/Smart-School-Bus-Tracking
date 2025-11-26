@@ -8,7 +8,7 @@ export const getStudentBusAssignmentByStudentId = async (req, res) => {
 
     const assignment = await StudentBusAssignment.findOne({
       student_id,
-      pickup_status: { $ne: 'dropped' } // Chưa trả học sinh
+   
     })
       .populate("student_id", "name grade")
       .populate({
