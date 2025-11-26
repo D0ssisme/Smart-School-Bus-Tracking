@@ -1,6 +1,3 @@
-
-
-// ⭐ Update bus location (called by simulator)
 // src/controllers/busLocationController.js
 import BusLocation from '../models/BusLocation.js';
 import StudentRouteAssignment from '../models/StudentRouteAssignment.js';
@@ -8,8 +5,8 @@ import ParentStudent from '../models/ParentStudent.js';
 import { io, userSockets } from '../server.js';
 import Notification from '../models/Notification.js';
 
-// Cache để tránh gửi thông báo trùng lặp
-const sentAlerts = new Map();
+// 🎯 Cache để lưu trạng thái đã gửi thông báo (tránh spam) - CHỈ GỬI 1 LẦN
+const sentAlerts = new Map(); // Key: `${studentId}_${stopId}_${type}` → Value: timestamp
 
 // ⭐ Update bus location (called by simulator)
 export const updateBusLocation = async (req, res) => {
@@ -66,7 +63,7 @@ export const updateBusLocation = async (req, res) => {
         });
         console.log(`📡 Broadcasted to bus_${bus_id}`);
 
-        // Check proximity alerts (async, không block response)
+        // ✅ Check proximity alerts - 100m và CHỈ GỬI 1 LẦN
         if (schedule_id) {
             checkProximityAlerts(bus_id, schedule_id, latitude, longitude).catch(err => {
                 console.error('❌ Proximity check error:', err);
@@ -90,8 +87,6 @@ export const updateBusLocation = async (req, res) => {
         });
     }
 };
-
-
 
 // Get current bus location
 export const getCurrentBusLocation = async (req, res) => {
@@ -139,19 +134,18 @@ export const getBusLocationHistory = async (req, res) => {
     }
 };
 
-// 🔔 Check proximity and send alerts
+// 🔔 Check proximity và gửi alert khi xe bus cách 100m - CHỈ GỬI 1 LẦN
 async function checkProximityAlerts(bus_id, schedule_id, busLat, busLng) {
     try {
         const BusSchedule = (await import('../models/BusSchedule.js')).default;
-        const Stop = (await import('../models/Stop.js')).default;
 
-        // Get schedule with route
+        // Lấy schedule với route
         const schedule = await BusSchedule.findById(schedule_id)
             .populate('route_id');
 
         if (!schedule) return;
 
-        // Get all students on this route
+        // Lấy tất cả học sinh trên tuyến này
         const studentAssignments = await StudentRouteAssignment.find({
             route_id: schedule.route_id._id,
             active: true
@@ -161,48 +155,93 @@ async function checkProximityAlerts(bus_id, schedule_id, busLat, busLng) {
             .populate('dropoff_stop_id');
 
         for (const assignment of studentAssignments) {
+            const studentId = assignment.student_id._id.toString();
+
+            // ✅ CHECK PICKUP STOP (Điểm đón)
             const pickupStop = assignment.pickup_stop_id;
-            if (!pickupStop?.location) continue;
+            if (pickupStop?.location) {
+                const distanceToPickup = calculateDistance(
+                    busLat,
+                    busLng,
+                    pickupStop.location.coordinates[1],
+                    pickupStop.location.coordinates[0]
+                );
 
-            // Calculate distance to pickup stop
-            const distance = calculateDistance(
-                busLat,
-                busLng,
-                pickupStop.location.coordinates[1],
-                pickupStop.location.coordinates[0]
-            );
+                // 🎯 Nếu xe cách điểm đón < 100m (0.1km) VÀ chưa gửi thông báo
+                const pickupAlertKey = `${studentId}_${pickupStop._id}_pickup`;
 
-            // 🔔 Alert when bus is within 1km
-            if (distance < 1 && distance > 0.5) {
-                await sendProximityAlert(assignment.student_id, pickupStop, distance, '1km');
+                if (distanceToPickup < 0.1 && !sentAlerts.has(pickupAlertKey)) {
+                    await sendProximityAlert(
+                        assignment.student_id,
+                        pickupStop,
+                        distanceToPickup,
+                        'pickup'
+                    );
+
+                    // ✅ Đánh dấu đã gửi (valid trong 15 phút)
+                    sentAlerts.set(pickupAlertKey, Date.now());
+                    setTimeout(() => sentAlerts.delete(pickupAlertKey), 15 * 60 * 1000);
+
+                    console.log(`✅ Sent PICKUP alert for student ${assignment.student_id.name} at ${(distanceToPickup * 1000).toFixed(0)}m`);
+                }
             }
 
-            // 🔔 Alert when bus arrives at stop
-            if (distance < 0.05) { // Within 50m
-                await sendArrivalAlert(assignment.student_id, pickupStop);
+            // ✅ CHECK DROPOFF STOP (Điểm trả)
+            const dropoffStop = assignment.dropoff_stop_id;
+            if (dropoffStop?.location) {
+                const distanceToDropoff = calculateDistance(
+                    busLat,
+                    busLng,
+                    dropoffStop.location.coordinates[1],
+                    dropoffStop.location.coordinates[0]
+                );
+
+                // 🎯 Nếu xe cách điểm trả < 100m (0.1km) VÀ chưa gửi thông báo
+                const dropoffAlertKey = `${studentId}_${dropoffStop._id}_dropoff`;
+
+                if (distanceToDropoff < 0.1 && !sentAlerts.has(dropoffAlertKey)) {
+                    await sendProximityAlert(
+                        assignment.student_id,
+                        dropoffStop,
+                        distanceToDropoff,
+                        'dropoff'
+                    );
+
+                    // ✅ Đánh dấu đã gửi (valid trong 15 phút)
+                    sentAlerts.set(dropoffAlertKey, Date.now());
+                    setTimeout(() => sentAlerts.delete(dropoffAlertKey), 15 * 60 * 1000);
+
+                    console.log(`✅ Sent DROPOFF alert for student ${assignment.student_id.name} at ${(distanceToDropoff * 1000).toFixed(0)}m`);
+                }
             }
         }
     } catch (error) {
-        console.error('Error checking proximity alerts:', error);
+        console.error('❌ Error checking proximity alerts:', error);
     }
 }
 
-// 📨 Send proximity alert
-async function sendProximityAlert(student, stop, distance, threshold) {
+// 📨 Gửi thông báo proximity - CẢ ĐIỂM ĐÓN VÀ ĐIỂM TRẢ
+async function sendProximityAlert(student, stop, distance, type) {
     try {
-        // Get all parents of this student
+        // Lấy tất cả phụ huynh của học sinh này
         const parentLinks = await ParentStudent.find({ student_id: student._id })
             .populate('parent_id');
+
+        const stopType = type === 'pickup' ? 'điểm đón' : 'điểm trả';
+        const icon = type === 'pickup' ? '🚏' : '🏫';
+        const message = type === 'pickup'
+            ? `Xe bus đã đến ${stop.name} (cách ${(distance * 1000).toFixed(0)}m). Vui lòng chuẩn bị đón ${student.name}.`
+            : `Xe bus đã đến ${stop.name} (cách ${(distance * 1000).toFixed(0)}m). ${student.name} sắp về đến nhà.`;
 
         for (const link of parentLinks) {
             const parent = link.parent_id;
             if (!parent) continue;
 
-            // Create notification
+            // Tạo notification
             const notification = await Notification.create({
                 receiver_id: parent._id,
-                title: `🚌 Xe bus sắp đến!`,
-                message: `Xe bus đang cách điểm đón ${stop.name} khoảng ${distance.toFixed(2)} km. Dự kiến đến trong ${Math.ceil(distance / 0.4)} phút nữa.`,
+                title: `${icon} Xe bus đã đến ${stopType}!`,
+                message: message,
                 type: 'info',
                 priority: 'high',
                 related_type: 'bus_location',
@@ -212,49 +251,15 @@ async function sendProximityAlert(student, stop, distance, threshold) {
 
             await notification.populate('receiver_id', 'name role');
 
-            // 🔥 Send via Socket.IO
+            // 🔥 Gửi qua Socket.IO
             const socketId = userSockets.get(parent._id.toString());
             if (socketId) {
                 io.to(socketId).emit('new_notification', notification);
-                console.log(`📨 Sent proximity alert to parent ${parent.name}`);
+                console.log(`📨 Sent ${type} alert to parent ${parent.name}`);
             }
         }
     } catch (error) {
-        console.error('Error sending proximity alert:', error);
-    }
-}
-
-// 📨 Send arrival alert
-async function sendArrivalAlert(student, stop) {
-    try {
-        const parentLinks = await ParentStudent.find({ student_id: student._id })
-            .populate('parent_id');
-
-        for (const link of parentLinks) {
-            const parent = link.parent_id;
-            if (!parent) continue;
-
-            const notification = await Notification.create({
-                receiver_id: parent._id,
-                title: `📍 Xe bus đã đến!`,
-                message: `Xe bus đã đến ${stop.name}. Vui lòng chuẩn bị đón ${student.name}.`,
-                type: 'success',
-                priority: 'urgent',
-                related_type: 'bus_arrival',
-                related_id: student._id,
-                isRead: false
-            });
-
-            await notification.populate('receiver_id', 'name role');
-
-            const socketId = userSockets.get(parent._id.toString());
-            if (socketId) {
-                io.to(socketId).emit('new_notification', notification);
-                console.log(`📨 Sent arrival alert to parent ${parent.name}`);
-            }
-        }
-    } catch (error) {
-        console.error('Error sending arrival alert:', error);
+        console.error('❌ Error sending proximity alert:', error);
     }
 }
 

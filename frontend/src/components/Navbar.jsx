@@ -12,6 +12,17 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // ⭐ Hàm xử lý smooth scroll
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
   return (
     <nav className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-blue-800 shadow-lg' : 'bg-blue-900 shadow-md'
       }`}>
@@ -38,24 +49,23 @@ function Navbar() {
           >
             Trang chủ
           </Link>
-          <Link
-            to="/dashboard"
+
+          {/* ⭐ Bấm vào "Tính năng" → scroll đến #features */}
+          <button
+            onClick={() => scrollToSection('features')}
             className="relative text-white hover:text-gray-300 transition font-medium after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
           >
             Tính năng
-          </Link>
-          <Link
-            to="/contact"
+          </button>
+
+          {/* ⭐ Bấm vào "Liên hệ" → scroll đến #contact */}
+          <button
+            onClick={() => scrollToSection('contact')}
             className="relative text-white hover:text-gray-300 transition font-medium after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
           >
             Liên hệ
-          </Link>
-          <Link
-            to="/parent/tracking"
-            className="relative text-white hover:text-gray-300 transition font-medium after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
-          >
-           Phụ huynh
-          </Link>
+          </button>
+
           <Link
             to="/login"
             className="px-6 py-2.5 bg-white text-blue-900 rounded-lg hover:shadow-xl transition-all duration-300 font-semibold transform hover:scale-105"

@@ -49,17 +49,8 @@ class BusSimulator {
 
       console.log(`📍 Loaded ${this.stops.length} stops`);
 
-      // 3. Tạo path
-      if (this.schedule.route_id.path?.coordinates) {
-        // Sử dụng path có sẵn
-        this.path = this.schedule.route_id.path.coordinates.map(coord => ({
-          longitude: coord[0],
-          latitude: coord[1]
-        }));
-      } else {
-        // Tạo từ stops
-        this.path = this.generatePathFromStops(this.stops);
-      }
+      // 3. ✅ LUÔN generate path mới từ stops để đảm bảo mượt mà
+      this.path = this.generatePathFromStops(this.stops);
 
       console.log(`✅ Generated path with ${this.path.length} points`);
       return true;
@@ -70,15 +61,27 @@ class BusSimulator {
     }
   }
 
-  // Tạo path mượt giữa các stops
+  // ✅ Tạo path mượt giữa các stops - FIXED VERSION
   generatePathFromStops(stops) {
     const path = [];
+    const METERS_PER_STEP = 50; // 🔧 Mỗi bước di chuyển 50m (điều chỉnh theo ý muốn)
 
     for (let i = 0; i < stops.length - 1; i++) {
       const start = stops[i].location.coordinates;
       const end = stops[i + 1].location.coordinates;
-      const steps = 20; // 🔧 20 điểm giữa mỗi stop (ít hơn = mượt hơn)
 
+      // ✅ Tính khoảng cách thực tế giữa 2 stops
+      const distance = this.calculateDistance(
+        start[1], start[0],  // latitude, longitude
+        end[1], end[0]
+      ) * 1000; // Chuyển km → m
+
+      // ✅ Tính số bước dựa trên khoảng cách
+      const steps = Math.max(5, Math.ceil(distance / METERS_PER_STEP));
+
+      console.log(`📏 Distance ${stops[i].name} → ${stops[i + 1].name}: ${distance.toFixed(0)}m → ${steps} steps`);
+
+      // Tạo các điểm trung gian
       for (let j = 0; j <= steps; j++) {
         const t = j / steps;
         path.push({
