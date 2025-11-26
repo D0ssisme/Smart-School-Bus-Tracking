@@ -52,10 +52,7 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete }) => {
                 <Info size={16} className="mr-3" />
                 Danh sách học sinh
               </Link>
-              <Link to={`/buses/${bus.id}/checkin`} state={{ busData: allBusData, studentData: allStudentData }} className="group flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-                <CalendarCheck size={16} className="mr-3" />
-                Check in / Check out
-              </Link>
+             
               <button onClick={handleEditClick} className="group flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                 <Pencil size={16} className="mr-3" />
                 Sửa thông tin

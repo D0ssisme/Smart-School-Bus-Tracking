@@ -15,7 +15,8 @@ class BusSimulator {
     this.currentStopIndex = 0;
     this.isRunning = false;
     this.intervalId = null;
-    this.speed = 2000; // Update every 2 seconds
+    this.speed = 5000; // 🔧 5 giây mỗi bước (RẤT chậm để test dễ)
+    this.isCompleted = false; // ✅ Thêm flag để check xe đã hoàn thành chưa
   }
 
   // Khởi tạo từ schedule
@@ -72,11 +73,11 @@ class BusSimulator {
   // Tạo path mượt giữa các stops
   generatePathFromStops(stops) {
     const path = [];
-    
+
     for (let i = 0; i < stops.length - 1; i++) {
       const start = stops[i].location.coordinates;
       const end = stops[i + 1].location.coordinates;
-      const steps = 100; // 100 bước giữa mỗi stop
+      const steps = 20; // 🔧 20 điểm giữa mỗi stop (ít hơn = mượt hơn)
 
       for (let j = 0; j <= steps; j++) {
         const t = j / steps;
@@ -107,6 +108,7 @@ class BusSimulator {
     }
 
     this.isRunning = true;
+    this.isCompleted = false; // ✅ Reset completed flag
     this.intervalId = setInterval(() => {
       this.update();
     }, this.speed);
@@ -128,6 +130,20 @@ class BusSimulator {
   async update() {
     if (!this.path || this.path.length === 0) return;
 
+    // ✅ CHECK: Nếu đã đến điểm cuối thì DỪNG LẠI
+    if (this.currentIndex >= this.path.length - 1) {
+      if (!this.isCompleted) {
+        this.isCompleted = true;
+        console.log(`🏁 Bus has reached the final destination!`);
+        console.log(`📍 Final stop: ${this.stops[this.stops.length - 1].name}`);
+
+        // Update trạng thái cuối cùng
+        await this.updateFinalLocation();
+      }
+      this.stop(); // Dừng hẳn simulator
+      return;
+    }
+
     const position = this.path[this.currentIndex];
 
     // Kiểm tra xe đến stop
@@ -148,11 +164,28 @@ class BusSimulator {
         current_stop_index: this.currentStopIndex
       });
 
-      // Next position
-      this.currentIndex = (this.currentIndex + 1) % this.path.length;
+      // ✅ Next position - KHÔNG loop lại nữa
+      this.currentIndex++;
 
     } catch (error) {
       console.error('❌ Update error:', error.message);
+    }
+  }
+
+  // ✅ Cập nhật vị trí cuối cùng khi xe đã hoàn thành
+  async updateFinalLocation() {
+    try {
+      const finalPosition = this.path[this.path.length - 1];
+      await axios.post('http://localhost:8080/api/bus-locations/update', {
+        bus_id: this.schedule.bus_id._id,
+        latitude: finalPosition.latitude,
+        longitude: finalPosition.longitude,
+        schedule_id: this.scheduleId,
+        current_stop_index: this.stops.length - 1,
+        is_completed: true // Thêm flag để backend biết xe đã xong
+      });
+    } catch (error) {
+      console.error('❌ Final update error:', error.message);
     }
   }
 
@@ -229,11 +262,12 @@ class BusSimulator {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 }
+
 export default BusSimulator;

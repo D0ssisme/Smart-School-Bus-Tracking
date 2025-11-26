@@ -43,9 +43,6 @@ export default function ParentTracking() {
         getStopsApi()
       ]);
 
-      console.log("🚏 Route assignments:", routeAssignments);
-      console.log("📍 All stops:", stopsData);
-
       setAllStops(stopsData);
 
       const transformedStudents = studentsData.map(item => {
@@ -56,8 +53,6 @@ export default function ParentTracking() {
           const raStudentId = ra.student_id?._id || ra.student_id;
           return raStudentId?.toString() === studentId?.toString();
         });
-
-        console.log(`🔍 Route assignment for ${student.name}:`, routeAssignment);
 
         let pickupStop = null;
         let dropoffStop = null;
@@ -72,9 +67,6 @@ export default function ParentTracking() {
           dropoffStop = stopsData.find(stop =>
             (stop._id?.toString() === dropoffStopId?.toString())
           );
-
-          console.log(`  📍 Pickup stop (${pickupStopId}):`, pickupStop);
-          console.log(`  📍 Dropoff stop (${dropoffStopId}):`, dropoffStop);
         }
 
         return {
@@ -99,8 +91,6 @@ export default function ParentTracking() {
           routeAssignment: routeAssignment
         };
       });
-
-      console.log("✅ Transformed students:", transformedStudents);
 
       setStudents(transformedStudents);
       if (transformedStudents.length > 0) {
@@ -143,14 +133,9 @@ export default function ParentTracking() {
       console.log('📡 Fetching route stops from API:', student.route_id);
       try {
         const response = await axios.get(`http://localhost:8080/api/route/${student.route_id}`);
-        console.log('📦 Full API Response:', JSON.stringify(response.data, null, 2));
 
         if (response.data && response.data.stops && response.data.stops.length > 0) {
-          console.log(`📊 Found ${response.data.stops.length} stops in API response`);
-
           const transformedStops = response.data.stops.map((stopData, index) => {
-            console.log(`🔍 Processing stop ${index + 1}:`, stopData);
-
             const stopInfo = stopData.stop_id || stopData;
 
             return {
@@ -168,42 +153,27 @@ export default function ParentTracking() {
           console.log('✅ Transformed stops from API:', transformedStops);
           setRouteStops(transformedStops);
           return;
-        } else {
-          console.log('⚠️ API response has no stops or empty stops array');
         }
       } catch (error) {
         console.log('⚠️ API fetch failed, using fallback:', error.message);
-        console.log('Error details:', error.response?.data || error);
       }
     }
 
     if (student.pickup_stop_id && student.dropoff_stop_id) {
-      console.log('🔨 Building route from pickup & dropoff stops');
-
       const pickupStopData = allStops.find(s => s._id?.toString() === student.pickup_stop_id?.toString());
       const dropoffStopData = allStops.find(s => s._id?.toString() === student.dropoff_stop_id?.toString());
 
       if (pickupStopData && dropoffStopData) {
         const constructedStops = [
-          {
-            stop_id: pickupStopData,
-            order: 1,
-            estimated_arrival_time: null
-          },
-          {
-            stop_id: dropoffStopData,
-            order: 2,
-            estimated_arrival_time: null
-          }
+          { stop_id: pickupStopData, order: 1, estimated_arrival_time: null },
+          { stop_id: dropoffStopData, order: 2, estimated_arrival_time: null }
         ];
 
-        console.log('✅ Constructed route stops:', constructedStops);
         setRouteStops(constructedStops);
         return;
       }
     }
 
-    console.log('🔍 Using all assignments fallback');
     buildRouteStopsFromAllAssignments(student.route_id);
   };
 
@@ -215,8 +185,6 @@ export default function ParentTracking() {
         const assignmentRouteId = assignment.route_id?._id || assignment.route_id;
         return assignmentRouteId?.toString() === routeId?.toString();
       });
-
-      console.log(`📦 Found ${sameRouteAssignments.length} assignments for this route`);
 
       if (sameRouteAssignments.length === 0) {
         setRouteStops([]);
@@ -250,7 +218,6 @@ export default function ParentTracking() {
         estimated_arrival_time: null
       }));
 
-      console.log(`✅ Built ${constructedStops.length} unique stops from assignments:`, constructedStops);
       setRouteStops(constructedStops);
 
     } catch (error) {
@@ -274,10 +241,10 @@ export default function ParentTracking() {
       setBusInfo(schedule);
 
       const busId = schedule.bus_id?._id || schedule.bus_id;
-      console.log(`📍 Fetching location for bus: ${busId}`);
+      console.log(`📍 Fetching initial location for bus: ${busId}`);
 
       const locationRes = await axios.get(`http://localhost:8080/api/bus-locations/${busId}`);
-      console.log('✅ Bus location:', locationRes.data);
+      console.log('✅ Initial bus location:', locationRes.data);
 
       setBusLocation(locationRes.data);
 
@@ -296,29 +263,53 @@ export default function ParentTracking() {
     }
   };
 
+  // 🚀 SOCKET REALTIME TRACKING - Fixed!
   useEffect(() => {
-    if (!socket || !busInfo?.bus_id) return;
+    if (!socket || !busInfo?.bus_id) {
+      console.log('⏳ Waiting for socket or busInfo...');
+      return;
+    }
 
     const busId = busInfo.bus_id._id || busInfo.bus_id;
+    console.log(`🔌 Setting up socket listener for bus: ${busId}`);
+
+    // Subscribe to bus updates
+    socket.emit('subscribe_bus', busId);
 
     const handleLocationUpdate = (data) => {
-      console.log('🚌 Location update:', data);
-      setBusLocation(prev => ({
-        ...prev,
+      console.log('🚌 REALTIME Location update received:', {
+        bus_id: data.bus_id,
+        lat: data.latitude?.toFixed(6),
+        lng: data.longitude?.toFixed(6),
+        timestamp: new Date(data.timestamp).toLocaleTimeString()
+      });
+
+      // Update bus location state
+      setBusLocation({
+        bus_id: data.bus_id,
         latitude: data.latitude,
         longitude: data.longitude,
-        timestamp: data.timestamp
-      }));
+        timestamp: data.timestamp,
+        schedule_id: data.schedule_id,
+        current_stop_index: data.current_stop_index
+      });
 
+      // Refresh student status if needed
       if (selectedStudent?._id) {
         fetchStudentStatus(selectedStudent._id);
       }
     };
 
-    socket.on(`bus_location_${busId}`, handleLocationUpdate);
+    // Listen to bus location updates (match backend event name)
+    socket.on('bus_location_update', handleLocationUpdate);
 
+    console.log(`✅ Socket listener registered for: bus_location_update in room bus_${busId}`);
+
+    // Cleanup on unmount or when busInfo changes
     return () => {
+      console.log(`🧹 Cleaning up socket listener for bus: ${busId}`);
       socket.off(`bus_location_${busId}`, handleLocationUpdate);
+      socket.emit('unsubscribe_bus', busId);
     };
   }, [socket, busInfo, selectedStudent]);
 
@@ -349,7 +340,8 @@ export default function ParentTracking() {
       case "picked":
         return <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">✅ Đã đón</span>;
       case "dropped":
-        return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">📍 Đã trả</span>;
+      case "completed":
+        return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">✅ Hoàn thành</span>;
       case "pending":
         return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">🚌 Đang đi</span>;
       default:
@@ -392,7 +384,7 @@ export default function ParentTracking() {
       <div className="bg-white border-b shadow-sm px-4 py-4">
         <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <MapPin className="text-blue-600" size={24} />
-          Theo dõi xe buýt học sinh 
+          Theo dõi xe buýt học sinh
         </h1>
       </div>
 
@@ -406,22 +398,13 @@ export default function ParentTracking() {
                 <div className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    <span className="font-semibold text-sm">🔴 LIVE - Đang theo dõi</span>
+                    <span className="font-semibold text-sm">🔴 LIVE - Đang theo dõi realtime</span>
                   </div>
                   <span className="text-xs">
                     {new Date(busLocation.timestamp).toLocaleTimeString('vi-VN')}
                   </span>
                 </div>
               )}
-
-              {/* Debug Info */}
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-3 text-xs">
-                <p className="font-bold text-blue-800 mb-1">ℹ️ Thông tin tuyến:</p>
-                <p>• Số điểm dừng: <span className="font-bold">{routeStops?.length || 0}</span></p>
-                <p>• Vị trí xe bus: <span className="font-bold">{busLocation ? '✅ Đang hoạt động' : '❌ Chưa khởi hành'}</span></p>
-                <p>• Điểm đón: <span className="font-bold">{selectedStudent?.pickup_stop_name}</span></p>
-                <p>• Điểm trả: <span className="font-bold">{selectedStudent?.dropoff_stop_name}</span></p>
-              </div>
 
               {/* Map Container */}
               <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full" style={{ height: '60vh' }}>
@@ -489,7 +472,6 @@ export default function ParentTracking() {
                     value={selectedStudent?._id || ''}
                     onChange={(e) => {
                       const student = students.find(s => s._id === e.target.value);
-                      console.log('👤 Student selected:', student);
                       setSelectedStudent(student);
                     }}
                     className="w-full px-4 py-3 pr-10 border-2 border-white rounded-lg outline-none focus:ring-4 focus:ring-yellow-300 appearance-none cursor-pointer bg-white hover:bg-gray-50 transition-all font-bold text-gray-800 shadow-md"
@@ -501,11 +483,6 @@ export default function ParentTracking() {
                     ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none" size={20} />
-                </div>
-                <div className="mt-3 bg-white/20 backdrop-blur-sm rounded-lg p-2 border border-white/30">
-                  <p className="text-xs text-white font-medium">
-                    🚌 Tuyến: <span className="font-bold">{selectedStudent?.route_name}</span>
-                  </p>
                 </div>
               </div>
 
