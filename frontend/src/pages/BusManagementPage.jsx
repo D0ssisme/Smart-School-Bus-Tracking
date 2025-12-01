@@ -7,13 +7,6 @@ import { getAllBuschedule, deleteBusScheduleApi } from '../api/busscheduleApi';
 import ToastService from "@/lib/toastService";
 import Swal from 'sweetalert2';
 
-const fakeStudents = [
-  { student_id: 101, name: 'Lê Hoàng An Đình', grade: 'Lớp 1A', parent_id: 201, pickup_point: 'Cổng A - Chung cư A', dropoff_point: 'Cổng A - Chung cư A' },
-  { student_id: 102, name: 'Nguyễn Ngọc Minh', grade: 'Lớp 2B', parent_id: 202, pickup_point: '72 Thành Thái, P.14, Q.10', dropoff_point: '72 Thành Thái, P.14, Q.10' },
-  { student_id: 103, name: 'Trần Đức Duy', grade: 'Lớp 1A', parent_id: 203, pickup_point: 'Ngã tư Hàng Xanh', dropoff_point: 'Cổng B - Chung cư A' },
-  { student_id: 104, name: 'Trầm Đại Dương', grade: 'Lớp 3C', parent_id: 204, pickup_point: 'Cổng C - Chung cư B', dropoff_point: 'Cổng C - Chung cư B' },
-  { student_id: 105, name: 'Võ Trường Sinh', grade: 'Lớp 4A', parent_id: 205, pickup_point: '18 Nguyễn Thị Minh Khai, Q.1', dropoff_point: '18 Nguyễn Thị Minh Khai, Q.1' },
-];
 
 const BusManagementPage = () => {
   const [busData, setBusData] = useState([]);
@@ -452,7 +445,7 @@ const BusManagementPage = () => {
                   key={bus.id}
                   bus={{ ...bus, routeId: route.routeId }}
                   allBusData={busData}
-                  allStudentData={fakeStudents}
+                 
                   onEdit={handleOpenEditModal}
                   onDelete={handleOpenDeleteModal}
                 />
