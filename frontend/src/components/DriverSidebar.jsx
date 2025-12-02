@@ -1,7 +1,9 @@
 import { LayoutDashboard, CalendarDays, Users, CheckCircle, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useLanguage } from '@/contexts/LanguageContext'; // ✅ Import hook
 
 export default function DriverSidebar({ isOpen }) {
+    const { t } = useLanguage(); // ✅ Sử dụng hook
     const item = "flex items-center px-5 py-2 rounded hover:bg-gray-100 relative";
     const icon = "w-5 h-5 text-blue-900";
 
@@ -54,7 +56,7 @@ export default function DriverSidebar({ isOpen }) {
                         </span>
                         {isOpen && (
                             <span className="text-[10px] text-blue-200 font-medium tracking-wider uppercase">
-                                School Bus System
+                                {t('sidebar.subtitle')}
                             </span>
                         )}
                     </div>
@@ -81,7 +83,7 @@ export default function DriverSidebar({ isOpen }) {
                         className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
                             }`}
                     >
-                        Trang chủ
+                        {t('driverSidebar.dashboard')}
                     </span>
                 </Link>
 
@@ -92,7 +94,7 @@ export default function DriverSidebar({ isOpen }) {
                         className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
                             }`}
                     >
-                        Lịch làm việc
+                        {t('driverSidebar.schedule')}
                     </span>
                 </Link>
 
@@ -102,7 +104,7 @@ export default function DriverSidebar({ isOpen }) {
                         className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
                             }`}
                     >
-                        Gửi Báo Cáo Về Sự Cố!!
+                        {t('driverSidebar.report')}
                     </span>
                 </Link>
             </nav>

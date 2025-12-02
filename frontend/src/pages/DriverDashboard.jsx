@@ -1,14 +1,11 @@
 //src/pages/DriverDashboard.jsx
 
-
 import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '@/contexts/AuthContext'; // Import Auth Context
-import { getBusScheduleByDriverIdApi } from '@/api/busscheduleApi'; // API lấy schedule của driver
+import { AuthContext } from '@/contexts/AuthContext';
+import { getBusScheduleByDriverIdApi } from '@/api/busscheduleApi';
 import { getCountStudentByScheduleId } from '@/api/studentbusassignmentApi';
-import ScheduleDetailModal from '@/components/ScheduleDetailModal'; // hoặc đường dẫn phù hợp
-
-
-
+import ScheduleDetailModal from '@/components/ScheduleDetailModal';
+import { useLanguage } from '@/contexts/LanguageContext'; // ✅ Import hook
 
 import {
     Bus,
@@ -24,7 +21,8 @@ import {
 } from 'lucide-react';
 
 export default function DriverDashboard() {
-    const { user } = useContext(AuthContext); // Lấy thông tin user đang login
+    const { t, language } = useLanguage(); // ✅ Sử dụng hook
+    const { user } = useContext(AuthContext);
 
     const [driverInfo, setDriverInfo] = useState({
         name: "",
@@ -54,22 +52,17 @@ export default function DriverDashboard() {
         try {
             setLoading(true);
 
-            // 1. Set thông tin driver từ user context
             setDriverInfo({
                 name: user.name || "Tài xế",
                 driverId: user.userId || "N/A",
                 licenseNumber: user.driverInfo?.licenseNumber || "N/A"
             });
-            console.log("🚗 Logged in driver:", user);
 
-            // 2. Lấy ID và ngày
-            const driverId = user._id || user.userId; // fallback nếu thiếu _id
+            const driverId = user._id || user.userId;
             const today = new Date().toISOString().split('T')[0];
 
             const schedulesResponse = await getBusScheduleByDriverIdApi(driverId, today);
-            const schedules = schedulesResponse?.data || []; // Lấy ra mảng data
-
-            console.log("📅 Driver schedules:", schedules);
+            const schedules = schedulesResponse?.data || [];
 
             if (!Array.isArray(schedules)) {
                 console.error("❌ API did not return an array:", schedules);
@@ -77,12 +70,9 @@ export default function DriverDashboard() {
                 return;
             }
 
-            // 3. Transform dữ liệu và lấy số lượng học sinh cho từng schedule
             const transformedSchedules = await Promise.all(
                 schedules.map(async (schedule) => {
                     let studentsCount = 0;
-
-                    // Gọi API đếm học sinh cho schedule này
                     try {
                         const countResponse = await getCountStudentByScheduleId(schedule._id);
                         studentsCount = countResponse?.studentCount || 0;
@@ -93,14 +83,14 @@ export default function DriverDashboard() {
                     return {
                         id: schedule._id,
                         scheduleId: schedule.schedule_id || schedule._id,
-                        route: schedule.route_id?.name || "Chưa có tuyến",
+                        route: schedule.route_id?.name || t('driverDashboard.status.cancelled'), // Fallback text
                         busPlate: schedule.bus_id?.license_plate || "N/A",
                         busId: schedule.bus_id?._id,
                         routeId: schedule.route_id?._id,
                         startTime: schedule.start_time || "N/A",
                         endTime: schedule.end_time || "N/A",
                         status: schedule.status || "scheduled",
-                        studentsCount: studentsCount, // ✅ Dữ liệu thực từ API
+                        studentsCount: studentsCount,
                         stops: schedule.route_id?.stops?.map(stop => stop.name) || []
                     };
                 })
@@ -108,7 +98,6 @@ export default function DriverDashboard() {
 
             setTodaySchedules(transformedSchedules);
 
-            // 4. Tính toán statistics
             setStats({
                 totalTripsToday: transformedSchedules.length,
                 completedTrips: transformedSchedules.filter(s => s.status === "completed").length,
@@ -117,46 +106,49 @@ export default function DriverDashboard() {
             });
 
         } catch (error) {
-            console.error("❌ Error fetching driver data:", {
-                message: error?.message,
-                response: error?.response?.data,
-                stack: error?.stack,
-            });
-            setTodaySchedules([]); // fallback
+            console.error("❌ Error fetching driver data:", error);
+            setTodaySchedules([]);
         } finally {
             setLoading(false);
         }
     };
 
     const getCurrentTime = () => {
-        return new Date().toLocaleTimeString('vi-VN', {
+        return new Date().toLocaleTimeString(language === 'vi' ? 'vi-VN' : 'en-US', {
             hour: '2-digit',
             minute: '2-digit'
         });
     };
 
+    const getGreetingTime = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return t('driverDashboard.greeting.morning');
+        if (hour < 18) return t('driverDashboard.greeting.afternoon');
+        return t('driverDashboard.greeting.evening');
+    };
+
     const getStatusBadge = (status) => {
         const statusConfig = {
             scheduled: {
-                label: 'Sắp tới',
+                label: t('driverDashboard.status.scheduled'),
                 bg: 'bg-yellow-100',
                 text: 'text-yellow-800',
                 icon: Clock
             },
             in_progress: {
-                label: 'Đang chạy',
+                label: t('driverDashboard.status.in_progress'),
                 bg: 'bg-blue-100',
                 text: 'text-blue-800',
                 icon: Navigation
             },
             completed: {
-                label: 'Hoàn thành',
+                label: t('driverDashboard.status.completed'),
                 bg: 'bg-green-100',
                 text: 'text-green-800',
                 icon: CheckCircle
             },
             cancelled: {
-                label: 'Đã hủy',
+                label: t('driverDashboard.status.cancelled'),
                 bg: 'bg-red-100',
                 text: 'text-red-800',
                 icon: AlertCircle
@@ -179,7 +171,7 @@ export default function DriverDashboard() {
             <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 min-h-screen p-6 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">Đang tải thông tin...</p>
+                    <p className="text-gray-600 font-medium">{t('driverDashboard.loading')}</p>
                 </div>
             </div>
         );
@@ -217,23 +209,25 @@ export default function DriverDashboard() {
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold text-white mb-1">
-                                    Chào buổi {new Date().getHours() < 12 ? 'sáng' : new Date().getHours() < 18 ? 'chiều' : 'tối'}, {driverInfo.name}! 👋
+                                    {t('driverDashboard.greeting.hello')
+                                        .replace('{time}', getGreetingTime())
+                                        .replace('{name}', driverInfo.name)}
                                 </h1>
                                 <p className="text-blue-100">
-                                    Chúc bạn một ngày lái xe an toàn và vui vẻ
+                                    {t('driverDashboard.greeting.subtext')}
                                 </p>
                             </div>
                         </div>
 
                         <div className="hidden md:flex gap-4">
                             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                                <div className="text-white/70 text-xs mb-1">Giờ hiện tại</div>
+                                <div className="text-white/70 text-xs mb-1">{t('driverDashboard.time.current')}</div>
                                 <div className="text-2xl font-bold text-white">{getCurrentTime()}</div>
                             </div>
                             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                                <div className="text-white/70 text-xs mb-1">Hôm nay</div>
+                                <div className="text-white/70 text-xs mb-1">{t('driverDashboard.time.today')}</div>
                                 <div className="text-lg font-bold text-white">
-                                    {new Date().toLocaleDateString('vi-VN', {
+                                    {new Date().toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
                                         day: '2-digit',
                                         month: '2-digit'
                                     })}
@@ -248,7 +242,7 @@ export default function DriverDashboard() {
             <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
                 <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <Bus className="text-blue-600" size={24} />
-                    Thông tin tài xế
+                    {t('driverDashboard.info.title')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
@@ -256,7 +250,7 @@ export default function DriverDashboard() {
                             <Users className="text-blue-600" size={20} />
                         </div>
                         <div>
-                            <p className="text-xs text-gray-600">Họ tên</p>
+                            <p className="text-xs text-gray-600">{t('driverDashboard.info.name')}</p>
                             <p className="font-semibold text-gray-900">{driverInfo.name}</p>
                         </div>
                     </div>
@@ -265,7 +259,7 @@ export default function DriverDashboard() {
                             <Bus className="text-green-600" size={20} />
                         </div>
                         <div>
-                            <p className="text-xs text-gray-600">Mã tài xế</p>
+                            <p className="text-xs text-gray-600">{t('driverDashboard.info.id')}</p>
                             <p className="font-semibold text-gray-900">{driverInfo.driverId}</p>
                         </div>
                     </div>
@@ -274,7 +268,7 @@ export default function DriverDashboard() {
                             <CheckCircle className="text-purple-600" size={20} />
                         </div>
                         <div>
-                            <p className="text-xs text-gray-600">Số GPLX</p>
+                            <p className="text-xs text-gray-600">{t('driverDashboard.info.license')}</p>
                             <p className="font-semibold text-gray-900">{driverInfo.licenseNumber}</p>
                         </div>
                     </div>
@@ -290,9 +284,9 @@ export default function DriverDashboard() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Chuyến hôm nay</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('driverDashboard.stats.todayTrips')}</h3>
                     <p className="text-3xl font-bold text-gray-900">{stats.totalTripsToday}</p>
-                    <p className="text-xs text-gray-500 mt-2">Tổng số chuyến</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('driverDashboard.stats.totalTrips')}</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500">
@@ -302,9 +296,9 @@ export default function DriverDashboard() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Hoàn thành</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('driverDashboard.stats.completed')}</h3>
                     <p className="text-3xl font-bold text-gray-900">{stats.completedTrips}</p>
-                    <p className="text-xs text-gray-500 mt-2">Chuyến đã chạy</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('driverDashboard.stats.tripsDone')}</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
@@ -314,9 +308,9 @@ export default function DriverDashboard() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Sắp tới</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('driverDashboard.stats.upcoming')}</h3>
                     <p className="text-3xl font-bold text-gray-900">{stats.upcomingTrips}</p>
-                    <p className="text-xs text-gray-500 mt-2">Chuyến chưa chạy</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('driverDashboard.stats.tripsPending')}</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-purple-500">
@@ -326,9 +320,9 @@ export default function DriverDashboard() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Học sinh</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('driverDashboard.stats.students')}</h3>
                     <p className="text-3xl font-bold text-gray-900">{stats.totalStudents}</p>
-                    <p className="text-xs text-gray-500 mt-2">Tổng số HS hôm nay</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('driverDashboard.stats.totalStudents')}</p>
                 </div>
             </div>
 
@@ -337,10 +331,10 @@ export default function DriverDashboard() {
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
                     <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                         <Calendar className="text-blue-600" size={24} />
-                        Lịch trình hôm nay
+                        {t('driverDashboard.schedule.title')}
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
-                        {new Date().toLocaleDateString('vi-VN', {
+                        {new Date().toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
                             weekday: 'long',
                             year: 'numeric',
                             month: 'long',
@@ -355,10 +349,10 @@ export default function DriverDashboard() {
                             <Calendar className="text-gray-400" size={48} />
                         </div>
                         <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                            Không có lịch trình hôm nay
+                            {t('driverDashboard.schedule.emptyTitle')}
                         </h3>
                         <p className="text-gray-500">
-                            Hôm nay bạn được nghỉ ngơi. Hãy thư giãn! 🎉
+                            {t('driverDashboard.schedule.emptyDesc')}
                         </p>
                     </div>
                 ) : (
@@ -376,7 +370,9 @@ export default function DriverDashboard() {
                                             </div>
                                             <div>
                                                 <h4 className="font-bold text-gray-900 text-lg">{schedule.route}</h4>
-                                                <p className="text-sm text-gray-600">Chuyến #{index + 1} - {schedule.scheduleId}</p>
+                                                <p className="text-sm text-gray-600">
+                                                    {t('driverDashboard.schedule.tripPrefix')} #{index + 1} - {schedule.scheduleId}
+                                                </p>
                                             </div>
                                         </div>
                                         {getStatusBadge(schedule.status)}
@@ -385,22 +381,24 @@ export default function DriverDashboard() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                         <div className="flex items-center gap-2 text-sm">
                                             <Bus className="text-gray-500" size={16} />
-                                            <span className="text-gray-600">Xe:</span>
+                                            <span className="text-gray-600">{t('driverDashboard.schedule.bus')}:</span>
                                             <span className="font-semibold text-gray-900">{schedule.busPlate}</span>
                                         </div>
                                         <div className="flex items-center gap-2 text-sm">
                                             <Users className="text-gray-500" size={16} />
-                                            <span className="text-gray-600">Học sinh:</span>
-                                            <span className="font-semibold text-gray-900">{schedule.studentsCount} em</span>
+                                            <span className="text-gray-600">{t('driverDashboard.schedule.students')}:</span>
+                                            <span className="font-semibold text-gray-900">
+                                                {schedule.studentsCount} {t('driverDashboard.schedule.studentUnit')}
+                                            </span>
                                         </div>
                                         <div className="flex items-center gap-2 text-sm">
                                             <Clock className="text-gray-500" size={16} />
-                                            <span className="text-gray-600">Giờ đi:</span>
+                                            <span className="text-gray-600">{t('driverDashboard.schedule.departure')}:</span>
                                             <span className="font-semibold text-gray-900">{schedule.startTime}</span>
                                         </div>
                                         <div className="flex items-center gap-2 text-sm">
                                             <Clock className="text-gray-500" size={16} />
-                                            <span className="text-gray-600">Giờ về:</span>
+                                            <span className="text-gray-600">{t('driverDashboard.schedule.arrival')}:</span>
                                             <span className="font-semibold text-gray-900">{schedule.endTime}</span>
                                         </div>
                                     </div>
@@ -410,7 +408,7 @@ export default function DriverDashboard() {
                                             <div className="flex items-start gap-2">
                                                 <RouteIcon className="text-indigo-600 mt-0.5" size={18} />
                                                 <div className="flex-1">
-                                                    <p className="text-xs font-semibold text-indigo-900 mb-1">Điểm dừng:</p>
+                                                    <p className="text-xs font-semibold text-indigo-900 mb-1">{t('driverDashboard.schedule.stops')}:</p>
                                                     <div className="flex flex-wrap gap-2">
                                                         {schedule.stops.map((stop, i) => (
                                                             <span
@@ -430,7 +428,7 @@ export default function DriverDashboard() {
                                     {schedule.status === 'scheduled' && (
                                         <div className="mt-4 flex gap-2">
                                             <button className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg font-semibold transition-all">
-                                                Bắt đầu chuyến
+                                                {t('driverDashboard.schedule.btnStart')}
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -439,7 +437,7 @@ export default function DriverDashboard() {
                                                 }}
                                                 className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition-all"
                                             >
-                                                Chi tiết
+                                                {t('driverDashboard.schedule.btnDetail')}
                                             </button>
                                         </div>
                                     )}
@@ -454,24 +452,24 @@ export default function DriverDashboard() {
             <div className="mt-6 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
                 <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                     <AlertCircle className="text-yellow-600" size={20} />
-                    💡 Lời nhắc nhở
+                    💡 {t('driverDashboard.tips.title')}
                 </h4>
                 <ul className="space-y-2 text-sm text-gray-700">
                     <li className="flex items-start gap-2">
                         <CheckCircle className="text-green-600 mt-0.5" size={16} />
-                        <span>Kiểm tra xe trước khi khởi hành (nhiên liệu, lốp, đèn, phanh)</span>
+                        <span>{t('driverDashboard.tips.tip1')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                         <CheckCircle className="text-green-600 mt-0.5" size={16} />
-                        <span>Luôn chú ý an toàn khi đón trả học sinh</span>
+                        <span>{t('driverDashboard.tips.tip2')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                         <CheckCircle className="text-green-600 mt-0.5" size={16} />
-                        <span>Tuân thủ giờ giấc và điểm dừng theo lịch trình</span>
+                        <span>{t('driverDashboard.tips.tip3')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                         <CheckCircle className="text-green-600 mt-0.5" size={16} />
-                        <span>Báo cáo ngay nếu có sự cố hoặc học sinh vắng mặt</span>
+                        <span>{t('driverDashboard.tips.tip4')}</span>
                     </li>
                 </ul>
             </div>
