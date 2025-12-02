@@ -1,6 +1,7 @@
 //
 import React, { useState, useEffect } from 'react';
 import { Plus, Filter, Search, CheckCircle, XCircle, Wrench, Edit2, Trash2, Users, Truck } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
 
 const BusIcon = Truck;
 
@@ -11,10 +12,13 @@ import { getAllBuses, createBusApi, updateBusApi, deleteBusApi } from '@/api/bus
 import ToastService from '@/lib/toastService';
 import Swal from 'sweetalert2';
 
+// Component BusCard
 const BusCard = ({ bus, onEdit, onDelete }) => {
+  const { t } = useLanguage(); // ✅ Sử dụng hook
+  
   const statusConfig = {
     active: {
-      label: 'Đang hoạt động',
+      label: t('busManager.status.active'), // ✅ Dịch label
       color: 'text-green-700',
       bg: 'bg-green-50',
       border: 'border-green-200',
@@ -22,7 +26,7 @@ const BusCard = ({ bus, onEdit, onDelete }) => {
       dotColor: 'bg-green-500'
     },
     inactive: {
-      label: 'Ngừng hoạt động',
+      label: t('busManager.status.inactive'), // ✅ Dịch label
       color: 'text-gray-700',
       bg: 'bg-gray-50',
       border: 'border-gray-200',
@@ -30,7 +34,7 @@ const BusCard = ({ bus, onEdit, onDelete }) => {
       dotColor: 'bg-gray-500'
     },
     repair: {
-      label: 'Đang sửa chữa',
+      label: t('busManager.status.repair'), // ✅ Dịch label
       color: 'text-orange-700',
       bg: 'bg-orange-50',
       border: 'border-orange-200',
@@ -39,7 +43,8 @@ const BusCard = ({ bus, onEdit, onDelete }) => {
     }
   };
 
-  const config = statusConfig[bus.status];
+  // Fallback nếu status không hợp lệ
+  const config = statusConfig[bus.status] || statusConfig.inactive;
   const StatusIcon = config.icon;
 
   return (
@@ -61,7 +66,7 @@ const BusCard = ({ bus, onEdit, onDelete }) => {
               <BusIcon className="text-white" size={24} />
             </div>
             <div>
-              <div className="text-white/80 text-xs font-medium">Mã xe</div>
+              <div className="text-white/80 text-xs font-medium">{t('busManager.card.code')}</div>
               <div className="text-white text-lg font-bold">{bus.bus_id}</div>
             </div>
           </div>
@@ -73,7 +78,7 @@ const BusCard = ({ bus, onEdit, onDelete }) => {
       <div className="p-5">
         {/* Biển số xe - nổi bật */}
         <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-lg p-3 mb-4 text-center shadow-md">
-          <div className="text-xs text-yellow-900 font-semibold mb-1">BIỂN SỐ XE</div>
+          <div className="text-xs text-yellow-900 font-semibold mb-1">{t('busManager.card.plateHeader')}</div>
           <div className="text-2xl font-bold text-yellow-900 tracking-wider font-mono">
             {bus.license_plate}
           </div>
@@ -85,16 +90,16 @@ const BusCard = ({ bus, onEdit, onDelete }) => {
           <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
             <div className="flex items-center gap-2">
               <Users className="text-blue-600" size={18} />
-              <span className="text-sm font-medium text-gray-700">Sức chứa</span>
+              <span className="text-sm font-medium text-gray-700">{t('busManager.card.capacity')}</span>
             </div>
-            <span className="text-lg font-bold text-blue-600">{bus.capacity} chỗ</span>
+            <span className="text-lg font-bold text-blue-600">{bus.capacity} {t('busManager.card.seat')}</span>
           </div>
 
           {/* Trạng thái */}
           <div className={`flex items-center justify-between p-3 ${config.bg} rounded-lg border ${config.border}`}>
             <div className="flex items-center gap-2">
               <StatusIcon className={config.color} size={18} />
-              <span className="text-sm font-medium text-gray-700">Trạng thái</span>
+              <span className="text-sm font-medium text-gray-700">{t('busManager.card.status')}</span>
             </div>
             <span className={`text-sm font-semibold ${config.color}`}>
               {config.label}
@@ -109,14 +114,14 @@ const BusCard = ({ bus, onEdit, onDelete }) => {
             className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
           >
             <Edit2 size={16} />
-            Sửa
+            {t('busManager.card.edit')}
           </button>
           <button
             onClick={() => onDelete(bus)}
             className="flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
           >
             <Trash2 size={16} />
-            Xóa
+            {t('busManager.card.delete')}
           </button>
         </div>
       </div>
@@ -124,7 +129,9 @@ const BusCard = ({ bus, onEdit, onDelete }) => {
   );
 };
 
+// Component Modal
 const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
+  const { t } = useLanguage(); // ✅ Sử dụng hook
   const [formData, setFormData] = useState({
     license_plate: '',
     capacity: '',
@@ -176,7 +183,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
             <BusIcon size={28} />
-            {initialData ? 'Chỉnh sửa xe bus' : 'Thêm xe bus mới'}
+            {initialData ? t('busManager.modal.editTitle') : t('busManager.modal.addTitle')}
           </h2>
         </div>
 
@@ -185,13 +192,13 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
           {/* Biển số xe */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Biển số xe <span className="text-red-500">*</span>
+              {t('busManager.modal.plateLabel')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={formData.license_plate}
               onChange={(e) => setFormData({ ...formData, license_plate: e.target.value })}
-              placeholder="VD: 51B-12345"
+              placeholder={t('busManager.modal.platePlaceholder')}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={saving}
             />
@@ -200,13 +207,13 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
           {/* Sức chứa */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Sức chứa (số chỗ ngồi) <span className="text-red-500">*</span>
+              {t('busManager.modal.capacityLabel')} <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
               value={formData.capacity}
               onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-              placeholder="VD: 45"
+              placeholder={t('busManager.modal.capacityPlaceholder')}
               min="1"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={saving}
@@ -216,7 +223,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
           {/* Trạng thái */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Trạng thái <span className="text-red-500">*</span>
+              {t('busManager.modal.statusLabel')} <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.status}
@@ -224,9 +231,9 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={saving}
             >
-              <option value="active">Đang hoạt động</option>
-              <option value="inactive">Ngừng hoạt động</option>
-              <option value="repair">Đang sửa chữa</option>
+              <option value="active">{t('busManager.status.active')}</option>
+              <option value="inactive">{t('busManager.status.inactive')}</option>
+              <option value="repair">{t('busManager.status.repair')}</option>
             </select>
           </div>
 
@@ -238,7 +245,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
               className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
               disabled={saving}
             >
-              Hủy
+              {t('busManager.modal.cancel')}
             </button>
             <button
               type="button"
@@ -246,7 +253,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
               className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
               disabled={saving}
             >
-              {saving ? 'Đang xử lý...' : (initialData ? 'Cập nhật' : 'Thêm xe')}
+              {saving ? t('busManager.modal.processing') : (initialData ? t('busManager.modal.update') : t('busManager.modal.create'))}
             </button>
           </div>
         </div>
@@ -255,7 +262,9 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
   );
 };
 
+// Component Chính
 const BusManager = () => {
+  const { t } = useLanguage(); // ✅ Sử dụng hook
   const [buses, setBuses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -274,7 +283,7 @@ const BusManager = () => {
       setBuses(data);
     } catch (err) {
       console.error('❌ Error fetching buses:', err);
-      setError('Không thể tải dữ liệu xe bus. Vui lòng thử lại!');
+      setError(t('busManager.messages.genericError'));
     } finally {
       setLoading(false);
     }
@@ -426,7 +435,7 @@ const BusManager = () => {
       <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen flex items-center justify-center p-6">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Đang tải dữ liệu xe bus...</p>
+          <p className="text-gray-600 font-medium">{t('busManager.loading')}</p>
         </div>
       </div>
     );
@@ -439,13 +448,13 @@ const BusManager = () => {
           <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
             <XCircle className="text-red-600" size={32} />
           </div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Lỗi tải dữ liệu</h3>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('busManager.errorTitle')}</h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={fetchBuses}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
           >
-            Thử lại
+            {t('busManager.retry')}
           </button>
         </div>
       </div>
@@ -462,7 +471,7 @@ const BusManager = () => {
           }}></div>
         </div>
 
-        {/* Bus SVG Illustration */}
+        {/* Bus SVG Illustration - giữ nguyên */}
         <div className="absolute right-8 top-1/2 transform -translate-y-1/2 opacity-20 hidden lg:block">
           <svg width="200" height="120" viewBox="0 0 200 120" fill="none">
             <rect x="40" y="20" width="120" height="70" rx="8" fill="white" opacity="0.9" />
@@ -484,26 +493,26 @@ const BusManager = () => {
                 <BusIcon className="text-white" size={40} />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white mb-1">Quản lý xe bus</h1>
-                <p className="text-blue-100">Theo dõi và quản lý đội xe trường học</p>
+                <h1 className="text-3xl font-bold text-white mb-1">{t('busManager.title')}</h1>
+                <p className="text-blue-100">{t('busManager.subtitle')}</p>
               </div>
             </div>
 
             <div className="hidden md:flex gap-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                <div className="text-white/70 text-xs mb-1">Tổng số xe</div>
+                <div className="text-white/70 text-xs mb-1">{t('busManager.stats.total')}</div>
                 <div className="text-2xl font-bold text-white">{buses.length}</div>
               </div>
               <div className="bg-green-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-green-300/30">
-                <div className="text-green-100 text-xs mb-1">Đang hoạt động</div>
+                <div className="text-green-100 text-xs mb-1">{t('busManager.stats.active')}</div>
                 <div className="text-2xl font-bold text-white">{activeBuses}</div>
               </div>
               <div className="bg-orange-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-orange-300/30">
-                <div className="text-orange-100 text-xs mb-1">Đang sửa chữa</div>
+                <div className="text-orange-100 text-xs mb-1">{t('busManager.stats.repair')}</div>
                 <div className="text-2xl font-bold text-white">{repairBuses}</div>
               </div>
               <div className="bg-gray-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-gray-300/30">
-                <div className="text-gray-100 text-xs mb-1">Ngừng hoạt động</div>
+                <div className="text-gray-100 text-xs mb-1">{t('busManager.stats.inactive')}</div>
                 <div className="text-2xl font-bold text-white">{inactiveBuses}</div>
               </div>
             </div>
@@ -522,10 +531,10 @@ const BusManager = () => {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="bg-transparent border-none focus:ring-0 text-sm outline-none font-medium text-gray-700 cursor-pointer"
               >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="active">Đang hoạt động</option>
-                <option value="repair">Đang sửa chữa</option>
-                <option value="inactive">Ngừng hoạt động</option>
+                <option value="all">{t('busManager.filter.all')}</option>
+                <option value="active">{t('busManager.filter.active')}</option>
+                <option value="repair">{t('busManager.filter.repair')}</option>
+                <option value="inactive">{t('busManager.filter.inactive')}</option>
               </select>
             </div>
 
@@ -533,7 +542,7 @@ const BusManager = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
-                placeholder="Tìm theo biển số hoặc mã xe..."
+                placeholder={t('busManager.filter.searchPlaceholder')}
                 className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -545,7 +554,7 @@ const BusManager = () => {
             onClick={handleOpenAddModal}
             className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
           >
-            <Plus size={20} /> Thêm xe bus
+            <Plus size={20} /> {t('busManager.filter.addBtn')}
           </button>
         </div>
       </div>
@@ -567,7 +576,7 @@ const BusManager = () => {
           <div className="bg-gray-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4">
             <BusIcon className="text-gray-400" size={48} />
           </div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">Không tìm thấy xe bus</h3>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">{t('busManager.empty.title')}</h3>
           <p className="text-gray-500">
             {buses.length === 0
               ? 'Chưa có xe bus nào. Nhấn nút "Thêm xe bus" để bắt đầu!'

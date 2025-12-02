@@ -3,20 +3,22 @@ import { Plus, Filter, Search, AlertTriangle, CheckCircle, Clock, XCircle, MapPi
 import { getIncidentReportByDriverIdApi , createIncidentReportApi, updateIncidentReportApi, deleteIncidentReportApi } from '@/api/incidentReportApi';
 import { getAllBuses } from '@/api/busApi';
 import { getAllBuschedule } from '@/api/busscheduleApi';
+import { useLanguage } from '@/contexts/LanguageContext'; // ✅ Import hook
 
 const BusIcon = Truck;
 
-const IncidentCard = ({ incident, onEdit, onDelete }) => {
+// Component Card
+const IncidentCard = ({ incident, onEdit, onDelete, t, language }) => {
   const statusConfig = {
-    pending: { label: 'Chờ xử lý', color: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-200', icon: Clock, dotColor: 'bg-yellow-500' },
-    resolved: { label: 'Đã giải quyết', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', icon: CheckCircle, dotColor: 'bg-green-500' },
-    ignored: { label: 'Bỏ qua', color: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-200', icon: XCircle, dotColor: 'bg-gray-500' }
+    pending: { label: t('driverReport.status.pending'), color: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-200', icon: Clock, dotColor: 'bg-yellow-500' },
+    resolved: { label: t('driverReport.status.resolved'), color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', icon: CheckCircle, dotColor: 'bg-green-500' },
+    ignored: { label: t('driverReport.status.ignored'), color: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-200', icon: XCircle, dotColor: 'bg-gray-500' }
   };
 
-  const config = statusConfig[incident.status];
+  const config = statusConfig[incident.status] || statusConfig.pending;
   const StatusIcon = config.icon;
 
-  const formatDate = (d) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const formatDate = (d) => new Date(d).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 group">
@@ -35,7 +37,7 @@ const IncidentCard = ({ incident, onEdit, onDelete }) => {
               <AlertTriangle className="text-white" size={24} />
             </div>
             <div>
-              <div className="text-white/80 text-xs font-medium">Mã sự cố</div>
+              <div className="text-white/80 text-xs font-medium">{t('driverReport.card.code')}</div>
               <div className="text-white text-sm font-bold">#{incident._id?.slice(-8)}</div>
             </div>
           </div>
@@ -52,7 +54,7 @@ const IncidentCard = ({ incident, onEdit, onDelete }) => {
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-sm">
             <User className="text-gray-400" size={16} />
-            <span className="text-gray-600">{incident.driver_id?.name || 'Chưa xác định'}</span>
+            <span className="text-gray-600">{incident.driver_id?.name || t('driverReport.card.unknownDriver')}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <BusIcon className="text-gray-400" size={16} />
@@ -73,17 +75,17 @@ const IncidentCard = ({ incident, onEdit, onDelete }) => {
         <div className={`flex items-center justify-between p-3 ${config.bg} rounded-lg border ${config.border} mb-4`}>
           <div className="flex items-center gap-2">
             <StatusIcon className={config.color} size={18} />
-            <span className="text-sm font-medium text-gray-700">Trạng thái</span>
+            <span className="text-sm font-medium text-gray-700">{t('driverReport.card.status')}</span>
           </div>
           <span className={`text-sm font-semibold ${config.color}`}>{config.label}</span>
         </div>
 
         <div className="flex gap-2 pt-3 border-t border-gray-100">
           <button onClick={() => onEdit(incident)} className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-            <Edit2 size={16} />Sửa
+            <Edit2 size={16} />{t('driverReport.card.actions.edit')}
           </button>
           <button onClick={() => onDelete(incident)} className="flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-            <Trash2 size={16} />Xóa
+            <Trash2 size={16} />{t('driverReport.card.actions.delete')}
           </button>
         </div>
       </div>
@@ -91,7 +93,8 @@ const IncidentCard = ({ incident, onEdit, onDelete }) => {
   );
 };
 
-const AddIncidentModal = ({ isOpen, onClose, onSave, initialData, buses, schedules, currentDriverId }) => {
+// Component Modal
+const AddIncidentModal = ({ isOpen, onClose, onSave, initialData, buses, schedules, currentDriverId, t }) => {
   const [formData, setFormData] = useState({
     driver_id: '', bus_id: '', schedule_id: '', title: '', description: '', latitude: '', longitude: '', status: 'pending'
   });
@@ -111,7 +114,7 @@ const AddIncidentModal = ({ isOpen, onClose, onSave, initialData, buses, schedul
       });
     } else {
       setFormData({
-        driver_id: currentDriverId, // Auto-fill driver ID
+        driver_id: currentDriverId, 
         bus_id: '',
         schedule_id: '',
         title: '',
@@ -127,11 +130,11 @@ const AddIncidentModal = ({ isOpen, onClose, onSave, initialData, buses, schedul
 
   const handleSubmit = async () => {
     if (!formData.title || !formData.bus_id || !formData.driver_id || !formData.schedule_id) {
-      alert('⚠️ Vui lòng điền đầy đủ thông tin bắt buộc!');
+      alert(t('driverReport.messages.validation'));
       return;
     }
     if (!formData.latitude || !formData.longitude) {
-      alert('⚠️ Vui lòng nhập tọa độ vị trí!');
+      alert(t('driverReport.messages.validationLocation'));
       return;
     }
 
@@ -158,61 +161,61 @@ const AddIncidentModal = ({ isOpen, onClose, onSave, initialData, buses, schedul
         <div className="bg-gradient-to-r from-red-600 to-orange-600 p-6 rounded-t-2xl">
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
             <AlertTriangle size={28} />
-            {initialData ? 'Chỉnh sửa báo cáo sự cố' : 'Thêm báo cáo sự cố mới'}
+            {initialData ? t('driverReport.modal.editTitle') : t('driverReport.modal.addTitle')}
           </h2>
         </div>
 
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Xe bus <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('driverReport.modal.busLabel')} <span className="text-red-500">*</span></label>
             <select value={formData.bus_id} onChange={(e) => setFormData({ ...formData, bus_id: e.target.value })} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent" disabled={saving}>
-              <option value="">Chọn xe bus</option>
+              <option value="">{t('driverReport.modal.selectBus')}</option>
               {buses.map(b => <option key={b.id} value={b.id}>{b.plate} ({b.busId})</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Lịch trình <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('driverReport.modal.scheduleLabel')} <span className="text-red-500">*</span></label>
             <select value={formData.schedule_id} onChange={(e) => setFormData({ ...formData, schedule_id: e.target.value })} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent" disabled={saving}>
-              <option value="">Chọn lịch trình</option>
+              <option value="">{t('driverReport.modal.selectSchedule')}</option>
               {schedules.map(s => <option key={s._id} value={s._id}>{s.schedule_id} - {s.route_id?.name || 'N/A'}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Tiêu đề sự cố <span className="text-red-500">*</span></label>
-            <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="VD: Xe hỏng động cơ" className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent" disabled={saving} />
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('driverReport.modal.titleLabel')} <span className="text-red-500">*</span></label>
+            <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder={t('driverReport.modal.placeholders.title')} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent" disabled={saving} />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Mô tả chi tiết</label>
-            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Mô tả chi tiết về sự cố..." rows="3" className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none" disabled={saving} />
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('driverReport.modal.descLabel')}</label>
+            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder={t('driverReport.modal.placeholders.desc')} rows="3" className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none" disabled={saving} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Vĩ độ (Latitude) <span className="text-red-500">*</span></label>
-              <input type="number" step="any" value={formData.latitude} onChange={(e) => setFormData({ ...formData, latitude: e.target.value })} placeholder="VD: 10.762622" className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent" disabled={saving} />
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('driverReport.modal.latLabel')} <span className="text-red-500">*</span></label>
+              <input type="number" step="any" value={formData.latitude} onChange={(e) => setFormData({ ...formData, latitude: e.target.value })} placeholder={t('driverReport.modal.placeholders.lat')} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent" disabled={saving} />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Kinh độ (Longitude) <span className="text-red-500">*</span></label>
-              <input type="number" step="any" value={formData.longitude} onChange={(e) => setFormData({ ...formData, longitude: e.target.value })} placeholder="VD: 106.660172" className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent" disabled={saving} />
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t('driverReport.modal.longLabel')} <span className="text-red-500">*</span></label>
+              <input type="number" step="any" value={formData.longitude} onChange={(e) => setFormData({ ...formData, longitude: e.target.value })} placeholder={t('driverReport.modal.placeholders.long')} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent" disabled={saving} />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Trạng thái</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('driverReport.modal.statusLabel')}</label>
             <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent" disabled={saving}>
-              <option value="pending">Chờ xử lý</option>
-              <option value="resolved">Đã giải quyết</option>
-              <option value="ignored">Bỏ qua</option>
+              <option value="pending">{t('driverReport.status.pending')}</option>
+              <option value="resolved">{t('driverReport.status.resolved')}</option>
+              <option value="ignored">{t('driverReport.status.ignored')}</option>
             </select>
           </div>
 
           <div className="flex gap-3 pt-4">
-            <button type="button" onClick={onClose} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50" disabled={saving}>Hủy</button>
+            <button type="button" onClick={onClose} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50" disabled={saving}>{t('driverReport.modal.btnCancel')}</button>
             <button type="button" onClick={handleSubmit} className="flex-1 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50" disabled={saving}>
-              {saving ? 'Đang xử lý...' : (initialData ? 'Cập nhật' : 'Thêm báo cáo')}
+              {saving ? t('driverReport.modal.btnProcess') : (initialData ? t('driverReport.modal.btnUpdate') : t('driverReport.modal.btnAdd'))}
             </button>
           </div>
         </div>
@@ -221,7 +224,9 @@ const AddIncidentModal = ({ isOpen, onClose, onSave, initialData, buses, schedul
   );
 };
 
+// Main Component
 const DriverReport = () => {
+  const { t, language } = useLanguage(); // ✅ Sử dụng hook
   const [incidents, setIncidents] = useState([]);
   const [buses, setBuses] = useState([]);
   const [schedules, setSchedules] = useState([]);
@@ -246,7 +251,7 @@ const DriverReport = () => {
       console.log('🚗 Current Driver ID:', driverId);
 
       if (!driverId) {
-        setError('Không tìm thấy thông tin tài xế. Vui lòng đăng nhập lại!');
+        setError(t('driverReport.messages.noDriver'));
         setLoading(false);
         return;
       }
@@ -266,41 +271,42 @@ const DriverReport = () => {
 
     } catch (err) {
       console.error('❌ Error:', err);
-      setError('Không thể tải dữ liệu. Vui lòng thử lại!');
+      setError(t('driverReport.messages.loadError'));
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [t]); // Reload khi đổi ngôn ngữ
 
   const handleSaveIncident = async (data) => {
     try {
       if (editingIncident) {
         await updateIncidentReportApi(editingIncident._id, data);
-        alert('✅ Cập nhật báo cáo sự cố thành công!');
+        alert(t('driverReport.messages.updateSuccess'));
       } else {
         await createIncidentReportApi(data);
-        alert('✅ Thêm báo cáo sự cố thành công!');
+        alert(t('driverReport.messages.addSuccess'));
       }
       await fetchData();
       setIsModalOpen(false);
       setEditingIncident(null);
     } catch (err) {
       console.error('❌ Error:', err);
-      alert('❌ Có lỗi xảy ra! ' + (err.response?.data?.message || err.message));
+      alert(t('driverReport.messages.error') + (err.response?.data?.message || err.message));
     }
   };
 
   const handleDeleteIncident = async (incident) => {
-    if (window.confirm(`⚠️ Bạn có chắc muốn xóa báo cáo sự cố "${incident.title}"?\n\nHành động này không thể hoàn tác!`)) {
+    const confirmMsg = t('driverReport.messages.deleteConfirm').replace('{title}', incident.title);
+    if (window.confirm(confirmMsg)) {
       try {
         await deleteIncidentReportApi(incident._id);
         setIncidents(incidents.filter(i => i._id !== incident._id));
-        alert('✅ Đã xóa báo cáo sự cố thành công!');
+        alert(t('driverReport.messages.deleteSuccess'));
       } catch (err) {
         console.error('❌ Error:', err);
-        alert('❌ Có lỗi xảy ra! ' + (err.response?.data?.message || err.message));
+        alert(t('driverReport.messages.error') + (err.response?.data?.message || err.message));
       }
     }
   };
@@ -358,22 +364,22 @@ const DriverReport = () => {
                 <AlertTriangle className="text-white" size={40} />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white mb-1">Báo cáo sự cố của tôi</h1>
-                <p className="text-red-100">Quản lý các sự cố bạn đã báo cáo</p>
+                <h1 className="text-3xl font-bold text-white mb-1">{t('driverReport.header.title')}</h1>
+                <p className="text-red-100">{t('driverReport.header.subtitle')}</p>
               </div>
             </div>
 
             <div className="hidden md:flex gap-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                <div className="text-white/70 text-xs mb-1">Tổng sự cố</div>
+                <div className="text-white/70 text-xs mb-1">{t('driverReport.stats.total')}</div>
                 <div className="text-2xl font-bold text-white">{incidents.length}</div>
               </div>
               <div className="bg-yellow-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-yellow-300/30">
-                <div className="text-yellow-100 text-xs mb-1">Chờ xử lý</div>
+                <div className="text-yellow-100 text-xs mb-1">{t('driverReport.stats.pending')}</div>
                 <div className="text-2xl font-bold text-white">{pendingCount}</div>
               </div>
               <div className="bg-green-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-green-300/30">
-                <div className="text-green-100 text-xs mb-1">Đã giải quyết</div>
+                <div className="text-green-100 text-xs mb-1">{t('driverReport.stats.resolved')}</div>
                 <div className="text-2xl font-bold text-white">{resolvedCount}</div>
               </div>
             </div>
@@ -387,36 +393,36 @@ const DriverReport = () => {
             <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 hover:border-red-300 transition-colors">
               <Filter size={18} className="text-gray-500" />
               <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="bg-transparent border-none focus:ring-0 text-sm outline-none font-medium text-gray-700 cursor-pointer">
-                <option value="all">Tất cả trạng thái</option>
-                <option value="pending">Chờ xử lý</option>
-                <option value="resolved">Đã giải quyết</option>
-                <option value="ignored">Bỏ qua</option>
+                <option value="all">{t('driverReport.filter.allStatus')}</option>
+                <option value="pending">{t('driverReport.filter.pending')}</option>
+                <option value="resolved">{t('driverReport.filter.resolved')}</option>
+                <option value="ignored">{t('driverReport.filter.ignored')}</option>
               </select>
             </div>
 
             <div className="relative flex-1 min-w-[250px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-              <input type="text" placeholder="Tìm theo tiêu đề, xe..." className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <input type="text" placeholder={t('driverReport.filter.searchPlaceholder')} className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
           </div>
 
           <button onClick={() => { setEditingIncident(null); setIsModalOpen(true); }} className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
-            <Plus size={20} /> Thêm báo cáo
+            <Plus size={20} /> {t('driverReport.filter.addBtn')}
           </button>
         </div>
       </div>
 
       {filteredIncidents.length > 0 ? (
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredIncidents.map(i => <IncidentCard key={i._id} incident={i} onEdit={(inc) => { setEditingIncident(inc); setIsModalOpen(true); }} onDelete={handleDeleteIncident} />)}
+          {filteredIncidents.map(i => <IncidentCard key={i._id} incident={i} onEdit={(inc) => { setEditingIncident(inc); setIsModalOpen(true); }} onDelete={handleDeleteIncident} t={t} language={language} />)}
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-lg p-12 text-center border border-gray-100">
           <div className="bg-gray-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="text-gray-400" size={48} />
           </div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">Không tìm thấy báo cáo sự cố</h3>
-          <p className="text-gray-500">{incidents.length === 0 ? 'Bạn chưa có báo cáo nào. Nhấn "Thêm báo cáo" để bắt đầu!' : 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'}</p>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">{t('driverReport.empty.title')}</h3>
+          <p className="text-gray-500">{incidents.length === 0 ? t('driverReport.empty.start') : t('driverReport.empty.search')}</p>
         </div>
       )}
 
@@ -428,6 +434,7 @@ const DriverReport = () => {
         buses={buses}
         schedules={schedules}
         currentDriverId={currentDriverId}
+        t={t}
       />
     </div>
   );
