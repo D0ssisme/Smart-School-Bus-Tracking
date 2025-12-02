@@ -36,6 +36,15 @@ const AddStudentToScheduleModal = ({ isOpen, onClose, scheduleInfo, onStudentAdd
         try {
             setFetchLoading(true);
 
+            // Kiểm tra scheduleInfo.routeId trước
+            if (!scheduleInfo?.routeId) {
+                console.warn("⚠️ No route ID in schedule info");
+                toast.error('Lịch trình chưa có thông tin tuyến đường');
+                setAvailableStudents([]);
+                setFilteredStudents([]);
+                return;
+            }
+
             // Lấy tất cả student route assignments
             const routeAssignments = await getAllStudentRouteAssignments();
             console.log("📦 All route assignments:", routeAssignments);
@@ -45,6 +54,12 @@ const AddStudentToScheduleModal = ({ isOpen, onClose, scheduleInfo, onStudentAdd
             // Lọc học sinh có cùng route_id với schedule
             const studentsInRoute = routeAssignments.filter(assignment => {
                 const assignmentRouteId = assignment.route_id?._id || assignment.route_id;
+
+                // Kiểm tra cả 2 giá trị có tồn tại không
+                if (!assignmentRouteId || !scheduleInfo.routeId) {
+                    return false;
+                }
+
                 return assignmentRouteId.toString() === scheduleInfo.routeId.toString();
             });
 

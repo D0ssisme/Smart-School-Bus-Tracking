@@ -321,6 +321,46 @@ export default function ParentTracking() {
         {selectedStudent && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 space-y-4">
+              {/* Hiển thị cảnh báo nếu học sinh chưa có lịch trình */}
+              {!busInfo && !busLocation && (
+                <div className="bg-white rounded-xl shadow-lg p-8 text-center border-2 border-yellow-300">
+                  <div className="bg-yellow-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="text-yellow-600" size={48} />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                    Chưa có lịch trình hôm nay
+                  </h3>
+                  <p className="text-gray-600 mb-2">
+                    <strong>{selectedStudent.name}</strong> chưa có lịch trình xe buýt trong ngày hôm nay.
+                  </p>
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-4 text-left rounded">
+                    <p className="text-sm text-yellow-800 font-medium mb-2">
+                      <strong>📌 Lý do có thể:</strong>
+                    </p>
+                    <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
+                      <li>Chưa được phân công vào lịch trình xe buýt</li>
+                      <li>Lịch trình hôm nay đã hoàn thành</li>
+                      <li>Xe buýt chưa bắt đầu chuyến đi</li>
+                    </ul>
+                  </div>
+                  <div className="mt-6 flex gap-3 justify-center">
+                    <button
+                      onClick={fetchStudents}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                    >
+                      <Navigation size={18} />
+                      Làm mới
+                    </button>
+                    <button
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-semibold transition-colors"
+                      onClick={() => toast.info('Vui lòng liên hệ nhà trường để biết thêm thông tin')}
+                    >
+                      Liên hệ trường
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {busLocation && (
                 <div className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -333,44 +373,46 @@ export default function ParentTracking() {
                 </div>
               )}
 
-              <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full" style={{ height: '60vh' }}>
-                <BusTrackingMapEnhanced
-                  busLocation={busLocation}
-                  pickupStop={selectedStudent?.pickup_stop_location && selectedStudent?.pickup_stop_id ? {
-                    _id: selectedStudent.pickup_stop_id,
-                    name: selectedStudent.pickup_stop_name,
-                    address: selectedStudent.pickup_stop_address,
-                    location: selectedStudent.pickup_stop_location
-                  } : null}
-                  dropoffStop={selectedStudent?.dropoff_stop_location && selectedStudent?.dropoff_stop_id ? {
-                    _id: selectedStudent.dropoff_stop_id,
-                    name: selectedStudent.dropoff_stop_name,
-                    address: selectedStudent.dropoff_stop_address,
-                    location: selectedStudent.dropoff_stop_location
-                  } : null}
-                  busInfo={busInfo}
-                  routeStops={routeStops}
-                />
-              </div>
+              {(busInfo || busLocation) && (
+                <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full" style={{ height: '60vh' }}>
+                  <BusTrackingMapEnhanced
+                    busLocation={busLocation}
+                    pickupStop={selectedStudent?.pickup_stop_location && selectedStudent?.pickup_stop_id ? {
+                      _id: selectedStudent.pickup_stop_id,
+                      name: selectedStudent.pickup_stop_name,
+                      address: selectedStudent.pickup_stop_address,
+                      location: selectedStudent.pickup_stop_location
+                    } : null}
+                    dropoffStop={selectedStudent?.dropoff_stop_location && selectedStudent?.dropoff_stop_id ? {
+                      _id: selectedStudent.dropoff_stop_id,
+                      name: selectedStudent.dropoff_stop_name,
+                      address: selectedStudent.dropoff_stop_address,
+                      location: selectedStudent.dropoff_stop_location
+                    } : null}
+                    busInfo={busInfo}
+                    routeStops={routeStops}
+                  />
+                </div>
+              )}
 
-              {/* Distance & Time Cards */}
+              {/* ✅ Distance & Time Cards - CẢ ĐIỂM ĐÓN VÀ ĐIỂM TRẢ */}
               <div className="grid grid-cols-2 gap-4">
                 {/* Điểm đón */}
                 <div className="space-y-2">
                   <h3 className="text-sm font-bold text-green-700 flex items-center gap-1">
                     <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    {t('parentTracking.labels.pickup')}
+                    Điểm đón
                   </h3>
                   <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-3">
-                    <p className="text-xs text-green-600 font-medium mb-1">{t('parentTracking.labels.distance')}</p>
+                    <p className="text-xs text-green-600 font-medium mb-1">Khoảng cách</p>
                     <p className="text-xl font-bold text-green-800">
-                      {distanceToPickup !== null ? `${distanceToPickup.toFixed(2)} km` : t('parentTracking.defaults.na')}
+                      {distanceToPickup !== null ? `${distanceToPickup.toFixed(2)} km` : 'N/A'}
                     </p>
                   </div>
                   <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-3">
-                    <p className="text-xs text-green-600 font-medium mb-1">{t('parentTracking.labels.estTime')}</p>
+                    <p className="text-xs text-green-600 font-medium mb-1">Thời gian dự kiến</p>
                     <p className="text-xl font-bold text-green-800">
-                      {estimatedTimeToPickup !== null ? `~${estimatedTimeToPickup} phút` : t('parentTracking.defaults.na')}
+                      {estimatedTimeToPickup !== null ? `~${estimatedTimeToPickup} phút` : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -379,18 +421,18 @@ export default function ParentTracking() {
                 <div className="space-y-2">
                   <h3 className="text-sm font-bold text-red-700 flex items-center gap-1">
                     <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                    {t('parentTracking.labels.dropoff')}
+                    Điểm trả
                   </h3>
                   <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-3">
-                    <p className="text-xs text-red-600 font-medium mb-1">{t('parentTracking.labels.distance')}</p>
+                    <p className="text-xs text-red-600 font-medium mb-1">Khoảng cách</p>
                     <p className="text-xl font-bold text-red-800">
-                      {distanceToDropoff !== null ? `${distanceToDropoff.toFixed(2)} km` : t('parentTracking.defaults.na')}
+                      {distanceToDropoff !== null ? `${distanceToDropoff.toFixed(2)} km` : 'N/A'}
                     </p>
                   </div>
                   <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-3">
-                    <p className="text-xs text-red-600 font-medium mb-1">{t('parentTracking.labels.estTime')}</p>
+                    <p className="text-xs text-red-600 font-medium mb-1">Thời gian dự kiến</p>
                     <p className="text-xl font-bold text-red-800">
-                      {estimatedTimeToDropoff !== null ? `~${estimatedTimeToDropoff} phút` : t('parentTracking.defaults.na')}
+                      {estimatedTimeToDropoff !== null ? `~${estimatedTimeToDropoff} phút` : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -403,9 +445,9 @@ export default function ParentTracking() {
                     <AlertCircle className="text-white" size={24} />
                   </div>
                   <div>
-                    <p className="font-bold text-green-800 text-lg">{t('parentTracking.alerts.pickupTitle')}</p>
+                    <p className="font-bold text-green-800 text-lg">⚡ Xe sắp đến điểm đón!</p>
                     <p className="text-sm text-green-700 mt-1">
-                      {t('parentTracking.alerts.pickupDesc')}
+                      Xe buýt đang rất gần điểm đón. Vui lòng chuẩn bị sẵn sàng.
                     </p>
                   </div>
                 </div>
@@ -418,9 +460,9 @@ export default function ParentTracking() {
                     <AlertCircle className="text-white" size={24} />
                   </div>
                   <div>
-                    <p className="font-bold text-orange-800 text-lg">{t('parentTracking.alerts.dropoffTitle')}</p>
+                    <p className="font-bold text-orange-800 text-lg">🏫 Con sắp về đến!</p>
                     <p className="text-sm text-orange-700 mt-1">
-                      {t('parentTracking.alerts.dropoffDesc')}
+                      Xe buýt sắp đến điểm trả. Con sắp về đến nhà.
                     </p>
                   </div>
                 </div>
