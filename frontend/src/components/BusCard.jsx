@@ -115,24 +115,15 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
             </div>
           </div>
 
-          {/* Tuyến đường */}
+          {/* Tuyến đường - READ ONLY */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Tuyến đường <span className="text-red-500">*</span>
+              Tuyến đường
             </label>
-            <select
-              value={formData.route_id}
-              onChange={(e) => setFormData({ ...formData, route_id: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={saving}
-            >
-              <option value="">Chọn tuyến đường</option>
-              {routes?.map(route => (
-                <option key={route.id} value={route.id}>
-                  {route.name}
-                </option>
-              ))}
-            </select>
+            <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 text-sm text-gray-600">
+              {routes?.find(route => route.id === formData.route_id)?.name || 'Không xác định'}
+              <p className="text-xs text-gray-500 mt-1">🔒 Không thể thay đổi tuyến đường</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
