@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { X, BellPlus, User, MessageSquare, AlertCircle } from "lucide-react";
+import { X, BellPlus, User, MessageSquare, AlertCircle, Edit2 } from "lucide-react";
 import { getAllUsersApi, getDriversApi, getParentsApi } from "@/api/userApi";
-import { createNotification } from "@/api/notificationApi";
+import { createNotification, updateNotification } from "@/api/notificationApi";
 import { toast } from "react-hot-toast";
 
-const CreateNotificationModal = ({ isOpen, onClose, onNotificationCreated }) => {
+const CreateNotificationModal = ({ isOpen, onClose, onNotificationCreated, editingNotification }) => {
     const [formData, setFormData] = useState({
         receiver_id: "",
         message: "",
@@ -22,7 +22,14 @@ const CreateNotificationModal = ({ isOpen, onClose, onNotificationCreated }) => 
     }, [isOpen]);
 
     useEffect(() => {
-        if (!isOpen) {
+        if (isOpen && editingNotification) {
+            // Load data khi edit
+            setFormData({
+                receiver_id: editingNotification.receiver_id?._id || editingNotification.receiver_id || "",
+                message: editingNotification.message || "",
+                type: editingNotification.type || "info"
+            });
+        } else if (!isOpen) {
             // Reset form when modal closes
             setFormData({
                 receiver_id: "",
@@ -31,7 +38,7 @@ const CreateNotificationModal = ({ isOpen, onClose, onNotificationCreated }) => 
             });
             setErrors({});
         }
-    }, [isOpen]);
+    }, [isOpen, editingNotification]);
 
     const fetchUsers = async () => {
         try {
@@ -93,15 +100,22 @@ const CreateNotificationModal = ({ isOpen, onClose, onNotificationCreated }) => 
 
         if (!validate()) return;
 
-        const loadingToast = toast.loading("Đang tạo thông báo...");
+        const isEditing = !!editingNotification;
+        const loadingToast = toast.loading(isEditing ? "Đang cập nhật thông báo..." : "Đang tạo thông báo...");
         setLoading(true);
 
         try {
-            await createNotification(formData);
-
-            toast.success("Tạo thông báo thành công!", {
-                id: loadingToast
-            });
+            if (isEditing) {
+                await updateNotification(editingNotification._id, formData);
+                toast.success("Cập nhật thông báo thành công!", {
+                    id: loadingToast
+                });
+            } else {
+                await createNotification(formData);
+                toast.success("Tạo thông báo thành công!", {
+                    id: loadingToast
+                });
+            }
 
             // Callback để refresh danh sách
             if (onNotificationCreated) {
@@ -112,8 +126,8 @@ const CreateNotificationModal = ({ isOpen, onClose, onNotificationCreated }) => 
             onClose();
 
         } catch (error) {
-            console.error("Error creating notification:", error);
-            const errorMessage = error.response?.data?.message || "Không thể tạo thông báo. Vui lòng thử lại!";
+            console.error(isEditing ? "Error updating notification:" : "Error creating notification:", error);
+            const errorMessage = error.response?.data?.message || (isEditing ? "Không thể cập nhật thông báo. Vui lòng thử lại!" : "Không thể tạo thông báo. Vui lòng thử lại!");
             toast.error(errorMessage, {
                 id: loadingToast
             });
@@ -144,11 +158,15 @@ const CreateNotificationModal = ({ isOpen, onClose, onNotificationCreated }) => 
                 <div className="bg-gradient-to-r from-orange-600 to-red-600 px-6 py-5 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
-                            <BellPlus className="text-white" size={24} />
+                            {editingNotification ? <Edit2 className="text-white" size={24} /> : <BellPlus className="text-white" size={24} />}
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-white">Tạo thông báo mới</h2>
-                            <p className="text-orange-100 text-sm">Gửi thông báo đến người dùng</p>
+                            <h2 className="text-2xl font-bold text-white">
+                                {editingNotification ? "Chỉnh sửa thông báo" : "Tạo thông báo mới"}
+                            </h2>
+                            <p className="text-orange-100 text-sm">
+                                {editingNotification ? "Cập nhật thông tin thông báo" : "Gửi thông báo đến người dùng"}
+                            </p>
                         </div>
                     </div>
                     <button
@@ -327,12 +345,12 @@ const CreateNotificationModal = ({ isOpen, onClose, onNotificationCreated }) => 
                         {loading ? (
                             <>
                                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                                Đang gửi...
+                                {editingNotification ? "Đang cập nhật..." : "Đang gửi..."}
                             </>
                         ) : (
                             <>
-                                <BellPlus size={20} />
-                                Tạo thông báo
+                                {editingNotification ? <Edit2 size={20} /> : <BellPlus size={20} />}
+                                {editingNotification ? "Cập nhật" : "Tạo thông báo"}
                             </>
                         )}
                     </button>

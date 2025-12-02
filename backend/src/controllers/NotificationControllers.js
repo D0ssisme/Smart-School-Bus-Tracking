@@ -60,9 +60,28 @@ export const markAsRead = async (req, res) => {
       { isRead: true },
       { new: true }
     ).populate("receiver_id", "name role");
-    
+
     if (!updated) return res.status(404).json({ message: "Not found" });
-    
+
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// 🟢 Cập nhật notification
+export const updateNotification = async (req, res) => {
+  try {
+    const { receiver_id, message, type } = req.body;
+
+    const updated = await Notification.findByIdAndUpdate(
+      req.params.id,
+      { receiver_id, message, type },
+      { new: true, runValidators: true }
+    ).populate("receiver_id", "name role");
+
+    if (!updated) return res.status(404).json({ message: "Not found" });
+
     res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });
