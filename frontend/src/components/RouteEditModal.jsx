@@ -5,9 +5,6 @@ import { X, Edit, Save } from 'lucide-react';
 const RouteEditModal = ({ isOpen, onClose, route, onSave }) => {
     const [formData, setFormData] = useState({
         name: '',
-        start: '',
-        end: '',
-        stops: 0,
         status: 'active'
     });
     const [errors, setErrors] = useState({});
@@ -16,9 +13,6 @@ const RouteEditModal = ({ isOpen, onClose, route, onSave }) => {
         if (route && isOpen) {
             setFormData({
                 name: route.name || '',
-                start: route.start || '',
-                end: route.end || '',
-                stops: route.stops || 0,
                 status: route.status || 'active'
             });
             setErrors({});
@@ -29,9 +23,6 @@ const RouteEditModal = ({ isOpen, onClose, route, onSave }) => {
         const newErrors = {};
 
         if (!formData.name.trim()) newErrors.name = 'Vui lòng nhập tên tuyến';
-        if (!formData.start.trim()) newErrors.start = 'Vui lòng nhập điểm bắt đầu';
-        if (!formData.end.trim()) newErrors.end = 'Vui lòng nhập điểm kết thúc';
-        if (formData.stops < 2) newErrors.stops = 'Số điểm dừng phải ít nhất 2';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -63,6 +54,25 @@ const RouteEditModal = ({ isOpen, onClose, route, onSave }) => {
                 </div>
 
                 <div className="p-6 space-y-4">
+                    {/* Thông tin chỉ đọc */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <p className="text-sm text-blue-800 mb-2">
+                            <span className="font-semibold">Mã tuyến:</span> {route?.id}
+                        </p>
+                        <p className="text-sm text-blue-800 mb-2">
+                            <span className="font-semibold">Điểm đầu:</span> {route?.start}
+                        </p>
+                        <p className="text-sm text-blue-800 mb-2">
+                            <span className="font-semibold">Điểm cuối:</span> {route?.end}
+                        </p>
+                        <p className="text-sm text-blue-800">
+                            <span className="font-semibold">Số điểm dừng:</span> {route?.stops}
+                        </p>
+                        <p className="text-xs text-blue-600 mt-2 italic">
+                            💡 Không thể thay đổi điểm dừng và vị trí. Chỉ có thể sửa tên và trạng thái.
+                        </p>
+                    </div>
+
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Tên tuyến <span className="text-red-500">*</span>
@@ -78,59 +88,6 @@ const RouteEditModal = ({ isOpen, onClose, route, onSave }) => {
                             placeholder="Nhập tên tuyến"
                         />
                         {errors.name && <p className="mt-1 text-sm text-red-600">⚠️ {errors.name}</p>}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Điểm bắt đầu <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            className={`w-full border-2 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.start ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                            value={formData.start}
-                            onChange={(e) => {
-                                setFormData({ ...formData, start: e.target.value });
-                                if (errors.start) setErrors({ ...errors, start: '' });
-                            }}
-                            placeholder="Nhập điểm bắt đầu"
-                        />
-                        {errors.start && <p className="mt-1 text-sm text-red-600">⚠️ {errors.start}</p>}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Điểm kết thúc <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            className={`w-full border-2 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.end ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                            value={formData.end}
-                            onChange={(e) => {
-                                setFormData({ ...formData, end: e.target.value });
-                                if (errors.end) setErrors({ ...errors, end: '' });
-                            }}
-                            placeholder="Nhập điểm kết thúc"
-                        />
-                        {errors.end && <p className="mt-1 text-sm text-red-600">⚠️ {errors.end}</p>}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Số điểm dừng <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="number"
-                            min="2"
-                            className={`w-full border-2 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${errors.stops ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                            value={formData.stops}
-                            onChange={(e) => {
-                                setFormData({ ...formData, stops: Number(e.target.value) });
-                                if (errors.stops) setErrors({ ...errors, stops: '' });
-                            }}
-                            placeholder="Nhập số điểm dừng"
-                        />
-                        {errors.stops && <p className="mt-1 text-sm text-red-600">⚠️ {errors.stops}</p>}
                     </div>
 
                     <div>

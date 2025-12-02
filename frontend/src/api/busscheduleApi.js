@@ -14,7 +14,9 @@ export const createBusScheduleApi = async (scheduleData) => {
 };
 
 export const updateBusScheduleApi = async (id, scheduleData) => {
+    console.log("📤 Updating schedule:", id, scheduleData);
     const res = await axios.put(`${API_URL}/${id}`, scheduleData);
+    console.log("✅ Update response:", res.data);
     return res.data;
 };
 
