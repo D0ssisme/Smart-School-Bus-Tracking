@@ -1,5 +1,3 @@
-
-//frontend/src/pages/StudentManager.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentTable from "../components/StudentTable";
@@ -12,13 +10,13 @@ import { getParentsApi } from "@/api/userApi";
 import { getRoutesApi } from "@/api/routeApi";
 import { createStudent, deleteStudent, updateStudent } from "@/api/studentApi";
 import { createParentStudent } from "@/api/parentstudentApi";
-
-import { createStudentRouteAssignment, getAllStudentRouteAssignments, updateStudentRouteAssignment } from "@/api/studentrouteassignmentApi";
-import { getRoutesByIdApi } from "@/api/routestopApi";
+import { createStudentRouteAssignment, getAllStudentRouteAssignments } from "@/api/studentrouteassignmentApi";
 import { GraduationCap, UserPlus, Filter, Search, TrendingUp, BookOpen, Users, Award } from "lucide-react";
 import Swal from 'sweetalert2';
+import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
 
 function StudentManager() {
+    const { t } = useLanguage(); // ✅ Sử dụng hook
     const navigate = useNavigate();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingStudent, setEditingStudent] = useState(null);
@@ -33,12 +31,11 @@ function StudentManager() {
     const [parents, setParents] = useState([]);
     const [routes, setRoutes] = useState([]);
 
+    // ✅ Thêm t vào dependency để reload lại text khi đổi ngôn ngữ
     useEffect(() => {
         fetchStudents();
         fetchParentsAndRoutes();
-    }, []);
-
-
+    }, [t]); 
 
     const fetchStudents = async () => {
         try {
@@ -50,21 +47,14 @@ function StudentManager() {
                 getAllStudentRouteAssignments()
             ]);
 
-            console.log("📊 Parent-Student Data:", parentStudentData);
-            console.log("📊 Route Assignments Data:", routeAssignmentsData);
-
             // Tạo Map để tra cứu nhanh route assignments theo student_id
             const routeAssignmentsMap = new Map();
             routeAssignmentsData.forEach(assignment => {
                 const studentId = assignment?.student_id?._id;
                 if (studentId) {
                     routeAssignmentsMap.set(studentId, assignment);
-                } else {
-                    console.warn("⚠️ Missing student_id in route assignment:", assignment);
                 }
             });
-
-            console.log("🗺️ Route Assignments Map:", routeAssignmentsMap);
 
             // Transform data và merge thông tin điểm đón/trả
             const transformedData = parentStudentData
@@ -72,21 +62,12 @@ function StudentManager() {
                     const studentObj = item.student_id;
                     const parentObj = item.parent_id;
 
-                    // Nếu thiếu student_id hoặc parent_id thì cảnh báo và bỏ qua
                     if (!studentObj?._id || !parentObj?._id) {
-                        console.warn("⚠️ Missing student or parent in item:", item);
                         return null;
                     }
 
                     const studentId = studentObj._id;
                     const routeAssignment = routeAssignmentsMap.get(studentId);
-
-                    console.log(`🔍 Student ${studentObj.name}:`, {
-                        studentId,
-                        routeAssignment,
-                        pickupStop: routeAssignment?.pickup_stop_id?.name,
-                        dropoffStop: routeAssignment?.dropoff_stop_id?.name
-                    });
 
                     return {
                         id: studentId,
@@ -99,39 +80,28 @@ function StudentManager() {
                         active: item.active,
                         createdAt: item.createdAt,
 
-                        // Thông tin điểm đón/trả
-                        Diemdon: routeAssignment?.pickup_stop_id?.name || 'Chưa có',
-                        Diemtra: routeAssignment?.dropoff_stop_id?.name || 'Chưa có',
-                        pickupStop: routeAssignment?.pickup_stop_id?.name || 'Chưa có',
-                        dropoffStop: routeAssignment?.dropoff_stop_id?.name || 'Chưa có',
-                        routeName: routeAssignment?.route_id?.name || 'Chưa phân tuyến',
+                        // ✅ Sử dụng t(...) cho các giá trị mặc định
+                        Diemdon: routeAssignment?.pickup_stop_id?.name || t('studentManager.data.noInfo'),
+                        Diemtra: routeAssignment?.dropoff_stop_id?.name || t('studentManager.data.noInfo'),
+                        pickupStop: routeAssignment?.pickup_stop_id?.name || t('studentManager.data.noInfo'),
+                        dropoffStop: routeAssignment?.dropoff_stop_id?.name || t('studentManager.data.noInfo'),
+                        routeName: routeAssignment?.route_id?.name || t('studentManager.data.noRoute'),
                         pickupStopId: routeAssignment?.pickup_stop_id?._id,
                         dropoffStopId: routeAssignment?.dropoff_stop_id?._id,
                         routeId: routeAssignment?.route_id?._id,
                         routeAssignmentId: routeAssignment?._id
                     };
                 })
-                .filter(Boolean); // loại bỏ các phần tử null
+                .filter(Boolean);
 
-            console.log("✅ Final Transformed Data:", transformedData);
             setStudents(transformedData);
         } catch (error) {
             console.error("Error fetching students:", error);
-            ToastService.error("Không thể tải danh sách học sinh");
+            ToastService.error(t('studentManager.messages.fetchError'));
         } finally {
             setLoading(false);
         }
     };
-
-
-
-
-
-
-
-
-
-
 
     const fetchParentsAndRoutes = async () => {
         try {
@@ -143,27 +113,24 @@ function StudentManager() {
             setRoutes(routesData);
         } catch (error) {
             console.error('Error fetching parents and routes:', error);
-            ToastService.error("Không thể tải dữ liệu phụ huynh và tuyến đường");
+            ToastService.error(t('studentManager.messages.fetchMetaError'));
         }
     };
 
     const handleAddStudent = async (formData) => {
-        const loadingToast = ToastService.loading("Đang thêm học sinh...");
+        const loadingToast = ToastService.loading(t('studentManager.messages.adding'));
 
         try {
-            // 1. Tạo student mới
             const studentPayload = {
                 name: formData.name,
                 grade: formData.class
             };
 
             const response = await createStudent(studentPayload);
-            console.log("✅ Student created:", response);
 
-            // 2. Tạo relationship parent-student
             const relationPayload = {
                 parent_id: formData.parentId,
-                student_id: response.student._id, // ← Sửa chỗ này: thêm .student
+                student_id: response.student._id,
                 active: true
             };
 
@@ -174,140 +141,69 @@ function StudentManager() {
                 dropoff_stop_id: formData.dropoffStopId
             };
 
-            console.log("📤 Sending parent-student payload:", relationPayload);
-            const result = await createParentStudent(relationPayload);
-            console.log("✅ Parent-Student relationship created:", result);
+            await createParentStudent(relationPayload);
+            await createStudentRouteAssignment(assignmentPayload);
 
-            console.log("📤 Sending student-route assignment payload:", assignmentPayload);
-            const assignmentResult = await createStudentRouteAssignment(assignmentPayload);
-            console.log("✅ Student-Route assignment created:", assignmentResult);
-
-            ToastService.update(loadingToast, "Thêm học sinh thành công!", "success");
+            ToastService.update(loadingToast, t('studentManager.messages.addSuccess'), "success");
             setIsModalOpen(false);
 
-            // Refresh danh sách học sinh
             await fetchStudents();
         } catch (error) {
             console.error('❌ Error adding student:', error);
-            console.error('Error response:', error.response?.data);
-            const errorMsg = error.response?.data?.message || "Không thể thêm học sinh. Vui lòng thử lại!";
+            const errorMsg = error.response?.data?.message || t('studentManager.messages.addError');
             ToastService.update(loadingToast, errorMsg, "error");
         }
     };
 
-
     const handleDeleteStudent = async (id) => {
-        // Tìm thông tin học sinh từ state
         const student = students.find(s => s.id === id);
 
         Swal.fire({
-            title: "Bạn có chắc muốn xóa?",
+            title: t('studentManager.swal.deleteTitle'),
             html: `
             <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0;">
                 <p style="margin: 0; font-size: 16px;">
-                    <strong>👤 Học sinh:</strong> ${student?.HoTen || 'N/A'}
+                    <strong>👤 ${t('studentManager.swal.student')}:</strong> ${student?.HoTen || 'N/A'}
                 </p>
                 <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
-                    <strong>📚 Lớp:</strong> ${student?.Lop || 'N/A'}
+                    <strong>📚 ${t('studentManager.swal.class')}:</strong> ${student?.Lop || 'N/A'}
                 </p>
                 <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
-                    <strong>🆔 Mã HS:</strong> ${student?.MaHS || 'N/A'}
+                    <strong>🆔 ${t('studentManager.swal.studentCode')}:</strong> ${student?.MaHS || 'N/A'}
                 </p>
             </div>
            
-            <p style="color: #d33; font-weight: bold; margin-top: 16px;">⚠️ Không thể hoàn tác!</p>
+            <p style="color: #d33; font-weight: bold; margin-top: 16px;">${t('studentManager.swal.warningAction')}</p>
         `,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#d33",
             cancelButtonColor: "#3085d6",
-            confirmButtonText: "Xóa",
-            cancelButtonText: "Hủy",
+            confirmButtonText: t('studentManager.swal.btnDelete'),
+            cancelButtonText: t('studentManager.swal.btnCancel'),
             width: 550
         }).then(async (result) => {
             if (result.isConfirmed) {
-                const loadingToast = ToastService.loading("Đang xóa học sinh...");
+                const loadingToast = ToastService.loading(t('studentManager.swal.deleteLoading'));
 
                 try {
-                    // Gọi API xóa học sinh
                     await deleteStudent(id);
-
-                    // Cập nhật UI - xóa học sinh khỏi danh sách
                     setStudents(students.filter(s => s.id !== id));
-
-                    ToastService.update(loadingToast, "Xóa học sinh và các liên kết thành công!", "success");
-
+                    ToastService.update(loadingToast, t('studentManager.messages.deleteSuccess'), "success");
                 } catch (error) {
                     console.error("Error deleting student:", error);
-                    const errorMsg = error.response?.data?.message || "Xóa học sinh thất bại!";
+                    const errorMsg = error.response?.data?.message || t('studentManager.messages.deleteError');
                     ToastService.update(loadingToast, errorMsg, "error");
                 }
             }
         });
     };
 
-    const handleUpdateStudent = async (formData) => {
-        const loadingToast = ToastService.loading("Đang cập nhật học sinh...");
-
-        try {
-            console.log("📝 Updating student:", editingStudent.id);
-            console.log("📤 Form data:", formData);
-
-            // 1. Cập nhật thông tin student cơ bản
-            const studentPayload = {
-                name: formData.name,
-                grade: formData.class
-            };
-
-            await updateStudent(editingStudent.id, studentPayload);
-            console.log("✅ Student info updated");
-
-            // 2. Nếu thay đổi parent, cập nhật relationship
-            if (formData.parentId && formData.parentId !== editingStudent.parent_id) {
-                // Có thể cần API update parent-student relationship
-                console.log("⚠️ Parent changed - might need to update relationship");
-            }
-
-            // 3. Cập nhật route assignment nếu có thay đổi
-            if (editingStudent.routeAssignmentId &&
-                (formData.routeId !== editingStudent.routeId ||
-                    formData.pickupStopId !== editingStudent.pickupStopId ||
-                    formData.dropoffStopId !== editingStudent.dropoffStopId)) {
-
-                const assignmentPayload = {
-                    student_id: editingStudent.id,
-                    route_id: formData.routeId,
-                    pickup_stop_id: formData.pickupStopId,
-                    dropoff_stop_id: formData.dropoffStopId
-                };
-
-                console.log("📤 Updating route assignment:", assignmentPayload);
-                await updateStudentRouteAssignment(editingStudent.routeAssignmentId, assignmentPayload);
-                console.log("✅ Route assignment updated");
-            }
-
-            ToastService.update(loadingToast, "Cập nhật học sinh thành công!", "success");
-            setIsEditModalOpen(false);
-            setEditingStudent(null);
-
-            // Refresh danh sách học sinh
-            await fetchStudents();
-
-        } catch (error) {
-            console.error('❌ Error updating student:', error);
-            console.error('Error response:', error.response?.data);
-            const errorMsg = error.response?.data?.message || "Không thể cập nhật học sinh. Vui lòng thử lại!";
-            ToastService.update(loadingToast, errorMsg, "error");
-        }
-    };
-
-
     const handleEditStudent = (student) => {
         setEditingStudent(student);
         setIsEditModalOpen(true);
     };
 
-    // Lấy danh sách lớp unique
     const classList = ["all", ...new Set(students.map(s => s.Lop))];
 
     const filteredStudents = students.filter(student => {
@@ -319,7 +215,6 @@ function StudentManager() {
         return matchSearch && matchClass;
     });
 
-    // Thống kê theo lớp
     const activeStudents = students.filter(s => s.active).length;
     const totalClasses = new Set(students.map(s => s.Lop)).size;
 
@@ -328,7 +223,7 @@ function StudentManager() {
             <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 rounded p-5 min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">Đang tải danh sách học sinh...</p>
+                    <p className="text-gray-600 font-medium">{t('studentManager.loading')}</p>
                 </div>
             </div>
         );
@@ -336,24 +231,21 @@ function StudentManager() {
 
     return (
         <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 min-h-screen p-6">
-            {/* Header Banner với illustration */}
+            {/* Header Banner */}
             <div className="relative bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 rounded-2xl shadow-2xl overflow-hidden mb-6">
-                {/* Background pattern */}
                 <div className="absolute inset-0 opacity-10">
                     <div className="absolute inset-0" style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
                     }}></div>
                 </div>
 
-                {/* Student illustration SVG */}
                 <div className="absolute right-8 top-1/2 transform -translate-y-1/2 opacity-20 hidden lg:block">
+                    {/* SVG giữ nguyên */}
                     <svg width="200" height="140" viewBox="0 0 200 140" fill="none">
-                        {/* Graduation cap */}
                         <rect x="50" y="30" width="100" height="8" fill="white" opacity="0.9" />
                         <polygon points="100,20 40,35 100,50 160,35" fill="white" opacity="0.9" />
                         <rect x="95" y="50" width="10" height="30" fill="white" opacity="0.8" />
                         <circle cx="100" cy="85" r="8" fill="white" opacity="0.8" />
-                        {/* Books */}
                         <rect x="30" y="100" width="40" height="30" rx="2" fill="white" opacity="0.7" />
                         <rect x="75" y="105" width="40" height="25" rx="2" fill="white" opacity="0.6" />
                         <rect x="120" y="95" width="40" height="35" rx="2" fill="white" opacity="0.5" />
@@ -368,10 +260,10 @@ function StudentManager() {
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold text-white mb-1">
-                                    Quản lý học sinh
+                                    {t('studentManager.title')}
                                 </h1>
                                 <p className="text-cyan-100">
-                                    Theo dõi và quản lý thông tin học sinh toàn trường
+                                    {t('studentManager.subtitle')}
                                 </p>
                             </div>
                         </div>
@@ -379,15 +271,15 @@ function StudentManager() {
                         {/* Quick stats */}
                         <div className="hidden md:flex gap-4">
                             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                                <div className="text-white/70 text-xs mb-1">Tổng số</div>
+                                <div className="text-white/70 text-xs mb-1">{t('studentManager.stats.total')}</div>
                                 <div className="text-2xl font-bold text-white">{students.length}</div>
                             </div>
                             <div className="bg-green-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-green-300/30">
-                                <div className="text-green-100 text-xs mb-1">Đang học</div>
+                                <div className="text-green-100 text-xs mb-1">{t('studentManager.stats.studyingShort')}</div>
                                 <div className="text-2xl font-bold text-white">{activeStudents}</div>
                             </div>
                             <div className="bg-blue-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-blue-300/30">
-                                <div className="text-blue-100 text-xs mb-1">Số lớp</div>
+                                <div className="text-blue-100 text-xs mb-1">{t('studentManager.stats.classCount')}</div>
                                 <div className="text-2xl font-bold text-white">{totalClasses}</div>
                             </div>
                         </div>
@@ -406,7 +298,7 @@ function StudentManager() {
                                 onChange={(e) => setFilterClass(e.target.value)}
                                 className="bg-transparent border-none focus:ring-0 text-sm outline-none font-medium text-gray-700 cursor-pointer"
                             >
-                                <option value="all">Tất cả lớp ({students.length})</option>
+                                <option value="all">{t('studentManager.filter.allClasses')} ({students.length})</option>
                                 {classList.filter(c => c !== "all").map(className => (
                                     <option key={className} value={className}>
                                         {className} ({students.filter(s => s.Lop === className).length})
@@ -419,7 +311,7 @@ function StudentManager() {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                             <input
                                 type="text"
-                                placeholder="Tìm theo tên, mã học sinh hoặc lớp..."
+                                placeholder={t('studentManager.filter.searchPlaceholder')}
                                 className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -431,7 +323,7 @@ function StudentManager() {
                         onClick={() => setIsModalOpen(true)}
                         className="flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                     >
-                        <UserPlus size={20} /> Thêm học sinh
+                        <UserPlus size={20} /> {t('studentManager.filter.addBtn')}
                     </button>
                 </div>
             </div>
@@ -445,9 +337,9 @@ function StudentManager() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Tổng học sinh</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('studentManager.stats.totalStudents')}</h3>
                     <p className="text-3xl font-bold text-gray-900">{students.length}</p>
-                    <p className="text-xs text-gray-500 mt-2">Toàn trường</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('studentManager.stats.schoolWide')}</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500">
@@ -457,9 +349,9 @@ function StudentManager() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Đang học tập</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('studentManager.stats.studying')}</h3>
                     <p className="text-3xl font-bold text-gray-900">{activeStudents}</p>
-                    <p className="text-xs text-gray-500 mt-2">Học sinh hoạt động</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('studentManager.stats.activeStudents')}</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-cyan-500">
@@ -469,9 +361,9 @@ function StudentManager() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Số lớp học</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('studentManager.stats.classes')}</h3>
                     <p className="text-3xl font-bold text-gray-900">{totalClasses}</p>
-                    <p className="text-xs text-gray-500 mt-2">Đang hoạt động</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('studentManager.stats.activeClasses')}</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-orange-500">
@@ -481,11 +373,11 @@ function StudentManager() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Trung bình/Lớp</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('studentManager.stats.avgPerClass')}</h3>
                     <p className="text-3xl font-bold text-gray-900">
                         {totalClasses > 0 ? Math.round(students.length / totalClasses) : 0}
                     </p>
-                    <p className="text-xs text-gray-500 mt-2">Học sinh mỗi lớp</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('studentManager.stats.studentPerClass')}</p>
                 </div>
             </div>
 
@@ -498,13 +390,13 @@ function StudentManager() {
                         </div>
                         <h3 className="text-xl font-semibold text-gray-700 mb-2">
                             {searchTerm || filterClass !== "all"
-                                ? "Không tìm thấy học sinh"
-                                : "Chưa có học sinh nào"}
+                                ? t('studentManager.empty.notFoundTitle')
+                                : t('studentManager.empty.noDataTitle')}
                         </h3>
                         <p className="text-gray-500 mb-4">
                             {searchTerm || filterClass !== "all"
-                                ? "Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm"
-                                : "Bắt đầu thêm học sinh vào hệ thống"}
+                                ? t('studentManager.empty.notFoundDesc')
+                                : t('studentManager.empty.noDataDesc')}
                         </p>
                         {(searchTerm || filterClass !== "all") && (
                             <button
@@ -514,7 +406,7 @@ function StudentManager() {
                                 }}
                                 className="text-cyan-600 hover:text-cyan-700 font-medium text-sm"
                             >
-                                Xóa bộ lọc
+                                {t('studentManager.filter.clearFilter')}
                             </button>
                         )}
                     </div>
@@ -543,7 +435,7 @@ function StudentManager() {
                     setIsEditModalOpen(false);
                     setEditingStudent(null);
                 }}
-                onSubmit={handleUpdateStudent}
+                // onSubmit={handleUpdateStudent}
                 student={editingStudent}
                 parents={parents}
                 routes={routes}
