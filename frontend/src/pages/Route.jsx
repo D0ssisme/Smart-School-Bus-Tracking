@@ -4,6 +4,8 @@ import { getRoutesApi, deleteRouteApi, updateRouteApi } from "@/api/routeApi";
 import { getRoutesByIdApi } from "@/api/routeStopApi";
 import RouteDetailModal from "@/components/RouteDetailModal";
 import RouteEditModal from "@/components/RouteEditModal";
+import ToastService from "@/lib/toastService";
+import Swal from 'sweetalert2';
 import {
   Route as RouteIcon,
   MapPin,
@@ -68,40 +70,78 @@ export default function RouteList() {
   };
 
   const handleDelete = async (route) => {
-    if (window.confirm("Bạn có chắc muốn xóa tuyến này?")) {
-      try {
-        setLoadingAction(true);
-        // Sử dụng MongoDB _id để xóa
-        const mongoId = route.originalData?._id || route.id;
+    Swal.fire({
+      title: 'Xác nhận xóa tuyến đường',
+      html: `
+        <div style="text-align: left;">
+          <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #dc3545;">
+            <p style="margin: 0; font-size: 16px;">
+              <strong>🛣️ Tên tuyến:</strong> ${route.name}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+              <strong>🆔 Mã tuyến:</strong> ${route.id}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+              <strong>📍 Điểm đầu:</strong> ${route.start}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+              <strong>🏁 Điểm cuối:</strong> ${route.end}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+              <strong>📍 Số điểm dừng:</strong> ${route.stops} điểm
+            </p>
+          </div>
+          <p style="color: #d33; font-weight: bold; margin-top: 16px;">⚠️ Hành động này không thể hoàn tác!</p>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa tuyến đường',
+      cancelButtonText: 'Hủy',
+      width: 600
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const loadingToast = ToastService.loading('Đang xóa tuyến đường...');
 
-        if (!mongoId) {
-          alert("Không tìm thấy ID tuyến đường!");
-          return;
+        try {
+          setLoadingAction(true);
+          // Sử dụng MongoDB _id để xóa
+          const mongoId = route.originalData?._id || route.id;
+
+          if (!mongoId) {
+            ToastService.update(loadingToast, 'Không tìm thấy ID tuyến đường!', 'error');
+            return;
+          }
+
+          console.log("Deleting route with ID:", mongoId);
+          await deleteRouteApi(mongoId);
+
+          // Fetch lại danh sách routes
+          await fetchRoutes();
+
+          ToastService.update(loadingToast, 'Xóa tuyến đường thành công!', 'success');
+        } catch (err) {
+          console.error("Error deleting route:", err);
+          const errorMessage = err.response?.data?.message || 'Không thể xóa tuyến đường!';
+          ToastService.update(loadingToast, errorMessage, 'error');
+        } finally {
+          setLoadingAction(false);
         }
-
-        console.log("Deleting route with ID:", mongoId);
-        await deleteRouteApi(mongoId);
-
-        // Fetch lại danh sách routes
-        await fetchRoutes();
-
-        alert("Xóa tuyến đường thành công!");
-      } catch (err) {
-        console.error("Error deleting route:", err);
-        const errorMessage = err.response?.data?.message || "Không thể xóa tuyến đường. Vui lòng thử lại!";
-        alert(errorMessage);
-      } finally {
-        setLoadingAction(false);
       }
-    }
-  }; const openDetail = async (route) => {
+    });
+  };
+
+
+  const openDetail = async (route) => {
     try {
       setLoadingAction(true);
       // Fetch detailed route information including stops using MongoDB _id
       const mongoId = route.originalData?._id || route.id;
 
       if (!mongoId) {
-        alert("Không tìm thấy ID tuyến đường!");
+        ToastService.error('Không tìm thấy ID tuyến đường!');
         return;
       }
 
@@ -122,7 +162,7 @@ export default function RouteList() {
       setIsDetailOpen(true);
     } catch (err) {
       console.error("Error fetching route details:", err);
-      alert("Không thể tải thông tin chi tiết. Vui lòng thử lại!");
+      ToastService.error('Không thể tải thông tin chi tiết. Vui lòng thử lại!');
     } finally {
       setLoadingAction(false);
     }
@@ -135,7 +175,7 @@ export default function RouteList() {
       const mongoId = route.originalData?._id || route.id;
 
       if (!mongoId) {
-        alert("Không tìm thấy ID tuyến đường!");
+        ToastService.error('Không tìm thấy ID tuyến đường!');
         return;
       }
 
@@ -150,7 +190,7 @@ export default function RouteList() {
       setIsEditOpen(true);
     } catch (err) {
       console.error("Error fetching route details:", err);
-      alert("Không thể tải thông tin tuyến đường. Vui lòng thử lại!");
+      ToastService.error('Không thể tải thông tin tuyến đường. Vui lòng thử lại!');
     } finally {
       setLoadingAction(false);
     }
@@ -170,7 +210,7 @@ export default function RouteList() {
       const mongoId = selectedRoute.originalData?._id || selectedRoute.id;
 
       if (!mongoId) {
-        alert("Không tìm thấy ID tuyến đường!");
+        ToastService.error('Không tìm thấy ID tuyến đường!');
         return;
       }
 
@@ -188,12 +228,12 @@ export default function RouteList() {
       // Fetch lại danh sách routes để có data mới nhất
       await fetchRoutes();
 
-      alert("Cập nhật tuyến đường thành công!");
+      ToastService.success('Cập nhật tuyến đường thành công!');
       closeModal();
     } catch (err) {
       console.error("Error updating route:", err);
-      const errorMessage = err.response?.data?.message || "Không thể cập nhật tuyến đường. Vui lòng thử lại!";
-      alert(errorMessage);
+      const errorMessage = err.response?.data?.message || 'Không thể cập nhật tuyến đường!';
+      ToastService.error(errorMessage);
     } finally {
       setLoadingAction(false);
     }

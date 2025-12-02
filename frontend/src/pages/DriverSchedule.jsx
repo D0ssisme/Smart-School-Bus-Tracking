@@ -37,7 +37,12 @@ export default function DriverSchedule() {
       setSchedules(list);
     } catch (error) {
       console.error("Error fetching schedules:", error);
-      toast.error("Không thể tải lịch trình");
+
+      // Chỉ hiển thị toast error khi thực sự có lỗi server, không phải 404 (không tìm thấy)
+      if (error.response?.status !== 404) {
+        toast.error("Có lỗi khi tải lịch trình. Vui lòng thử lại!");
+      }
+
       setSchedules([]); // tránh crash UI
     } finally {
       setLoading(false);
