@@ -1,8 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Bus, Mail, Phone, MapPin } from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext"; // ✅ Import hook
 
 function Footer() {
+  const { t } = useLanguage(); // ✅ Sử dụng hook để dịch
+
   return (
     // ⭐ Thêm id="contact" để navbar có thể scroll đến đây
     <footer id="contact" className="bg-blue-900 text-white mt-auto">
@@ -15,10 +18,10 @@ function Footer() {
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
                 <Bus className="w-6 h-6" />
               </div>
-              <span className="text-xl font-bold">Smart School Bus</span>
+              <span className="text-xl font-bold">{t('footer.title')}</span> {/* ✅ Dịch */}
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Hệ thống theo dõi xe buýt học sinh thông minh, an toàn và tiện lợi.
+              {t('footer.description')} {/* ✅ Dịch */}
             </p>
 
             {/* Mạng xã hội */}
@@ -49,38 +52,38 @@ function Footer() {
 
           {/* Liên kết nhanh */}
           <div>
-            <h3 className="text-lg font-bold mb-4">Liên kết nhanh</h3>
+            <h3 className="text-lg font-bold mb-4">{t('footer.quickLinks')}</h3> {/* ✅ Dịch */}
             <ul className="space-y-2">
-              <li><Link to="/" className="text-gray-400 hover:text-white transition">Trang chủ</Link></li>
-              <li><a href="#features" className="text-gray-400 hover:text-white transition">Tính năng</a></li>
-              <li><a href="#contact" className="text-gray-400 hover:text-white transition">Liên hệ</a></li>
+              <li><Link to="/" className="text-gray-400 hover:text-white transition">{t('footer.homePage')}</Link></li> {/* ✅ Dịch */}
+              <li><a href="#features" className="text-gray-400 hover:text-white transition">{t('footer.features')}</a></li> {/* ✅ Dịch */}
+              <li><a href="#contact" className="text-gray-400 hover:text-white transition">{t('footer.contact')}</a></li> {/* ✅ Dịch */}
             </ul>
           </div>
 
           {/* Hỗ trợ */}
           <div>
-            <h3 className="text-lg font-bold mb-4">Hỗ trợ</h3>
+            <h3 className="text-lg font-bold mb-4">{t('footer.support')}</h3> {/* ✅ Dịch */}
             <ul className="space-y-2 text-gray-400">
-              <li><a href="#">Câu hỏi thường gặp</a></li>
-              <li><a href="#">Hướng dẫn sử dụng</a></li>
-              <li><a href="#">Chính sách bảo mật</a></li>
+              <li><a href="#">{t('footer.faq')}</a></li> {/* ✅ Dịch */}
+              <li><a href="#">{t('footer.userGuide')}</a></li> {/* ✅ Dịch */}
+              <li><a href="#">{t('footer.privacyPolicy')}</a></li> {/* ✅ Dịch */}
             </ul>
           </div>
 
           {/* Liên hệ */}
           <div>
-            <h3 className="text-lg font-bold mb-4">Liên hệ</h3>
+            <h3 className="text-lg font-bold mb-4">{t('footer.contactInfo')}</h3> {/* ✅ Dịch */}
             <ul className="space-y-3 text-gray-400">
-              <li className="flex gap-3"><MapPin className="w-5 h-5 text-white" /> Đại học Sài Gòn, TP. Hồ Chí Minh</li>
-              <li className="flex gap-3"><Phone className="w-5 h-5 text-white" /><a href="tel:0912345678">0912 345 678</a></li>
-              <li className="flex gap-3"><Mail className="w-5 h-5 text-white" /><a href="mailto:support@smartschoolbus.vn">support@smartschoolbus.vn</a></li>
+              <li className="flex gap-3"><MapPin className="w-5 h-5 text-white" /> {t('footer.location')}</li> {/* ✅ Dịch */}
+              <li className="flex gap-3"><Phone className="w-5 h-5 text-white" /><a href="tel:0912345678">{t('footer.phone')}</a></li> {/* ✅ Dịch */}
+              <li className="flex gap-3"><Mail className="w-5 h-5 text-white" /><a href="mailto:support@smartschoolbus.vn">{t('footer.email')}</a></li> {/* ✅ Dịch */}
             </ul>
           </div>
         </div>
 
         {/* Copyright */}
         <div className="text-center text-white text-sm border-t border-gray-700 pt-6">
-          © 2025 SGU Smart School Bus Tracking System
+          {t('footer.copyright')} {/* ✅ Dịch */}
         </div>
       </div>
     </footer>

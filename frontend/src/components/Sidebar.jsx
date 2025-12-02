@@ -1,7 +1,9 @@
-import { LayoutDashboard, Bus, Users, BellRing, Route, GraduationCap, AlertTriangle, UserCog, LifeBuoy,Calendar  } from "lucide-react";
+import { LayoutDashboard, Bus, Users, BellRing, Route, GraduationCap, AlertTriangle, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../contexts/LanguageContext"; // ✅ Import hook
 
 export default function Sidebar({ isOpen }) {
+  const { t } = useLanguage(); // ✅ Sử dụng hook để dịch
   const item = "flex items-center px-5 py-2 rounded hover:bg-gray-100 relative";
   const icon = "w-5 h-5 text-blue-900";
 
@@ -50,11 +52,11 @@ export default function Sidebar({ isOpen }) {
           {/* Text */}
           <div className="flex flex-col">
             <span className="text-xl font-bold text-white leading-tight tracking-wide">
-              {isOpen ? "SSB Tracking" : "SSB"}
+              {isOpen ? t('sidebar.title') : "SSB"} {/* ✅ Dịch */}
             </span>
             {isOpen && (
               <span className="text-[10px] text-blue-200 font-medium tracking-wider uppercase">
-                School Bus System
+                {t('sidebar.subtitle')} {/* ✅ Dịch */}
               </span>
             )}
           </div>
@@ -80,7 +82,7 @@ export default function Sidebar({ isOpen }) {
             className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
               }`}
           >
-            Trang chủ
+            {t('sidebar.dashboard')} {/* ✅ Dịch */}
           </span>
         </Link>
 
@@ -90,16 +92,17 @@ export default function Sidebar({ isOpen }) {
             className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
               }`}
           >
-            Lịch trình xe
+            {t('sidebar.schedule')} {/* ✅ Dịch */}
           </span>
         </Link>
+
         <Link to="/busmanager" className={item}>
           <Bus className={icon} />
           <span
             className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
               }`}
           >
-            Xe bus
+            {t('sidebar.buses')} {/* ✅ Dịch */}
           </span>
         </Link>
 
@@ -109,16 +112,17 @@ export default function Sidebar({ isOpen }) {
             className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
               }`}
           >
-            Người dùng
+            {t('sidebar.users')} {/* ✅ Dịch */}
           </span>
         </Link>
+
         <Link to="/students" className={item}>
           <GraduationCap className={icon} />
           <span
             className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
               }`}
           >
-            Học sinh
+            {t('sidebar.students')} {/* ✅ Dịch */}
           </span>
         </Link>
 
@@ -128,7 +132,7 @@ export default function Sidebar({ isOpen }) {
             className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
               }`}
           >
-            Tuyến đường
+            {t('sidebar.routes')} {/* ✅ Dịch */}
           </span>
         </Link>
 
@@ -138,7 +142,7 @@ export default function Sidebar({ isOpen }) {
             className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
               }`}
           >
-            Thông báo
+            {t('sidebar.notifications')} {/* ✅ Dịch */}
           </span>
         </Link>
 
@@ -148,10 +152,9 @@ export default function Sidebar({ isOpen }) {
             className={`absolute left-14 whitespace-nowrap transition-all duration-500 text-black font-medium ${isOpen ? "opacity-100" : "opacity-0"
               }`}
           >
-            Báo cáo, cảnh báo
+            {t('sidebar.reports')} {/* ✅ Dịch */}
           </span>
         </Link>
-
       </nav>
     </aside>
   );

@@ -1,15 +1,17 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Shield, Clock, Bell, MapPin } from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext"; // ✅ Import hook
 
 function Hero() {
   const navigate = useNavigate();
+  const { t } = useLanguage(); // ✅ Sử dụng hook để dịch
 
   const benefits = [
-    { icon: <Shield className="w-5 h-5" />, text: "An toàn tuyệt đối" },
-    { icon: <Clock className="w-5 h-5" />, text: "Quản lý thời gian" },
-    { icon: <Bell className="w-5 h-5" />, text: "Thông báo tức thì" },
-    { icon: <MapPin className="w-5 h-5" />, text: "Định vị chính xác" }
+    { icon: <Shield className="w-5 h-5" />, text: t('features.security') },
+    { icon: <Clock className="w-5 h-5" />, text: t('features.timeManagement') },
+    { icon: <Bell className="w-5 h-5" />, text: t('features.notifications') },
+    { icon: <MapPin className="w-5 h-5" />, text: t('features.location') }
   ];
 
   return (
@@ -25,11 +27,11 @@ function Hero() {
         {/* Text Content */}
         <div className="flex-1 space-y-6">
           <h1 className="text-4xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-size-200 animate-gradient-x leading-tight animate-fade-in-up">
-            Hệ Thống Quản Lý Xe Bus
+            {t('hero.title')} {/* ✅ Dịch */}
           </h1>
 
           <p className="text-0.5xl text-gray-900 leading-relaxed animate-fade-in-up animation-delay-200">
-            Hệ thống giúp phụ huynh, nhà trường và tài xế quản lý minh bạch & tiện lợi.
+            {t('hero.subtitle')} {/* ✅ Dịch */}
           </p>
 
           <div className="flex gap-4 pt-4 animate-fade-in-up animation-delay-400">
@@ -38,7 +40,7 @@ function Hero() {
               className="group px-8 py-4 bg-gradient-to-r from-blue-800 to-blue-700 text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105"
             >
               <span className="flex items-center gap-2">
-                Bắt đầu ngay
+                {t('hero.getStarted')} {/* ✅ Dịch */}
                 <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
@@ -52,7 +54,7 @@ function Hero() {
               }}
               className="px-8 py-4 border-2 border-blue-600 text-blue-600 rounded-xl font-bold text-lg hover:bg-blue-50 transition-all duration-300 hover:scale-105 transform"
             >
-              Tìm hiểu thêm
+              {t('hero.learnMore')} {/* ✅ Dịch */}
             </button>
           </div>
 
@@ -95,8 +97,8 @@ function Hero() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-bold text-gray-800">25 Xe bus</p>
-                    <p className="text-sm text-gray-500">Đang hoạt động</p>
+                    <p className="font-bold text-gray-800">{t('hero.activeBuses')}</p> {/* ✅ Dịch */}
+                    <p className="text-sm text-gray-500">{t('hero.activeBusesStatus')}</p> {/* ✅ Dịch */}
                   </div>
                 </div>
               </div>
@@ -112,8 +114,8 @@ function Hero() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-bold text-gray-800">500+ Học sinh</p>
-                    <p className="text-sm text-gray-500">Sử dụng mỗi ngày</p>
+                    <p className="font-bold text-gray-800">{t('hero.totalStudents')}</p> {/* ✅ Dịch */}
+                    <p className="text-sm text-gray-500">{t('hero.studentsStatus')}</p> {/* ✅ Dịch */}
                   </div>
                 </div>
               </div>
