@@ -175,7 +175,7 @@ export const createBusSchedule = async (req, res) => {
     const route = await Route.findById(route_id)
       .populate('start_point')
       .populate('end_point');
-    
+
     if (!route) {
       return res.status(404).json({
         success: false,
@@ -211,7 +211,7 @@ export const createBusSchedule = async (req, res) => {
     // 10. Kiểm tra Driver đã có lịch trong thời gian này chưa
     const driverConflict = await BusSchedule.findOne({
       driver_id: driver._id,
-  
+
       status: { $in: ['scheduled', 'in_progress'] }
     });
 
@@ -221,7 +221,7 @@ export const createBusSchedule = async (req, res) => {
         message: `Tài xế '${driver.name}' đã có lịch `,
         conflict: {
           schedule_id: driverConflict.schedule_id,
-         
+
           start_time: driverConflict.start_time
         }
       });
@@ -348,11 +348,90 @@ export const getBusScheduleById = async (req, res) => {
 // UPDATE
 export const updateBusSchedule = async (req, res) => {
   try {
-    const schedule = await BusSchedule.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!schedule) return res.status(404).json({ message: "Schedule not found" });
-    res.status(200).json(schedule);
+    const { id } = req.params;
+    const updateData = req.body;
+
+    console.log(`📝 Updating schedule ${id} with:`, updateData);
+
+    // Kiểm tra schedule có tồn tại không
+    const existingSchedule = await BusSchedule.findById(id);
+    if (!existingSchedule) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy lịch trình"
+      });
+    }
+
+    // Validate các ObjectId nếu có trong update
+    if (updateData.bus_id) {
+      const bus = await Bus.findById(updateData.bus_id);
+      if (!bus) {
+        return res.status(404).json({
+          success: false,
+          message: "Xe bus không tồn tại"
+        });
+      }
+    }
+
+    if (updateData.driver_id) {
+      const driver = await User.findById(updateData.driver_id);
+      if (!driver || driver.role !== 'driver') {
+        return res.status(404).json({
+          success: false,
+          message: "Tài xế không tồn tại hoặc không hợp lệ"
+        });
+      }
+    }
+
+    if (updateData.route_id) {
+      const route = await Route.findById(updateData.route_id);
+      if (!route) {
+        return res.status(404).json({
+          success: false,
+          message: "Tuyến đường không tồn tại"
+        });
+      }
+    }
+
+    // Update schedule
+    const updatedSchedule = await BusSchedule.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    )
+      .populate({ path: "bus_id", select: "license_plate capacity status" })
+      .populate({ path: "driver_id", select: "name phone role" })
+      .populate({
+        path: "route_id",
+        select: "name",
+        populate: [
+          { path: "start_point", select: "name" },
+          { path: "end_point", select: "name" }
+        ]
+      });
+
+    console.log("✅ Schedule updated successfully:", updatedSchedule.schedule_id);
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật lịch trình thành công",
+      data: updatedSchedule
+    });
+
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error("❌ Error updating schedule:", error);
+
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: "ID không hợp lệ"
+      });
+    }
+
+    res.status(400).json({
+      success: false,
+      message: error.message || "Không thể cập nhật lịch trình"
+    });
   }
 };
 

@@ -1,3 +1,4 @@
+//
 import React, { useState, useEffect } from 'react';
 import { Plus, Filter, Search, CheckCircle, XCircle, Wrench, Edit2, Trash2, Users, Truck } from 'lucide-react';
 
@@ -7,6 +8,8 @@ const BusIcon = Truck;
 // 🔥 IMPORT API - sử dụng alias @ từ project
 // ========================================
 import { getAllBuses, createBusApi, updateBusApi, deleteBusApi } from '@/api/busApi';
+import ToastService from '@/lib/toastService';
+import Swal from 'sweetalert2';
 
 const BusCard = ({ bus, onEdit, onDelete }) => {
   const statusConfig = {
@@ -46,12 +49,12 @@ const BusCard = ({ bus, onEdit, onDelete }) => {
         <div className="absolute inset-0 opacity-20">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <pattern id={`bus-pattern-${bus._id}`} x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <circle cx="20" cy="20" r="1" fill="white"/>
+              <circle cx="20" cy="20" r="1" fill="white" />
             </pattern>
-            <rect width="100%" height="100%" fill={`url(#bus-pattern-${bus._id})`}/>
+            <rect width="100%" height="100%" fill={`url(#bus-pattern-${bus._id})`} />
           </svg>
         </div>
-        
+
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
@@ -149,12 +152,12 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData }) => {
 
   const handleSubmit = async () => {
     if (!formData.license_plate || !formData.capacity) {
-      alert('⚠️ Vui lòng điền đầy đủ thông tin!');
+      ToastService.error('Vui lòng điền đầy đủ thông tin!');
       return;
     }
 
     if (formData.capacity < 1) {
-      alert('⚠️ Sức chứa phải lớn hơn 0!');
+      ToastService.error('Sức chứa phải lớn hơn 0!');
       return;
     }
 
@@ -297,64 +300,118 @@ const BusManager = () => {
   };
 
   const handleSaveBus = async (data) => {
+    const loadingToast = ToastService.loading('Đang xử lý...');
+
     try {
       if (editingBus) {
         // Update existing bus
         console.log('🔄 Updating bus:', editingBus._id, data);
         const updatedBus = await updateBusApi(editingBus._id, data);
-        
-        setBuses(buses.map(bus => 
-          bus._id === editingBus._id 
+
+        setBuses(buses.map(bus =>
+          bus._id === editingBus._id
             ? { ...bus, ...data }
             : bus
         ));
-        
-        alert('✅ Cập nhật xe bus thành công!');
+
+        ToastService.update(loadingToast, 'Cập nhật xe bus thành công!', 'success');
       } else {
         // Add new bus
         console.log('➕ Creating new bus:', data);
         const newBus = await createBusApi(data);
         console.log('✅ API response:', newBus);
-        
+
         // Refresh data từ server để có bus_id mới
         await fetchBuses();
-        
-        alert('✅ Thêm xe bus thành công!');
+
+        ToastService.update(loadingToast, 'Thêm xe bus thành công!', 'success');
       }
       handleCloseModal();
     } catch (err) {
       console.error('❌ Error saving bus:', err);
-      alert('❌ Có lỗi xảy ra! ' + (err.response?.data?.message || err.message));
+      ToastService.update(
+        loadingToast,
+        err.response?.data?.message || 'Có lỗi xảy ra khi lưu xe bus!',
+        'error'
+      );
     }
   };
 
   const handleDeleteBus = async (bus) => {
-    const confirmDelete = window.confirm(
-      `⚠️ Bạn có chắc muốn xóa xe ${bus.license_plate} (${bus.bus_id})?\n\nHành động này không thể hoàn tác!`
-    );
-    
-    if (confirmDelete) {
-      try {
-        console.log('🗑️ Deleting bus:', bus._id);
-        await deleteBusApi(bus._id);
-        
-        setBuses(buses.filter(b => b._id !== bus._id));
-        alert('✅ Đã xóa xe bus thành công!');
-      } catch (err) {
-        console.error('❌ Error deleting bus:', err);
-        
-        if (err.response?.status === 400 && err.response?.data?.message?.includes('lịch trình')) {
-          alert('❌ Không thể xóa xe bus này!\n\nXe đang được sử dụng trong lịch trình. Vui lòng xóa lịch trình trước.');
-        } else {
-          alert('❌ Có lỗi xảy ra khi xóa xe bus! ' + (err.response?.data?.message || err.message));
+    Swal.fire({
+      title: 'Xác nhận xóa xe bus',
+      html: `
+        <div style="text-align: left;">
+          <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #dc3545;">
+            <p style="margin: 0; font-size: 16px;">
+              <strong>🚌 Biển số:</strong> ${bus.license_plate}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+              <strong>🆔 Mã xe:</strong> ${bus.bus_id}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+              <strong>👥 Sức chứa:</strong> ${bus.capacity} chỗ
+            </p>
+          </div>
+          <p style="color: #d33; font-weight: bold; margin-top: 16px;">⚠️ Hành động này không thể hoàn tác!</p>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa xe bus',
+      cancelButtonText: 'Hủy',
+      width: 600
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const loadingToast = ToastService.loading('Đang xóa xe bus...');
+
+        try {
+          console.log('🗑️ Deleting bus:', bus._id);
+          await deleteBusApi(bus._id);
+
+          setBuses(buses.filter(b => b._id !== bus._id));
+          ToastService.update(loadingToast, 'Xóa xe bus thành công!', 'success');
+        } catch (err) {
+          console.error('❌ Error deleting bus:', err);
+
+          if (err.response?.status === 400 && err.response?.data?.message?.includes('lịch trình')) {
+            ToastService.update(loadingToast, 'Xe đang được sử dụng trong lịch trình!', 'error');
+
+            Swal.fire({
+              title: 'Không thể xóa!',
+              html: `
+                <div style="text-align: left;">
+                  <p style="margin-bottom: 12px;">Xe <strong>${bus.license_plate}</strong> đang được sử dụng trong lịch trình.</p>
+                  <div style="background: #fff3cd; padding: 12px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0; font-size: 14px;">
+                      💡 <strong>Hướng dẫn:</strong><br/>
+                      1. Vào trang <strong>Quản lý lịch trình</strong><br/>
+                      2. Xóa các lịch trình của xe này<br/>
+                      3. Quay lại xóa xe bus
+                    </p>
+                  </div>
+                </div>
+              `,
+              icon: 'error',
+              confirmButtonText: 'Đã hiểu'
+            });
+          } else {
+            ToastService.update(
+              loadingToast,
+              err.response?.data?.message || 'Có lỗi xảy ra khi xóa xe bus!',
+              'error'
+            );
+          }
         }
       }
-    }
+    });
   };
 
   const filteredBuses = buses.filter(bus => {
     const statusMatch = filterStatus === 'all' || bus.status === filterStatus;
-    const searchMatch = 
+    const searchMatch =
       bus.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bus.bus_id.toLowerCase().includes(searchTerm.toLowerCase());
     return statusMatch && searchMatch;
@@ -512,8 +569,8 @@ const BusManager = () => {
           </div>
           <h3 className="text-xl font-semibold text-gray-700 mb-2">Không tìm thấy xe bus</h3>
           <p className="text-gray-500">
-            {buses.length === 0 
-              ? 'Chưa có xe bus nào. Nhấn nút "Thêm xe bus" để bắt đầu!' 
+            {buses.length === 0
+              ? 'Chưa có xe bus nào. Nhấn nút "Thêm xe bus" để bắt đầu!'
               : 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'}
           </p>
         </div>

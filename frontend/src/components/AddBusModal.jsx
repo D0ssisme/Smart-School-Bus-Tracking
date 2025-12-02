@@ -4,7 +4,7 @@ import { X, Bus, User, MapPin, Activity, Clock, Users } from 'lucide-react';
 import { getDriversApi } from "../api/userApi";
 import { getRoutesApi } from "../api/routeApi";
 import { getAllBuses, createBusApi } from '@/api/busApi';
-import { createBusScheduleApi } from '@/api/busscheduleApi';
+import { createBusScheduleApi, updateBusScheduleApi } from '@/api/busscheduleApi';
 import Swal from 'sweetalert2';
 import { toast } from 'react-hot-toast';
 
@@ -91,21 +91,33 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
     fetchData();
   }, [isOpen]);
 
-  // Reset form khi mở modal
+  // Reset form khi mở modal hoặc load data khi edit
   useEffect(() => {
-    if (isOpen && !isEditing) {
-      setMode('create');
-      setPlate('');
-      setCapacity('');
-      setBusStatus('active');
-      setSelectedBusId('');
-      setDriverId('');
-      setRouteId('');
-      setScheduleStatus('scheduled');
-      setStartTime('');
-      setEndTime('');
+    if (isOpen) {
+      if (isEditing && initialData) {
+        // Load data cho edit schedule
+        setMode('schedule');
+        setSelectedBusId(initialData.busId || '');
+        setDriverId(initialData.driverId || '');
+        setRouteId(initialData.routeId || '');
+        setScheduleStatus(initialData.rawStatus || 'scheduled');
+        setStartTime(initialData.startTime || '');
+        setEndTime(initialData.endTime || '');
+      } else {
+        // Reset form cho tạo mới
+        setMode('create');
+        setPlate('');
+        setCapacity('');
+        setBusStatus('active');
+        setSelectedBusId('');
+        setDriverId('');
+        setRouteId('');
+        setScheduleStatus('scheduled');
+        setStartTime('');
+        setEndTime('');
+      }
     }
-  }, [isOpen, isEditing]);
+  }, [isOpen, isEditing, initialData]);
 
   // Handle submit cho TẠO BUS MỚI
   const handleCreateBus = async (e) => {
@@ -160,8 +172,8 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
   };
 
 
-  // Handle submit cho PHÂN BỔ LỊCH TRÌNH
-  const handleCreateSchedule = async (e) => {
+  // Handle submit cho PHÂN BỔ/SỬA LỊCH TRÌNH
+  const handleSaveSchedule = async (e) => {
     e.preventDefault();
     setError(null);
 
@@ -178,10 +190,19 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
         status: scheduleStatus || 'scheduled'
       };
 
-      const response = await createBusScheduleApi(scheduleData);
-      console.log("✅ Schedule created successfully:", response);
+      let response;
+      if (isEditing && initialData?.id) {
+        // Update existing schedule
+        response = await updateBusScheduleApi(initialData.id, scheduleData);
+        console.log("✅ Schedule updated successfully:", response);
+      } else {
+        // Create new schedule
+        response = await createBusScheduleApi(scheduleData);
+        console.log("✅ Schedule created successfully:", response);
+      }
 
       // ← Thay alert bằng Toast đẹp
+      const successMessage = isEditing ? 'Cập nhật lịch trình thành công' : 'Phân bổ lịch trình xe bus thành công';
       toast.success(
         <div className="flex items-center gap-3">
           <div className="bg-green-100 rounded-full p-2">
@@ -191,7 +212,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
           </div>
           <div>
             <p className="font-semibold text-gray-800">Thành công!</p>
-            <p className="text-sm text-gray-600">Phân bổ lịch trình xe bus thành công</p>
+            <p className="text-sm text-gray-600">{successMessage}</p>
           </div>
         </div>,
         {
@@ -309,7 +330,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                   as="h3"
                   className="text-lg font-medium leading-6 text-gray-900 flex justify-between items-center"
                 >
-                  {mode === 'create' ? 'Tạo xe bus mới' : 'Phân bổ lịch trình xe'}
+                  {isEditing ? '✏️ Sửa lịch trình xe' : (mode === 'create' ? 'Tạo xe bus mới' : 'Phân bổ lịch trình xe')}
                   <button
                     onClick={onClose}
                     className="text-gray-400 hover:text-gray-600"
@@ -455,9 +476,9 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                       </form>
                     )}
 
-                    {/* FORM PHÂN BỔ LỊCH TRÌNH */}
+                    {/* FORM PHÂN BỔ/SỬA LỊCH TRÌNH */}
                     {mode === 'schedule' && (
-                      <form onSubmit={handleCreateSchedule} className="mt-4 space-y-4">
+                      <form onSubmit={handleSaveSchedule} className="mt-4 space-y-4">
                         {/* Chọn xe bus */}
                         <div>
                           <label htmlFor="existingBus" className="block text-sm font-medium text-gray-700">
@@ -516,7 +537,8 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                         {/* Chọn tuyến đường */}
                         <div>
                           <label htmlFor="route" className="block text-sm font-medium text-gray-700">
-                            Chọn tuyến đường <span className="text-red-500">*</span>
+                            Chọn tuyến đường {!isEditing && <span className="text-red-500">*</span>}
+                            {isEditing && <span className="text-xs text-gray-500 ml-2">🔒 Không thể thay đổi</span>}
                           </label>
                           <div className="relative mt-1">
                             <span className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -526,8 +548,10 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                               id="route"
                               value={routeId}
                               onChange={(e) => setRouteId(e.target.value)}
-                              required
-                              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white"
+                              required={!isEditing}
+                              disabled={isEditing}
+                              className={`w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${isEditing ? 'bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed' : 'bg-white border-gray-300'
+                                }`}
                             >
                               <option value="" disabled>-- Chọn tuyến đường --</option>
                               {routes.map(route => (
@@ -580,7 +604,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                         </div>
 
                         {/* Trạng thái lịch trình */}
-                       
+
 
                         <div className="mt-6 flex justify-end gap-3">
                           <button
@@ -595,7 +619,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                             disabled={loading || buses.length === 0}
                             className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {loading ? 'Đang xử lý...' : 'Phân bổ lịch trình'}
+                            {loading ? 'Đang xử lý...' : (isEditing ? 'Cập nhật lịch trình' : 'Phân bổ lịch trình')}
                           </button>
                         </div>
                       </form>

@@ -3,7 +3,10 @@ import BusCard from '../components/BusCard';
 import AddBusModal from '../components/AddBusModal';
 import { Plus, Filter, Bus as BusIcon, Route as RouteIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { getAllBuschedule, deleteBusScheduleApi } from '../api/busscheduleApi';
+import { getAllBuschedule, deleteBusScheduleApi, updateBusScheduleApi } from '../api/busscheduleApi';
+import { getDriversApi } from '../api/userApi';
+import { getRoutesApi } from '../api/routeApi';
+import { getAllBuses } from '../api/busApi';
 import ToastService from "@/lib/toastService";
 import Swal from 'sweetalert2';
 
@@ -25,38 +28,46 @@ const BusManagementPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const schedulesData = await getAllBuschedule();
+
+        // Load tất cả dữ liệu song song
+        const [schedulesData, driversData, routesData, busesData] = await Promise.all([
+          getAllBuschedule(),
+          getDriversApi(),
+          getRoutesApi(),
+          getAllBuses()
+        ]);
+
         setSchedules(schedulesData);
 
-        const driversSet = new Set();
-        const routesSet = new Set();
-        const busesSet = new Set();
+        // Transform drivers
+        const transformedDrivers = driversData.map(driver => ({
+          id: driver._id,
+          name: driver.name,
+          phoneNumber: driver.phoneNumber,
+          licenseNumber: driver.driverInfo?.licenseNumber,
+        }));
 
-        schedulesData.forEach(schedule => {
-          if (schedule.driver_id) {
-            driversSet.add(JSON.stringify({
-              id: schedule.driver_id._id,
-              name: schedule.driver_id.name
-            }));
-          }
-          if (schedule.route_id) {
-            routesSet.add(JSON.stringify({
-              id: schedule.route_id._id,
-              name: schedule.route_id.name
-            }));
-          }
-          if (schedule.bus_id) {
-            busesSet.add(JSON.stringify({
-              id: schedule.bus_id._id,
-              plate: schedule.bus_id.license_plate,
-              capacity: schedule.bus_id.capacity
-            }));
-          }
-        });
+        // Transform routes
+        const transformedRoutes = routesData.map(route => ({
+          id: route._id,
+          route_id: route.route_id,
+          name: route.name,
+          startPoint: route.start_point?.name,
+          endPoint: route.end_point?.name,
+        }));
 
-        setDrivers(Array.from(driversSet).map(item => JSON.parse(item)));
-        setRoutes(Array.from(routesSet).map(item => JSON.parse(item)));
-        setBuses(Array.from(busesSet).map(item => JSON.parse(item)));
+        // Transform buses
+        const transformedBuses = busesData.map(bus => ({
+          id: bus._id,
+          bus_id: bus.bus_id,
+          plate: bus.license_plate,
+          capacity: bus.capacity,
+          status: bus.status,
+        }));
+
+        setDrivers(transformedDrivers);
+        setRoutes(transformedRoutes);
+        setBuses(transformedBuses);
 
         const transformedData = transformDataForDisplay(schedulesData);
         setBusData(transformedData);
@@ -101,6 +112,7 @@ const BusManagementPage = () => {
         plate: schedule.bus_id.license_plate,
         driver: schedule.driver_id ? schedule.driver_id.name : 'Chưa phân công',
         driverId: schedule.driver_id?._id || null,
+        routeId: schedule.route_id._id,
         status: statusMap[schedule.status] || 'Đang chờ',
         rawStatus: schedule.status,
         passengers: 0,
@@ -122,9 +134,34 @@ const BusManagementPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (busToEdit) => {
-    setEditingBus(busToEdit);
-    setIsModalOpen(true);
+  const handleOpenEditModal = async (busToEditOrId, formData) => {
+    // Nếu có 2 tham số thì đây là việc update từ EditScheduleModal trong BusCard
+    if (formData) {
+      const loadingToast = ToastService.loading("Đang cập nhật lịch trình...");
+      try {
+        await updateBusScheduleApi(busToEditOrId, formData);
+
+        // Reload data
+        const schedulesData = await getAllBuschedule();
+        setSchedules(schedulesData);
+        const transformedData = transformDataForDisplay(schedulesData);
+        setBusData(transformedData);
+
+        ToastService.update(loadingToast, "Cập nhật lịch trình thành công!", "success");
+      } catch (error) {
+        console.error("Error updating schedule:", error);
+        ToastService.update(
+          loadingToast,
+          error.response?.data?.message || "Không thể cập nhật lịch trình!",
+          "error"
+        );
+        throw error;
+      }
+    } else {
+      // Nếu chỉ có 1 tham số thì đây là việc mở modal từ main page
+      setEditingBus(busToEditOrId);
+      setIsModalOpen(true);
+    }
   };
 
   const handleCloseModal = () => {
@@ -445,7 +482,9 @@ const BusManagementPage = () => {
                   key={bus.id}
                   bus={{ ...bus, routeId: route.routeId }}
                   allBusData={busData}
-                 
+                  drivers={drivers}
+                  routes={routes}
+                  buses={buses}
                   onEdit={handleOpenEditModal}
                   onDelete={handleOpenDeleteModal}
                 />

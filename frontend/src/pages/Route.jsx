@@ -39,20 +39,23 @@ export default function RouteList() {
       setLoading(true);
       const response = await getRoutesApi();
 
-      const transformedRoutes = response.map(route => ({
-        id: route.route_id || route._id,
-        name: route.name,
-        start: route.start_point?.name || "N/A",
-        end: route.end_point?.name || "N/A",
-        stops: route.path?.coordinates?.length || 2,
-        stopsList: [
-          route.start_point?.name,
-          ...(route.intermediate_stops?.map(stop => stop.name) || []),
-          route.end_point?.name
-        ].filter(Boolean),
-        status: route.status,
-        originalData: route
-      }));
+      const transformedRoutes = response.map(route => {
+        console.log("Route from API:", route);
+        return {
+          id: route.route_id || route._id,
+          name: route.name,
+          start: route.start_point?.name || "N/A",
+          end: route.end_point?.name || "N/A",
+          stops: route.path?.coordinates?.length || 2,
+          stopsList: [
+            route.start_point?.name,
+            ...(route.intermediate_stops?.map(stop => stop.name) || []),
+            route.end_point?.name
+          ].filter(Boolean),
+          status: route.status,
+          originalData: route
+        };
+      });
 
       setRoutes(transformedRoutes);
       setError(null);
@@ -69,24 +72,39 @@ export default function RouteList() {
       try {
         setLoadingAction(true);
         // Sử dụng MongoDB _id để xóa
-        const mongoId = route.originalData?._id || route.originalData?.route_id;
+        const mongoId = route.originalData?._id || route.id;
+
+        if (!mongoId) {
+          alert("Không tìm thấy ID tuyến đường!");
+          return;
+        }
+
+        console.log("Deleting route with ID:", mongoId);
         await deleteRouteApi(mongoId);
-        setRoutes(routes.filter((r) => r.id !== route.id));
+
+        // Fetch lại danh sách routes
+        await fetchRoutes();
+
         alert("Xóa tuyến đường thành công!");
       } catch (err) {
         console.error("Error deleting route:", err);
-        alert("Không thể xóa tuyến đường. Vui lòng thử lại!");
+        const errorMessage = err.response?.data?.message || "Không thể xóa tuyến đường. Vui lòng thử lại!";
+        alert(errorMessage);
       } finally {
         setLoadingAction(false);
       }
     }
-  };
-
-  const openDetail = async (route) => {
+  }; const openDetail = async (route) => {
     try {
       setLoadingAction(true);
       // Fetch detailed route information including stops using MongoDB _id
-      const mongoId = route.originalData?._id || route.originalData?.route_id;
+      const mongoId = route.originalData?._id || route.id;
+
+      if (!mongoId) {
+        alert("Không tìm thấy ID tuyến đường!");
+        return;
+      }
+
       const detailedRoute = await getRoutesByIdApi(mongoId);
 
       // Transform the detailed data
@@ -114,7 +132,13 @@ export default function RouteList() {
     try {
       setLoadingAction(true);
       // Fetch detailed route information for editing using MongoDB _id
-      const mongoId = route.originalData?._id || route.originalData?.route_id;
+      const mongoId = route.originalData?._id || route.id;
+
+      if (!mongoId) {
+        alert("Không tìm thấy ID tuyến đường!");
+        return;
+      }
+
       const detailedRoute = await getRoutesByIdApi(mongoId);
 
       const enrichedRoute = {
@@ -143,46 +167,33 @@ export default function RouteList() {
       setLoadingAction(true);
 
       // Sử dụng MongoDB _id để update
-      const mongoId = selectedRoute.originalData?._id || selectedRoute.originalData?.route_id;
+      const mongoId = selectedRoute.originalData?._id || selectedRoute.id;
 
-      // Prepare update data
+      if (!mongoId) {
+        alert("Không tìm thấy ID tuyến đường!");
+        return;
+      }
+
+      console.log("Updating route with ID:", mongoId);
+
+      // Backend chỉ nhận name và status
       const updateData = {
         name: formData.name,
-        start_point: {
-          name: formData.start,
-          coordinates: selectedRoute.originalData?.start_point?.coordinates || [0, 0]
-        },
-        end_point: {
-          name: formData.end,
-          coordinates: selectedRoute.originalData?.end_point?.coordinates || [0, 0]
-        },
         status: formData.status
       };
 
       // Call API to update route
-      await updateRouteApi(mongoId, updateData);
+      const response = await updateRouteApi(mongoId, updateData);
 
-      // Update local state
-      setRoutes((prev) =>
-        prev.map((r) =>
-          r.id === selectedRoute.id
-            ? {
-              ...r,
-              name: formData.name,
-              start: formData.start,
-              end: formData.end,
-              stops: formData.stops,
-              status: formData.status
-            }
-            : r
-        )
-      );
+      // Fetch lại danh sách routes để có data mới nhất
+      await fetchRoutes();
 
       alert("Cập nhật tuyến đường thành công!");
       closeModal();
     } catch (err) {
       console.error("Error updating route:", err);
-      alert("Không thể cập nhật tuyến đường. Vui lòng thử lại!");
+      const errorMessage = err.response?.data?.message || "Không thể cập nhật tuyến đường. Vui lòng thử lại!";
+      alert(errorMessage);
     } finally {
       setLoadingAction(false);
     }
@@ -451,7 +462,7 @@ export default function RouteList() {
                         <button onClick={() => openEdit(r)} className="p-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-600 hover:text-white transition-all" title="Sửa">
                           <Edit size={16} />
                         </button>
-                        <button onClick={() => handleDelete(r.id)} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-600 hover:text-white transition-all" title="Xóa">
+                        <button onClick={() => handleDelete(r)} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-600 hover:text-white transition-all" title="Xóa">
                           <Trash2 size={16} />
                         </button>
                       </div>
