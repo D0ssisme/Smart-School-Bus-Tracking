@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getRoutesApi, deleteRouteApi, updateRouteApi } from "@/api/routeApi";
-import { getRoutesByIdApi } from "@/api/routeStopApi";
+import { getRoutesByIdApi } from "@/api/routestopApi";
 import RouteDetailModal from "@/components/RouteDetailModal";
 import RouteEditModal from "@/components/RouteEditModal";
+import ToastService from "@/lib/toastService";
+import Swal from 'sweetalert2';
 import {
   Route as RouteIcon,
   MapPin,
@@ -18,10 +20,8 @@ import {
   Trash2,
   X
 } from "lucide-react";
-import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
 
 export default function RouteList() {
-  const { t } = useLanguage(); // ✅ Sử dụng hook
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -70,48 +70,78 @@ export default function RouteList() {
   };
 
   const handleDelete = async (route) => {
-    if (window.confirm("Bạn có chắc muốn xóa tuyến này?")) {
-      try {
-        setLoadingAction(true);
-        // Sử dụng MongoDB _id để xóa
-        const mongoId = route.originalData?._id || route.id;
+    Swal.fire({
+      title: 'Xác nhận xóa tuyến đường',
+      html: `
+        <div style="text-align: left;">
+          <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #dc3545;">
+            <p style="margin: 0; font-size: 16px;">
+              <strong>🛣️ Tên tuyến:</strong> ${route.name}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+              <strong>🆔 Mã tuyến:</strong> ${route.id}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+              <strong>📍 Điểm đầu:</strong> ${route.start}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+              <strong>🏁 Điểm cuối:</strong> ${route.end}
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+              <strong>📍 Số điểm dừng:</strong> ${route.stops} điểm
+            </p>
+          </div>
+          <p style="color: #d33; font-weight: bold; margin-top: 16px;">⚠️ Hành động này không thể hoàn tác!</p>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa tuyến đường',
+      cancelButtonText: 'Hủy',
+      width: 600
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const loadingToast = ToastService.loading('Đang xóa tuyến đường...');
 
-        if (!mongoId) {
-          alert("Không tìm thấy ID tuyến đường!");
-          return;
+        try {
+          setLoadingAction(true);
+          // Sử dụng MongoDB _id để xóa
+          const mongoId = route.originalData?._id || route.id;
+
+          if (!mongoId) {
+            ToastService.update(loadingToast, 'Không tìm thấy ID tuyến đường!', 'error');
+            return;
+          }
+
+          console.log("Deleting route with ID:", mongoId);
+          await deleteRouteApi(mongoId);
+
+          // Fetch lại danh sách routes
+          await fetchRoutes();
+
+          ToastService.update(loadingToast, 'Xóa tuyến đường thành công!', 'success');
+        } catch (err) {
+          console.error("Error deleting route:", err);
+          const errorMessage = err.response?.data?.message || 'Không thể xóa tuyến đường!';
+          ToastService.update(loadingToast, errorMessage, 'error');
+        } finally {
+          setLoadingAction(false);
         }
-
-        console.log("Deleting route with ID:", mongoId);
-        await deleteRouteApi(mongoId);
-
-        // Fetch lại danh sách routes
-        await fetchRoutes();
-
-        alert("Xóa tuyến đường thành công!");
-      } catch (err) {
-        console.error("Error deleting route:", err);
-        const errorMessage = err.response?.data?.message || "Không thể xóa tuyến đường. Vui lòng thử lại!";
-        alert(errorMessage);
-      } finally {
-        setLoading(false);
       }
-    };
+    });
+  };
 
-    fetchRoutes();
-  }, [t]); // Reload khi đổi ngôn ngữ để cập nhật error message nếu có
 
-  const handleDelete = (id) => {
-    if (window.confirm(t('routeManager.messages.deleteConfirm'))) {
-      setRoutes(routes.filter((r) => r.id !== id));
-    }
-  }; const openDetail = async (route) => {
+  const openDetail = async (route) => {
     try {
       setLoadingAction(true);
       // Fetch detailed route information including stops using MongoDB _id
       const mongoId = route.originalData?._id || route.id;
 
       if (!mongoId) {
-        alert("Không tìm thấy ID tuyến đường!");
+        ToastService.error('Không tìm thấy ID tuyến đường!');
         return;
       }
 
@@ -132,7 +162,7 @@ export default function RouteList() {
       setIsDetailOpen(true);
     } catch (err) {
       console.error("Error fetching route details:", err);
-      alert("Không thể tải thông tin chi tiết. Vui lòng thử lại!");
+      ToastService.error('Không thể tải thông tin chi tiết. Vui lòng thử lại!');
     } finally {
       setLoadingAction(false);
     }
@@ -145,7 +175,7 @@ export default function RouteList() {
       const mongoId = route.originalData?._id || route.id;
 
       if (!mongoId) {
-        alert("Không tìm thấy ID tuyến đường!");
+        ToastService.error('Không tìm thấy ID tuyến đường!');
         return;
       }
 
@@ -160,7 +190,7 @@ export default function RouteList() {
       setIsEditOpen(true);
     } catch (err) {
       console.error("Error fetching route details:", err);
-      alert("Không thể tải thông tin tuyến đường. Vui lòng thử lại!");
+      ToastService.error('Không thể tải thông tin tuyến đường. Vui lòng thử lại!');
     } finally {
       setLoadingAction(false);
     }
@@ -180,7 +210,7 @@ export default function RouteList() {
       const mongoId = selectedRoute.originalData?._id || selectedRoute.id;
 
       if (!mongoId) {
-        alert("Không tìm thấy ID tuyến đường!");
+        ToastService.error('Không tìm thấy ID tuyến đường!');
         return;
       }
 
@@ -198,12 +228,12 @@ export default function RouteList() {
       // Fetch lại danh sách routes để có data mới nhất
       await fetchRoutes();
 
-      alert("Cập nhật tuyến đường thành công!");
+      ToastService.success('Cập nhật tuyến đường thành công!');
       closeModal();
     } catch (err) {
       console.error("Error updating route:", err);
-      const errorMessage = err.response?.data?.message || "Không thể cập nhật tuyến đường. Vui lòng thử lại!";
-      alert(errorMessage);
+      const errorMessage = err.response?.data?.message || 'Không thể cập nhật tuyến đường!';
+      ToastService.error(errorMessage);
     } finally {
       setLoadingAction(false);
     }
@@ -230,7 +260,7 @@ export default function RouteList() {
       <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded p-5 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">{t('routeManager.loading')}</p>
+          <p className="text-gray-600 font-medium">Đang tải dữ liệu tuyến đường...</p>
         </div>
       </div>
     );
@@ -245,7 +275,7 @@ export default function RouteList() {
               <X className="text-red-600" size={24} />
             </div>
             <div>
-              <p className="font-bold text-red-800">{t('routeManager.messages.errorTitle')}</p>
+              <p className="font-bold text-red-800">Lỗi tải dữ liệu</p>
               <p className="text-red-700">{error}</p>
             </div>
           </div>
@@ -275,7 +305,6 @@ export default function RouteList() {
         </div>
 
         <div className="absolute right-8 top-1/2 transform -translate-y-1/2 opacity-20 hidden lg:block">
-          {/* SVG Illustration - giữ nguyên */}
           <svg width="200" height="120" viewBox="0 0 200 120" fill="none">
             <circle cx="40" cy="60" r="15" fill="white" opacity="0.9" />
             <circle cx="100" cy="40" r="12" fill="white" opacity="0.7" />
@@ -295,22 +324,22 @@ export default function RouteList() {
                 <Map className="text-white" size={40} />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white mb-1">{t('routeManager.title')}</h1>
-                <p className="text-indigo-100">{t('routeManager.subtitle')}</p>
+                <h1 className="text-3xl font-bold text-white mb-1">Quản lý tuyến đường</h1>
+                <p className="text-indigo-100">Danh sách và thông tin các tuyến xe buýt</p>
               </div>
             </div>
 
             <div className="hidden md:flex gap-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                <div className="text-white/70 text-xs mb-1">{t('routeManager.stats.total')}</div>
+                <div className="text-white/70 text-xs mb-1">Tổng số</div>
                 <div className="text-2xl font-bold text-white">{routes.length}</div>
               </div>
               <div className="bg-green-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-green-300/30">
-                <div className="text-green-100 text-xs mb-1">{t('routeManager.stats.activeShort')}</div>
+                <div className="text-green-100 text-xs mb-1">Hoạt động</div>
                 <div className="text-2xl font-bold text-white">{activeRoutes}</div>
               </div>
               <div className="bg-blue-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-blue-300/30">
-                <div className="text-blue-100 text-xs mb-1">{t('routeManager.stats.avg')}</div>
+                <div className="text-blue-100 text-xs mb-1">TB điểm dừng</div>
                 <div className="text-2xl font-bold text-white">{avgStops}</div>
               </div>
             </div>
@@ -329,9 +358,9 @@ export default function RouteList() {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="bg-transparent border-none focus:ring-0 text-sm outline-none font-medium text-gray-700 cursor-pointer"
               >
-                <option value="all">{t('routeManager.filter.allStatus')}</option>
-                <option value="active">{t('routeManager.filter.active')}</option>
-                <option value="inactive">{t('routeManager.filter.inactive')}</option>
+                <option value="all">Tất cả trạng thái</option>
+                <option value="active">Hoạt động</option>
+                <option value="inactive">Không hoạt động</option>
               </select>
             </div>
 
@@ -339,7 +368,7 @@ export default function RouteList() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
-                placeholder={t('routeManager.filter.searchPlaceholder')}
+                placeholder="Tìm theo tên tuyến, mã, điểm đầu/cuối..."
                 className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -351,7 +380,7 @@ export default function RouteList() {
             to="/createroute"
             className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
           >
-            <Plus size={20} /> {t('routeManager.filter.addBtn')}
+            <Plus size={20} /> Tạo tuyến mới
           </Link>
         </div>
       </div>
@@ -365,9 +394,9 @@ export default function RouteList() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('routeManager.stats.totalRoutes')}</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">Tổng tuyến đường</h3>
           <p className="text-3xl font-bold text-gray-900">{routes.length}</p>
-          <p className="text-xs text-gray-500 mt-2">{t('routeManager.stats.created')}</p>
+          <p className="text-xs text-gray-500 mt-2">Đã tạo trong hệ thống</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500">
@@ -377,9 +406,9 @@ export default function RouteList() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('routeManager.stats.active')}</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">Đang hoạt động</h3>
           <p className="text-3xl font-bold text-gray-900">{activeRoutes}</p>
-          <p className="text-xs text-gray-500 mt-2">{t('routeManager.stats.operating')}</p>
+          <p className="text-xs text-gray-500 mt-2">Tuyến đang vận hành</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-blue-500">
@@ -389,9 +418,9 @@ export default function RouteList() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('routeManager.stats.totalStops')}</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">Tổng điểm dừng</h3>
           <p className="text-3xl font-bold text-gray-900">{totalStops}</p>
-          <p className="text-xs text-gray-500 mt-2">{t('routeManager.stats.allRoutes')}</p>
+          <p className="text-xs text-gray-500 mt-2">Trên tất cả tuyến</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-purple-500">
@@ -401,9 +430,9 @@ export default function RouteList() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('routeManager.stats.avgStops')}</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">TB điểm dừng</h3>
           <p className="text-3xl font-bold text-gray-900">{avgStops}</p>
-          <p className="text-xs text-gray-500 mt-2">{t('routeManager.stats.stopPerRoute')}</p>
+          <p className="text-xs text-gray-500 mt-2">Điểm dừng/tuyến</p>
         </div>
       </div>
 
@@ -415,14 +444,14 @@ export default function RouteList() {
               <RouteIcon className="text-gray-400" size={48} />
             </div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              {searchTerm || filterStatus !== "all" ? t('routeManager.empty.notFoundTitle') : t('routeManager.empty.noDataTitle')}
+              {searchTerm || filterStatus !== "all" ? "Không tìm thấy tuyến đường" : "Chưa có tuyến đường nào"}
             </h3>
             <p className="text-gray-500 mb-4">
-              {searchTerm || filterStatus !== "all" ? t('routeManager.empty.notFoundDesc') : t('routeManager.empty.noDataDesc')}
+              {searchTerm || filterStatus !== "all" ? "Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm" : "Bắt đầu tạo tuyến đường mới cho hệ thống"}
             </p>
             {(searchTerm || filterStatus !== "all") && (
               <button onClick={() => { setSearchTerm(""); setFilterStatus("all"); }} className="text-indigo-600 hover:text-indigo-700 font-medium text-sm">
-                {t('routeManager.filter.clearFilter')}
+                Xóa bộ lọc
               </button>
             )}
           </div>
@@ -431,13 +460,13 @@ export default function RouteList() {
             <table className="w-full">
               <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b-2 border-indigo-100">
                 <tr>
-                  <th className="p-4 text-left text-sm font-semibold text-gray-700">{t('routeManager.table.code')}</th>
-                  <th className="p-4 text-left text-sm font-semibold text-gray-700">{t('routeManager.table.name')}</th>
-                  <th className="p-4 text-left text-sm font-semibold text-gray-700">{t('routeManager.table.start')}</th>
-                  <th className="p-4 text-left text-sm font-semibold text-gray-700">{t('routeManager.table.end')}</th>
-                  <th className="p-4 text-center text-sm font-semibold text-gray-700">{t('routeManager.table.stops')}</th>
-                  <th className="p-4 text-center text-sm font-semibold text-gray-700">{t('routeManager.table.status')}</th>
-                  <th className="p-4 text-center text-sm font-semibold text-gray-700">{t('routeManager.table.action')}</th>
+                  <th className="p-4 text-left text-sm font-semibold text-gray-700">Mã tuyến</th>
+                  <th className="p-4 text-left text-sm font-semibold text-gray-700">Tên tuyến</th>
+                  <th className="p-4 text-left text-sm font-semibold text-gray-700">Điểm khởi đầu</th>
+                  <th className="p-4 text-left text-sm font-semibold text-gray-700">Điểm kết thúc</th>
+                  <th className="p-4 text-center text-sm font-semibold text-gray-700">Điểm dừng</th>
+                  <th className="p-4 text-center text-sm font-semibold text-gray-700">Trạng thái</th>
+                  <th className="p-4 text-center text-sm font-semibold text-gray-700">Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -462,15 +491,15 @@ export default function RouteList() {
                     </td>
                     <td className="p-4 text-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${r.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
-                        {r.status === "active" ? t('routeManager.status.active') : t('routeManager.status.inactive')}
+                        {r.status === "active" ? "Hoạt động" : "Không hoạt động"}
                       </span>
                     </td>
                     <td className="p-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => openDetail(r)} className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-600 hover:text-white transition-all" title={t('routeManager.table.actions.detail')}>
+                        <button onClick={() => openDetail(r)} className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-600 hover:text-white transition-all" title="Chi tiết">
                           <Eye size={16} />
                         </button>
-                        <button onClick={() => openEdit(r)} className="p-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-600 hover:text-white transition-all" title={t('routeManager.table.actions.edit')}>
+                        <button onClick={() => openEdit(r)} className="p-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-600 hover:text-white transition-all" title="Sửa">
                           <Edit size={16} />
                         </button>
                         <button onClick={() => handleDelete(r)} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-600 hover:text-white transition-all" title="Xóa">
@@ -486,185 +515,19 @@ export default function RouteList() {
         )}
       </div>
 
-      {/* Modal chi tiết */}
-      {isDetailOpen && selectedRoute && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <RouteIcon size={24} />
-                  {t('routeManager.modal.detailTitle')}
-                </h3>
-                <button onClick={closeModal} className="text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
-                  <X size={24} />
-                </button>
-              </div>
-            </div>
+      {/* Modal Components */}
+      <RouteDetailModal
+        isOpen={isDetailOpen}
+        onClose={closeModal}
+        route={selectedRoute}
+      />
 
-            <div className="p-6 space-y-4">
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <RouteIcon className="text-indigo-600 mt-1" size={20} />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">{t('routeManager.modal.code')}</p>
-                  <p className="font-semibold text-gray-800">{selectedRoute.id}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <Map className="text-indigo-600 mt-1" size={20} />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">{t('routeManager.modal.name')}</p>
-                  <p className="font-semibold text-gray-800">{selectedRoute.name}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
-                <MapPin className="text-green-600 mt-1" size={20} />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">{t('routeManager.modal.start')}</p>
-                  <p className="font-semibold text-gray-800">{selectedRoute.start}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
-                <MapPin className="text-red-600 mt-1" size={20} />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">{t('routeManager.modal.end')}</p>
-                  <p className="font-semibold text-gray-800">{selectedRoute.end}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                <Navigation className="text-blue-600 mt-1" size={20} />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">{t('routeManager.modal.stopsCount')}</p>
-                  <p className="font-semibold text-gray-800">{selectedRoute.stops} {t('routeManager.modal.unitStop')}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="mt-1">
-                  <div className={`w-5 h-5 rounded-full ${selectedRoute.status === "active" ? "bg-green-500" : "bg-gray-500"}`}></div>
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">{t('routeManager.modal.status')}</p>
-                  <p className="font-semibold text-gray-800">
-                    {selectedRoute.status === "active" ? t('routeManager.status.active') : t('routeManager.status.inactive')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-4 bg-indigo-50 rounded-lg border-l-4 border-indigo-600">
-                <p className="text-sm font-semibold text-gray-800 mb-3">{t('routeManager.modal.stopsList')}</p>
-                <ul className="space-y-2">
-                  {selectedRoute.stopsList.map((stop, index) => (
-                    <li key={index} className="flex items-center gap-2 text-sm text-gray-700">
-                      <div className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold">{index + 1}</div>
-                      {stop}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="p-6 bg-gray-50 rounded-b-2xl">
-              <button onClick={closeModal} className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-3 rounded-lg font-semibold transition-all">
-                {t('routeManager.modal.close')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal sửa */}
-      {isEditOpen && selectedRoute && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Edit size={24} />
-                  {t('routeManager.modal.editTitle')}
-                </h3>
-                <button onClick={closeModal} className="text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
-                  <X size={24} />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('routeManager.modal.name')}</label>
-                <input
-                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={selectedRoute.name}
-                  onChange={(e) => setSelectedRoute({ ...selectedRoute, name: e.target.value })}
-                  placeholder={t('routeManager.modal.placeholders.name')}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('routeManager.modal.start')}</label>
-                <input
-                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={selectedRoute.start}
-                  onChange={(e) => setSelectedRoute({ ...selectedRoute, start: e.target.value })}
-                  placeholder={t('routeManager.modal.placeholders.start')}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('routeManager.modal.end')}</label>
-                <input
-                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={selectedRoute.end}
-                  onChange={(e) => setSelectedRoute({ ...selectedRoute, end: e.target.value })}
-                  placeholder={t('routeManager.modal.placeholders.end')}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('routeManager.modal.stopsCount')}</label>
-                <input
-                  type="number"
-                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={selectedRoute.stops}
-                  onChange={(e) => setSelectedRoute({ ...selectedRoute, stops: Number(e.target.value) })}
-                  placeholder={t('routeManager.modal.placeholders.stops')}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('routeManager.modal.status')}</label>
-                <select
-                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={selectedRoute.status}
-                  onChange={(e) => setSelectedRoute({ ...selectedRoute, status: e.target.value })}
-                >
-                  <option value="active">{t('routeManager.status.active')}</option>
-                  <option value="inactive">{t('routeManager.status.inactive')}</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="p-6 bg-gray-50 rounded-b-2xl flex gap-3">
-              <button
-                onClick={handleEditSave}
-                className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg font-semibold transition-all"
-              >
-                {t('routeManager.modal.save')}
-              </button>
-              <button
-                onClick={closeModal}
-                className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-3 rounded-lg font-semibold transition-all"
-              >
-                {t('routeManager.modal.cancel')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RouteEditModal
+        isOpen={isEditOpen}
+        onClose={closeModal}
+        route={selectedRoute}
+        onSave={handleEditSave}
+      />
     </div>
   );
 }

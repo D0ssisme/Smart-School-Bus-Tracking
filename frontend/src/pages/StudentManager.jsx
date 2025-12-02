@@ -435,7 +435,7 @@ function StudentManager() {
                     setIsEditModalOpen(false);
                     setEditingStudent(null);
                 }}
-                onSubmit={handleUpdateStudent}
+                // onSubmit={handleUpdateStudent}
                 student={editingStudent}
                 parents={parents}
                 routes={routes}
