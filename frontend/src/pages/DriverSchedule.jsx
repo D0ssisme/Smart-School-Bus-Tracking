@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Calendar, Clock, MapPin, Bus, Navigation, Users, AlertCircle, CheckCircle, TrendingUp, Route as RouteIcon } from "lucide-react";
 import { getBusScheduleByDriverIdApi } from "@/api/busscheduleApi";
 import { toast } from "react-hot-toast";
+import { useLanguage } from '@/contexts/LanguageContext'; // ✅ Import hook
 
 export default function DriverSchedule() {
+  const { t, language } = useLanguage(); // ✅ Sử dụng hook
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -14,7 +16,7 @@ export default function DriverSchedule() {
 
   useEffect(() => {
     fetchSchedules();
-  }, []);
+  }, [t]); // Reload khi đổi ngôn ngữ để cập nhật toast nếu cần
 
   const fetchSchedules = async () => {
     try {
@@ -37,7 +39,7 @@ export default function DriverSchedule() {
       setSchedules(list);
     } catch (error) {
       console.error("Error fetching schedules:", error);
-      toast.error("Không thể tải lịch trình");
+      toast.error(t('driverSchedule.messages.error'));
       setSchedules([]); // tránh crash UI
     } finally {
       setLoading(false);
@@ -62,7 +64,7 @@ export default function DriverSchedule() {
   }).length;
 
   const getCurrentTime = () => {
-    return new Date().toLocaleTimeString('vi-VN', {
+    return new Date().toLocaleTimeString(language === 'vi' ? 'vi-VN' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -84,21 +86,21 @@ export default function DriverSchedule() {
       return (
         <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
           <Clock size={14} />
-          Sắp tới
+          {t('driverSchedule.status.upcoming')}
         </span>
       );
     } else if (currentTime >= startMinutes && currentTime <= endMinutes) {
       return (
         <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
           <Navigation size={14} />
-          Đang chạy
+          {t('driverSchedule.status.running')}
         </span>
       );
     } else {
       return (
         <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
           <CheckCircle size={14} />
-          Hoàn thành
+          {t('driverSchedule.status.completed')}
         </span>
       );
     }
@@ -109,7 +111,7 @@ export default function DriverSchedule() {
       <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 min-h-screen p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Đang tải lịch trình...</p>
+          <p className="text-gray-600 font-medium">{t('driverSchedule.loading')}</p>
         </div>
       </div>
     );
@@ -123,10 +125,10 @@ export default function DriverSchedule() {
             <Calendar className="text-gray-400" size={48} />
           </div>
           <h3 className="text-xl font-semibold text-gray-700 mb-2">
-            Chưa có lịch trình nào
+            {t('driverSchedule.list.emptyAllTitle')}
           </h3>
           <p className="text-gray-500">
-            Bạn chưa được phân công lịch trình làm việc
+            {t('driverSchedule.list.emptyAllDesc')}
           </p>
         </div>
       </div>
@@ -145,6 +147,7 @@ export default function DriverSchedule() {
 
         {/* Bus illustration */}
         <div className="absolute right-8 top-1/2 transform -translate-y-1/2 opacity-20 hidden lg:block">
+          {/* SVG Illustration - giữ nguyên */}
           <svg width="180" height="100" viewBox="0 0 180 100" fill="none">
             <rect x="30" y="20" width="120" height="60" rx="8" fill="white" opacity="0.9" />
             <rect x="40" y="30" width="25" height="20" rx="3" fill="#1e40af" />
@@ -165,23 +168,23 @@ export default function DriverSchedule() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white mb-1">
-                  📅 Lịch trình làm việc
+                  📅 {t('driverSchedule.header.title')}
                 </h1>
                 <p className="text-blue-100">
-                  Xem và quản lý lịch trình của bạn
+                  {t('driverSchedule.header.subtitle')}
                 </p>
               </div>
             </div>
 
             <div className="hidden md:flex gap-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                <div className="text-white/70 text-xs mb-1">Giờ hiện tại</div>
+                <div className="text-white/70 text-xs mb-1">{t('driverSchedule.header.currentTime')}</div>
                 <div className="text-2xl font-bold text-white">{getCurrentTime()}</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                <div className="text-white/70 text-xs mb-1">Tài xế</div>
+                <div className="text-white/70 text-xs mb-1">{t('driverSchedule.header.driver')}</div>
                 <div className="text-lg font-bold text-white">
-                  {currentUser.name || 'N/A'}
+                  {currentUser.name || t('driverSchedule.card.na')}
                 </div>
               </div>
             </div>
@@ -194,7 +197,7 @@ export default function DriverSchedule() {
         <div className="flex items-center justify-between">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              📆 Chọn ngày xem lịch trình:
+              📆 {t('driverSchedule.filter.dateLabel')}
             </label>
             <input
               type="date"
@@ -204,9 +207,9 @@ export default function DriverSchedule() {
             />
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-600 mb-1">Hiển thị</p>
+            <p className="text-sm text-gray-600 mb-1">{t('driverSchedule.filter.showing')}</p>
             <p className="text-3xl font-bold text-blue-600">{filteredSchedules.length}</p>
-            <p className="text-xs text-gray-500">lịch trình</p>
+            <p className="text-xs text-gray-500">{t('driverSchedule.filter.unit')}</p>
           </div>
         </div>
       </div>
@@ -220,9 +223,9 @@ export default function DriverSchedule() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Tổng lịch trình</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('driverSchedule.stats.total')}</h3>
           <p className="text-3xl font-bold text-gray-900">{totalSchedules}</p>
-          <p className="text-xs text-gray-500 mt-2">Tất cả các ngày</p>
+          <p className="text-xs text-gray-500 mt-2">{t('driverSchedule.stats.allDays')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500">
@@ -232,9 +235,9 @@ export default function DriverSchedule() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Hôm nay</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('driverSchedule.stats.today')}</h3>
           <p className="text-3xl font-bold text-gray-900">{todaySchedules}</p>
-          <p className="text-xs text-gray-500 mt-2">Lịch trình hôm nay</p>
+          <p className="text-xs text-gray-500 mt-2">{t('driverSchedule.stats.todayDesc')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-orange-500">
@@ -244,11 +247,11 @@ export default function DriverSchedule() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Xe phụ trách</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('driverSchedule.stats.vehicle')}</h3>
           <p className="text-3xl font-bold text-gray-900">
-            {schedules[0]?.bus_id?.license_plate || 'N/A'}
+            {schedules[0]?.bus_id?.license_plate || t('driverSchedule.card.na')}
           </p>
-          <p className="text-xs text-gray-500 mt-2">Biển số xe</p>
+          <p className="text-xs text-gray-500 mt-2">{t('driverSchedule.stats.plate')}</p>
         </div>
       </div>
 
@@ -257,10 +260,10 @@ export default function DriverSchedule() {
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
             <Navigation className="text-blue-600" size={24} />
-            Danh sách lịch trình
+            {t('driverSchedule.list.title')}
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            {new Date(selectedDate).toLocaleDateString('vi-VN', {
+            {new Date(selectedDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
@@ -275,10 +278,10 @@ export default function DriverSchedule() {
               <Calendar className="text-gray-400" size={48} />
             </div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              Không có lịch trình
+              {t('driverSchedule.list.emptyDateTitle')}
             </h3>
             <p className="text-gray-500">
-              Không có lịch trình nào cho ngày đã chọn
+              {t('driverSchedule.list.emptyDateDesc')}
             </p>
           </div>
         ) : (
@@ -290,6 +293,7 @@ export default function DriverSchedule() {
                   schedule={schedule}
                   index={index}
                   getStatusBadge={getStatusBadge}
+                  t={t} // Pass translation function
                 />
               ))}
             </div>
@@ -301,24 +305,24 @@ export default function DriverSchedule() {
       <div className="mt-6 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
         <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
           <AlertCircle className="text-yellow-600" size={20} />
-          💡 Lời nhắc nhở
+          💡 {t('driverSchedule.tips.title')}
         </h4>
         <ul className="space-y-2 text-sm text-gray-700">
           <li className="flex items-start gap-2">
             <CheckCircle className="text-green-600 mt-0.5" size={16} />
-            <span>Kiểm tra xe trước khi khởi hành (nhiên liệu, lốp, đèn, phanh)</span>
+            <span>{t('driverSchedule.tips.tip1')}</span>
           </li>
           <li className="flex items-start gap-2">
             <CheckCircle className="text-green-600 mt-0.5" size={16} />
-            <span>Luôn chú ý an toàn khi đón trả học sinh</span>
+            <span>{t('driverSchedule.tips.tip2')}</span>
           </li>
           <li className="flex items-start gap-2">
             <CheckCircle className="text-green-600 mt-0.5" size={16} />
-            <span>Tuân thủ giờ giấc và điểm dừng theo lịch trình</span>
+            <span>{t('driverSchedule.tips.tip3')}</span>
           </li>
           <li className="flex items-start gap-2">
             <CheckCircle className="text-green-600 mt-0.5" size={16} />
-            <span>Báo cáo ngay nếu có sự cố hoặc học sinh vắng mặt</span>
+            <span>{t('driverSchedule.tips.tip4')}</span>
           </li>
         </ul>
       </div>
@@ -327,7 +331,7 @@ export default function DriverSchedule() {
 }
 
 // Schedule Card Component
-function ScheduleCard({ schedule, index, getStatusBadge }) {
+function ScheduleCard({ schedule, index, getStatusBadge, t }) {
   return (
     <div className="border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-white rounded-r-xl p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
@@ -337,10 +341,10 @@ function ScheduleCard({ schedule, index, getStatusBadge }) {
           </div>
           <div>
             <h4 className="font-bold text-gray-900 text-lg">
-              {schedule.route_id?.name || 'Tuyến không xác định'}
+              {schedule.route_id?.name || t('driverSchedule.card.unknownRoute')}
             </h4>
             <p className="text-sm text-gray-600">
-              Chuyến #{index + 1} - Mã: {schedule.route_id?.route_id || 'N/A'}
+              {t('driverSchedule.card.tripPrefix')} #{index + 1} - {t('driverSchedule.card.code')}: {schedule.route_id?.route_id || t('driverSchedule.card.na')}
             </p>
           </div>
         </div>
@@ -351,26 +355,26 @@ function ScheduleCard({ schedule, index, getStatusBadge }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <div className="flex items-center gap-2 text-sm">
           <Clock className="text-gray-500" size={16} />
-          <span className="text-gray-600">Giờ bắt đầu:</span>
-          <span className="font-semibold text-gray-900">{schedule.start_time || 'N/A'}</span>
+          <span className="text-gray-600">{t('driverSchedule.card.startTime')}:</span>
+          <span className="font-semibold text-gray-900">{schedule.start_time || t('driverSchedule.card.na')}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <Clock className="text-gray-500" size={16} />
-          <span className="text-gray-600">Giờ kết thúc:</span>
-          <span className="font-semibold text-gray-900">{schedule.end_time || 'N/A'}</span>
+          <span className="text-gray-600">{t('driverSchedule.card.endTime')}:</span>
+          <span className="font-semibold text-gray-900">{schedule.end_time || t('driverSchedule.card.na')}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <Bus className="text-gray-500" size={16} />
-          <span className="text-gray-600">Xe bus:</span>
+          <span className="text-gray-600">{t('driverSchedule.card.bus')}:</span>
           <span className="font-semibold text-gray-900">
-            {schedule.bus_id?.license_plate || 'N/A'}
+            {schedule.bus_id?.license_plate || t('driverSchedule.card.na')}
           </span>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <Users className="text-gray-500" size={16} />
-          <span className="text-gray-600">Sức chứa:</span>
+          <span className="text-gray-600">{t('driverSchedule.card.capacity')}:</span>
           <span className="font-semibold text-gray-900">
-            {schedule.bus_id?.capacity || 'N/A'} học sinh
+            {schedule.bus_id?.capacity || t('driverSchedule.card.na')} {t('driverSchedule.card.students')}
           </span>
         </div>
       </div>
@@ -381,15 +385,15 @@ function ScheduleCard({ schedule, index, getStatusBadge }) {
           <div className="flex items-start gap-2">
             <RouteIcon className="text-indigo-600 mt-0.5" size={18} />
             <div className="flex-1">
-              <p className="text-xs font-semibold text-indigo-900 mb-1">Tuyến đường:</p>
+              <p className="text-xs font-semibold text-indigo-900 mb-1">{t('driverSchedule.card.route')}:</p>
               <div className="flex items-center gap-2">
                 <MapPin className="text-indigo-600" size={14} />
                 <span className="text-sm font-semibold text-gray-800">
-                  {schedule.route_id.start_point?.name || 'Điểm bắt đầu'}
+                  {schedule.route_id.start_point?.name || t('driverSchedule.card.startPoint')}
                 </span>
                 <Navigation className="text-gray-400" size={14} />
                 <span className="text-sm font-semibold text-gray-800">
-                  {schedule.route_id.end_point?.name || 'Điểm kết thúc'}
+                  {schedule.route_id.end_point?.name || t('driverSchedule.card.endPoint')}
                 </span>
               </div>
             </div>
@@ -400,10 +404,10 @@ function ScheduleCard({ schedule, index, getStatusBadge }) {
       {/* Action Buttons */}
       <div className="mt-4 flex gap-2">
         <button className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg font-semibold transition-all">
-          Chi tiết tuyến
+          {t('driverSchedule.buttons.detail')}
         </button>
         <button className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition-all">
-          Xem bản đồ
+          {t('driverSchedule.buttons.map')}
         </button>
       </div>
     </div>

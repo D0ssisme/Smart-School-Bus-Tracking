@@ -19,9 +19,12 @@ import {
   Clock
 } from "lucide-react";
 import Pagination from "@/components/Pagination";
+import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
 
 // ReportCard Component
 function ReportCard({ report, onEdit, onDelete }) {
+  const { t, language } = useLanguage(); // ✅ Sử dụng hook
+
   const getStatusStyle = (status) => {
     switch (status?.toLowerCase()) {
       case 'resolved':
@@ -57,13 +60,16 @@ function ReportCard({ report, onEdit, onDelete }) {
   const getStatusLabel = (status) => {
     switch (status?.toLowerCase()) {
       case 'resolved':
-        return 'Đã giải quyết';
+      case 'đã giải quyết':
+        return t('reportManager.status.resolved');
       case 'pending':
-        return 'Đang xử lý';
+      case 'đang xử lý':
+        return t('reportManager.status.pending');
       case 'urgent':
-        return 'Khẩn cấp';
+      case 'khẩn cấp':
+        return t('reportManager.status.urgent');
       default:
-        return status || 'Chưa xác định';
+        return status || t('reportManager.status.unknown');
     }
   };
 
@@ -82,7 +88,7 @@ function ReportCard({ report, onEdit, onDelete }) {
               {report.createdAt && (
                 <span className="text-xs text-gray-500 flex items-center gap-1">
                   <Calendar size={14} />
-                  {new Date(report.createdAt).toLocaleDateString('vi-VN', {
+                  {new Date(report.createdAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -93,16 +99,16 @@ function ReportCard({ report, onEdit, onDelete }) {
               )}
             </div>
 
-            <p className="text-gray-800 font-medium mb-2">{report.description || report.message || 'Không có mô tả'}</p>
+            <p className="text-gray-800 font-medium mb-2">{report.description || report.message || t('reportManager.card.noDescription')}</p>
 
             {/* Hiển thị thông tin tài xế */}
             {report.driver_id && (
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <p className="text-sm text-gray-600 flex items-center gap-1">
                   <Users size={14} />
-                  <span className="font-medium">Tài xế:</span>
+                  <span className="font-medium">{t('reportManager.card.driver')}</span>
                   <span className="text-gray-800">
-                    {report.driver_id.name || 'N/A'}
+                    {report.driver_id.name || t('reportManager.card.na')}
                   </span>
                 </p>
 
@@ -125,21 +131,21 @@ function ReportCard({ report, onEdit, onDelete }) {
             {report.location?.coordinates && (
               <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                 <MapPin size={14} />
-                Vị trí: {report.location.coordinates[1].toFixed(6)}, {report.location.coordinates[0].toFixed(6)}
+                {t('reportManager.card.location')} {report.location.coordinates[1].toFixed(6)}, {report.location.coordinates[0].toFixed(6)}
               </p>
             )}
 
             {/* Hiển thị thông tin xe bus */}
             {report.bus_id && (
               <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                🚌 Xe bus: {report.bus_id.licensePlate || report.bus_id.busNumber || report.bus_id._id}
+                🚌 {t('reportManager.card.bus')} {report.bus_id.licensePlate || report.bus_id.busNumber || report.bus_id._id}
               </p>
             )}
 
             {/* Hiển thị lịch trình */}
             {report.schedule_id && (
               <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                📅 Lịch trình: {report.schedule_id.name || report.schedule_id._id}
+                📅 {t('reportManager.card.schedule')} {report.schedule_id.name || report.schedule_id._id}
               </p>
             )}
           </div>
@@ -148,14 +154,14 @@ function ReportCard({ report, onEdit, onDelete }) {
           <button
             onClick={() => onEdit(report)}
             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Chỉnh sửa"
+            title={t('reportManager.card.actions.edit')}
           >
             <Edit2 size={18} />
           </button>
           <button
             onClick={() => onDelete(report._id)}
             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Xóa"
+            title={t('reportManager.card.actions.delete')}
           >
             <Trash2 size={18} />
           </button>
@@ -166,6 +172,7 @@ function ReportCard({ report, onEdit, onDelete }) {
 }
 
 function Report() {
+  const { t } = useLanguage(); // ✅ Sử dụng hook
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -176,27 +183,27 @@ function Report() {
 
   useEffect(() => {
     fetchReports();
-  }, []);
+  }, [t]); // Reload khi đổi ngôn ngữ
 
   const fetchReports = async () => {
-    const loadingToast = ToastService.loading("Đang tải báo cáo...");
+    const loadingToast = ToastService.loading(t('reportManager.loading'));
 
     try {
       setLoading(true);
       const data = await getAllIncidentReports();
       setReports(data);
-      ToastService.update(loadingToast, "Tải báo cáo thành công!", "success");
+      ToastService.update(loadingToast, t('reportManager.messages.loadSuccess'), "success");
     } catch (error) {
       console.error('Error fetching reports:', error);
-      ToastService.update(loadingToast, "Không thể tải báo cáo. Vui lòng thử lại!", "error");
+      ToastService.update(loadingToast, t('reportManager.messages.loadError'), "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteReport = async (id) => {
-    if (confirm("Bạn có chắc muốn xóa báo cáo này?")) {
-      const loadingToast = ToastService.loading("Đang xóa báo cáo...");
+    if (confirm(t('reportManager.messages.deleteConfirm'))) {
+      const loadingToast = ToastService.loading(t('reportManager.messages.deleting'));
 
       try {
         // TODO: Gọi API xóa report
@@ -204,11 +211,11 @@ function Report() {
 
         setTimeout(() => {
           setReports(reports.filter(r => r._id !== id));
-          ToastService.update(loadingToast, "Xóa báo cáo thành công!", "success");
+          ToastService.update(loadingToast, t('reportManager.messages.deleteSuccess'), "success");
         }, 1000);
       } catch (error) {
         console.error('Error deleting report:', error);
-        ToastService.update(loadingToast, "Không thể xóa báo cáo. Vui lòng thử lại!", "error");
+        ToastService.update(loadingToast, t('reportManager.messages.deleteError'), "error");
       }
     }
   };
@@ -253,7 +260,7 @@ function Report() {
       <div className="bg-gradient-to-br from-red-50 via-white to-orange-50 rounded p-5 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Đang tải báo cáo...</p>
+          <p className="text-gray-600 font-medium">{t('reportManager.loading')}</p>
         </div>
       </div>
     );
@@ -263,15 +270,14 @@ function Report() {
     <div className="bg-gradient-to-br from-red-50 via-white to-orange-50 min-h-screen p-6">
       {/* Header Banner */}
       <div className="relative bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 rounded-2xl shadow-2xl overflow-hidden mb-6">
-        {/* Background pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10zm10 8c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm40 40c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
           }}></div>
         </div>
 
-        {/* Alert illustration */}
         <div className="absolute right-8 top-1/2 transform -translate-y-1/2 opacity-20 hidden lg:block">
+          {/* SVG Illustration - giữ nguyên */}
           <svg width="180" height="180" viewBox="0 0 180 180" fill="none">
             <path d="M90 30 L150 150 L30 150 Z" fill="white" opacity="0.8" stroke="white" strokeWidth="4" />
             <circle cx="90" cy="110" r="5" fill="white" />
@@ -287,10 +293,10 @@ function Report() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white mb-1">
-                  Quản lý báo cáo sự cố
+                  {t('reportManager.title')}
                 </h1>
                 <p className="text-orange-100">
-                  Theo dõi và xử lý các báo cáo sự cố từ phụ huynh và tài xế
+                  {t('reportManager.subtitle')}
                 </p>
               </div>
             </div>
@@ -298,15 +304,15 @@ function Report() {
             {/* Quick stats */}
             <div className="hidden md:flex gap-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                <div className="text-white/70 text-xs mb-1">Tổng số</div>
+                <div className="text-white/70 text-xs mb-1">{t('reportManager.stats.total')}</div>
                 <div className="text-2xl font-bold text-white">{reports.length}</div>
               </div>
               <div className="bg-red-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-red-300/30">
-                <div className="text-red-100 text-xs mb-1">Khẩn cấp</div>
+                <div className="text-red-100 text-xs mb-1">{t('reportManager.stats.urgent')}</div>
                 <div className="text-2xl font-bold text-white">{urgentCount}</div>
               </div>
               <div className="bg-yellow-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-yellow-300/30">
-                <div className="text-yellow-100 text-xs mb-1">Đang xử lý</div>
+                <div className="text-yellow-100 text-xs mb-1">{t('reportManager.stats.pending')}</div>
                 <div className="text-2xl font-bold text-white">{pendingCount}</div>
               </div>
             </div>
@@ -325,10 +331,10 @@ function Report() {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="bg-transparent border-none focus:ring-0 text-sm outline-none font-medium text-gray-700 cursor-pointer"
               >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="urgent">Khẩn cấp</option>
-                <option value="pending">Đang xử lý</option>
-                <option value="resolved">Đã giải quyết</option>
+                <option value="all">{t('reportManager.filter.allStatus')}</option>
+                <option value="urgent">{t('reportManager.filter.urgent')}</option>
+                <option value="pending">{t('reportManager.filter.pending')}</option>
+                <option value="resolved">{t('reportManager.filter.resolved')}</option>
               </select>
             </div>
 
@@ -336,7 +342,7 @@ function Report() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
-                placeholder="Tìm kiếm báo cáo..."
+                placeholder={t('reportManager.filter.searchPlaceholder')}
                 className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -355,9 +361,9 @@ function Report() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Tổng báo cáo</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('reportManager.stats.totalReports')}</h3>
           <p className="text-3xl font-bold text-gray-900">{reports.length}</p>
-          <p className="text-xs text-gray-500 mt-2">Đã nhận được</p>
+          <p className="text-xs text-gray-500 mt-2">{t('reportManager.stats.received')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-red-600">
@@ -367,9 +373,9 @@ function Report() {
             </div>
             <TrendingUp className="text-red-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Khẩn cấp</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('reportManager.stats.urgent')}</h3>
           <p className="text-3xl font-bold text-gray-900">{urgentCount}</p>
-          <p className="text-xs text-gray-500 mt-2">Cần xử lý ngay</p>
+          <p className="text-xs text-gray-500 mt-2">{t('reportManager.stats.urgentAction')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
@@ -379,9 +385,9 @@ function Report() {
             </div>
             <TrendingUp className="text-yellow-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Đang xử lý</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('reportManager.stats.pending')}</h3>
           <p className="text-3xl font-bold text-gray-900">{pendingCount}</p>
-          <p className="text-xs text-gray-500 mt-2">Đang được xem xét</p>
+          <p className="text-xs text-gray-500 mt-2">{t('reportManager.stats.reviewing')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500">
@@ -391,9 +397,9 @@ function Report() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Đã giải quyết</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('reportManager.stats.resolved')}</h3>
           <p className="text-3xl font-bold text-gray-900">{resolvedCount}</p>
-          <p className="text-xs text-gray-500 mt-2">Hoàn thành</p>
+          <p className="text-xs text-gray-500 mt-2">{t('reportManager.stats.completed')}</p>
         </div>
       </div>
 
@@ -402,7 +408,7 @@ function Report() {
         <div className="p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <FileText className="text-red-600" size={24} />
-            Danh sách báo cáo sự cố
+            {t('reportManager.list.title')}
           </h2>
 
           {filteredReports.length === 0 ? (
@@ -411,10 +417,10 @@ function Report() {
                 <AlertTriangle className="text-gray-400" size={48} />
               </div>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                Không tìm thấy báo cáo
+                {t('reportManager.empty.title')}
               </h3>
               <p className="text-gray-500 mb-4">
-                Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+                {t('reportManager.empty.subtitle')}
               </p>
               <button
                 onClick={() => {
@@ -423,7 +429,7 @@ function Report() {
                 }}
                 className="text-red-600 hover:text-red-700 font-medium text-sm"
               >
-                Xóa bộ lọc
+                {t('reportManager.filter.clearFilter')}
               </button>
             </div>
           ) : (

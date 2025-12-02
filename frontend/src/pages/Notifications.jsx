@@ -5,9 +5,11 @@ import { getAllNotifications, createNotification } from "@/api/notificationApi";
 import ToastService from "@/lib/toastService";
 import { Bell, BellPlus, Filter, Search, TrendingUp, AlertCircle, Info, CheckCircle, Megaphone, Edit2, Trash2, Calendar, Users } from "lucide-react";
 import Pagination from "@/components/Pagination";
+import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
 
 // NotificationCard Component
 function NotificationCard({ notification, onEdit, onDelete }) {
+    const { t } = useLanguage(); // ✅ Sử dụng hook
 
     const getTypeStyle = (type) => {
         switch (type) {
@@ -42,15 +44,15 @@ function NotificationCard({ notification, onEdit, onDelete }) {
     const getTypeLabel = (type) => {
         switch (type) {
             case 'alert':
-                return 'Cảnh báo';
+                return t('notificationManager.card.type.alert');
             case 'info':
-                return 'Thông tin';
+                return t('notificationManager.card.type.info');
             case 'success':
-                return 'Thành công';
+                return t('notificationManager.card.type.success');
             case 'announcement':
-                return 'Thông báo chung';
+                return t('notificationManager.card.type.announcement');
             default:
-                return 'Khác';
+                return t('notificationManager.card.type.other');
         }
     };
 
@@ -80,7 +82,7 @@ function NotificationCard({ notification, onEdit, onDelete }) {
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                                 <p className="text-sm text-gray-600 flex items-center gap-1">
                                     <Users size={14} />
-                                    <span className="font-medium">Người nhận:</span>
+                                    <span className="font-medium">{t('notificationManager.card.receiver')}</span>
                                     <span className="text-gray-800">
                                         {notification.receiver_id.name || 'N/A'}
                                     </span>
@@ -94,11 +96,11 @@ function NotificationCard({ notification, onEdit, onDelete }) {
                                                 : 'bg-gray-100 text-gray-700'
                                         }`}>
                                         {notification.receiver_id.role === 'parent'
-                                            ? '👨‍👩‍👧 Phụ huynh'
+                                            ? t('notificationManager.card.role.parent')
                                             : notification.receiver_id.role === 'driver'
-                                                ? '🚗 Tài xế'
+                                                ? t('notificationManager.card.role.driver')
                                                 : notification.receiver_id.role === 'admin'
-                                                    ? '👔 Quản trị viên'
+                                                    ? t('notificationManager.card.role.admin')
                                                     : '👤 ' + notification.receiver_id.role
                                         }
                                     </span>
@@ -115,7 +117,7 @@ function NotificationCard({ notification, onEdit, onDelete }) {
                         {notification.recipientCount && (
                             <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                                 <Users size={14} />
-                                Gửi đến {notification.recipientCount} người
+                                {t('notificationManager.card.sentTo').replace('{count}', notification.recipientCount)}
                             </p>
                         )}
                     </div>
@@ -124,14 +126,14 @@ function NotificationCard({ notification, onEdit, onDelete }) {
                     <button
                         onClick={() => onEdit(notification)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Chỉnh sửa"
+                        title={t('notificationManager.card.actions.edit')}
                     >
                         <Edit2 size={18} />
                     </button>
                     <button
                         onClick={() => onDelete(notification._id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Xóa"
+                        title={t('notificationManager.card.actions.delete')}
                     >
                         <Trash2 size={18} />
                     </button>
@@ -142,6 +144,7 @@ function NotificationCard({ notification, onEdit, onDelete }) {
 }
 
 function Notifications() {
+    const { t } = useLanguage(); // ✅ Sử dụng hook
     const navigate = useNavigate();
     const [notifications, setNotifications] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
@@ -149,31 +152,33 @@ function Notifications() {
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const notificationsPerPage = 20; // 👉 số thông báo mỗi trang
+    const notificationsPerPage = 20;
 
     useEffect(() => {
         fetchNotifications();
-    }, []);
+    }, [t]); // Reload khi đổi ngôn ngữ để cập nhật thông báo toast nếu cần
 
     const fetchNotifications = async () => {
-        const loadingToast = ToastService.loading("Đang tải thông báo...");
+        // Chỉ hiện loading lần đầu, không hiện khi reload do ngôn ngữ
+        // Tuy nhiên ở đây giữ nguyên logic toast như cũ
+        const loadingToast = ToastService.loading(t('notificationManager.loading'));
 
         try {
             setLoading(true);
             const data = await getAllNotifications();
             setNotifications(data);
-            ToastService.update(loadingToast, "Tải thông báo thành công!", "success");
+            ToastService.update(loadingToast, t('notificationManager.messages.loadSuccess'), "success");
         } catch (error) {
             console.error('Error fetching notifications:', error);
-            ToastService.update(loadingToast, "Không thể tải thông báo. Vui lòng thử lại!", "error");
+            ToastService.update(loadingToast, t('notificationManager.messages.loadError'), "error");
         } finally {
             setLoading(false);
         }
     };
 
     const handleDeleteNotification = async (id) => {
-        if (confirm("Bạn có chắc muốn xóa thông báo này?")) {
-            const loadingToast = ToastService.loading("Đang xóa thông báo...");
+        if (confirm(t('notificationManager.messages.deleteConfirm'))) {
+            const loadingToast = ToastService.loading(t('notificationManager.messages.deleting'));
 
             try {
                 // TODO: Gọi API xóa notification
@@ -181,11 +186,11 @@ function Notifications() {
 
                 setTimeout(() => {
                     setNotifications(notifications.filter(n => n._id !== id));
-                    ToastService.update(loadingToast, "Xóa thông báo thành công!", "success");
+                    ToastService.update(loadingToast, t('notificationManager.messages.deleteSuccess'), "success");
                 }, 1000);
             } catch (error) {
                 console.error('Error deleting notification:', error);
-                ToastService.update(loadingToast, "Không thể xóa thông báo. Vui lòng thử lại!", "error");
+                ToastService.update(loadingToast, t('notificationManager.messages.deleteError'), "error");
             }
         }
     };
@@ -202,25 +207,21 @@ function Notifications() {
         return matchSearch && matchType;
     });
 
-    // 👉 Reset về trang 1 khi filter/search thay đổi
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, filterType]);
 
-    // 👉 Tính toán phân trang sau khi đã filter
     const totalPages = Math.ceil(filteredNotifications.length / notificationsPerPage) || 1;
     const indexOfLast = currentPage * notificationsPerPage;
     const indexOfFirst = indexOfLast - notificationsPerPage;
     const currentNotifications = filteredNotifications.slice(indexOfFirst, indexOfLast);
 
-    // 👉 Hàm đổi trang
     const handlePageChange = (pageNumber) => {
         if (pageNumber >= 1 && pageNumber <= totalPages) {
             setCurrentPage(pageNumber);
         }
     };
 
-    // Statistics
     const alertCount = notifications.filter(n => n.type === 'alert').length;
     const infoCount = notifications.filter(n => n.type === 'info').length;
     const successCount = notifications.filter(n => n.type === 'success').length;
@@ -231,7 +232,7 @@ function Notifications() {
             <div className="bg-gradient-to-br from-orange-50 via-white to-red-50 rounded p-5 min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-600 border-t-transparent mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">Đang tải thông báo...</p>
+                    <p className="text-gray-600 font-medium">{t('notificationManager.loading')}</p>
                 </div>
             </div>
         );
@@ -241,15 +242,14 @@ function Notifications() {
         <div className="bg-gradient-to-br from-orange-50 via-white to-red-50 min-h-screen p-6">
             {/* Header Banner */}
             <div className="relative bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 rounded-2xl shadow-2xl overflow-hidden mb-6">
-                {/* Background pattern */}
                 <div className="absolute inset-0 opacity-10">
                     <div className="absolute inset-0" style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10zm10 8c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm40 40c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
                     }}></div>
                 </div>
 
-                {/* Bell illustration */}
                 <div className="absolute right-8 top-1/2 transform -translate-y-1/2 opacity-20 hidden lg:block">
+                    {/* SVG Illustration - giữ nguyên */}
                     <svg width="180" height="180" viewBox="0 0 180 180" fill="none">
                         <path d="M90 30 C70 30, 60 45, 60 65 L60 95 C60 105, 50 110, 50 120 L130 120 C130 110, 120 105, 120 95 L120 65 C120 45, 110 30, 90 30 Z" fill="white" opacity="0.8" />
                         <ellipse cx="90" cy="120" rx="40" ry="8" fill="white" opacity="0.6" />
@@ -267,10 +267,10 @@ function Notifications() {
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold text-white mb-1">
-                                    Quản lý thông báo
+                                    {t('notificationManager.title')}
                                 </h1>
                                 <p className="text-orange-100">
-                                    Gửi và theo dõi thông báo đến phụ huynh và tài xế
+                                    {t('notificationManager.subtitle')}
                                 </p>
                             </div>
                         </div>
@@ -278,15 +278,15 @@ function Notifications() {
                         {/* Quick stats */}
                         <div className="hidden md:flex gap-4">
                             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                                <div className="text-white/70 text-xs mb-1">Tổng số</div>
+                                <div className="text-white/70 text-xs mb-1">{t('notificationManager.stats.total')}</div>
                                 <div className="text-2xl font-bold text-white">{notifications.length}</div>
                             </div>
                             <div className="bg-red-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-red-300/30">
-                                <div className="text-red-100 text-xs mb-1">Cảnh báo</div>
+                                <div className="text-red-100 text-xs mb-1">{t('notificationManager.stats.alert')}</div>
                                 <div className="text-2xl font-bold text-white">{alertCount}</div>
                             </div>
                             <div className="bg-yellow-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-yellow-300/30">
-                                <div className="text-yellow-100 text-xs mb-1">Thông tin</div>
+                                <div className="text-yellow-100 text-xs mb-1">{t('notificationManager.stats.info')}</div>
                                 <div className="text-2xl font-bold text-white">{infoCount}</div>
                             </div>
                         </div>
@@ -305,11 +305,11 @@ function Notifications() {
                                 onChange={(e) => setFilterType(e.target.value)}
                                 className="bg-transparent border-none focus:ring-0 text-sm outline-none font-medium text-gray-700 cursor-pointer"
                             >
-                                <option value="all">Tất cả loại</option>
-                                <option value="alert">Cảnh báo</option>
-                                <option value="info">Thông tin</option>
-                                <option value="success">Thành công</option>
-                                <option value="announcement">Thông báo chung</option>
+                                <option value="all">{t('notificationManager.filter.all')}</option>
+                                <option value="alert">{t('notificationManager.filter.alert')}</option>
+                                <option value="info">{t('notificationManager.filter.info')}</option>
+                                <option value="success">{t('notificationManager.filter.success')}</option>
+                                <option value="announcement">{t('notificationManager.filter.announcement')}</option>
                             </select>
                         </div>
 
@@ -317,7 +317,7 @@ function Notifications() {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                             <input
                                 type="text"
-                                placeholder="Tìm kiếm thông báo..."
+                                placeholder={t('notificationManager.filter.searchPlaceholder')}
                                 className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -329,7 +329,7 @@ function Notifications() {
                         onClick={() => setIsCreateModalOpen(true)}
                         className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                     >
-                        <BellPlus size={20} /> Tạo thông báo
+                        <BellPlus size={20} /> {t('notificationManager.filter.addBtn')}
                     </button>
                 </div>
             </div>
@@ -343,9 +343,9 @@ function Notifications() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Tổng thông báo</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('notificationManager.stats.totalNotifications')}</h3>
                     <p className="text-3xl font-bold text-gray-900">{notifications.length}</p>
-                    <p className="text-xs text-gray-500 mt-2">Đã gửi đi</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('notificationManager.stats.sent')}</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-red-500">
@@ -355,9 +355,9 @@ function Notifications() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Cảnh báo</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('notificationManager.stats.alert')}</h3>
                     <p className="text-3xl font-bold text-gray-900">{alertCount}</p>
-                    <p className="text-xs text-gray-500 mt-2">Thông báo khẩn cấp</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('notificationManager.stats.emergency')}</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-blue-500">
@@ -367,9 +367,9 @@ function Notifications() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Thông tin</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('notificationManager.stats.info')}</h3>
                     <p className="text-3xl font-bold text-gray-900">{infoCount}</p>
-                    <p className="text-xs text-gray-500 mt-2">Thông báo thông thường</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('notificationManager.stats.normal')}</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500">
@@ -379,9 +379,9 @@ function Notifications() {
                         </div>
                         <TrendingUp className="text-green-500" size={20} />
                     </div>
-                    <h3 className="text-gray-600 text-sm font-medium mb-1">Thành công</h3>
+                    <h3 className="text-gray-600 text-sm font-medium mb-1">{t('notificationManager.stats.success')}</h3>
                     <p className="text-3xl font-bold text-gray-900">{successCount}</p>
-                    <p className="text-xs text-gray-500 mt-2">Hoàn thành tốt</p>
+                    <p className="text-xs text-gray-500 mt-2">{t('notificationManager.stats.completed')}</p>
                 </div>
             </div>
 
@@ -390,7 +390,7 @@ function Notifications() {
                 <div className="p-6">
                     <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                         <Megaphone className="text-orange-600" size={24} />
-                        Danh sách thông báo
+                        {t('notificationManager.list.title')}
                     </h2>
 
                     {filteredNotifications.length === 0 ? (
@@ -399,10 +399,10 @@ function Notifications() {
                                 <Bell className="text-gray-400" size={48} />
                             </div>
                             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                                Không tìm thấy thông báo
+                                {t('notificationManager.empty.title')}
                             </h3>
                             <p className="text-gray-500 mb-4">
-                                Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+                                {t('notificationManager.empty.subtitle')}
                             </p>
                             <button
                                 onClick={() => {
@@ -411,7 +411,7 @@ function Notifications() {
                                 }}
                                 className="text-orange-600 hover:text-orange-700 font-medium text-sm"
                             >
-                                Xóa bộ lọc
+                                {t('notificationManager.filter.clearFilter')}
                             </button>
                         </div>
                     ) : (
@@ -428,7 +428,7 @@ function Notifications() {
                     )}
                 </div>
 
-                {/* ✅ Phân trang */}
+                {/* Phân trang */}
                 {filteredNotifications.length > 0 && totalPages > 1 && (
                     <Pagination
                         currentPage={currentPage}

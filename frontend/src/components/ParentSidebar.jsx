@@ -1,7 +1,9 @@
 import { MapPin, BellRing, User } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useLanguage } from '@/contexts/LanguageContext'; // ✅ Import hook
 
 export default function ParentSidebar({ isOpen }) {
+  const { t } = useLanguage(); // ✅ Sử dụng hook
   const item = "flex items-center px-5 py-2 rounded hover:bg-blue-50 relative transition-colors duration-200";
   const icon = "w-5 h-5 text-blue-900";
 
@@ -82,7 +84,7 @@ export default function ParentSidebar({ isOpen }) {
             </span>
             {isOpen && (
               <span className="text-[10px] text-blue-200 font-medium tracking-wider uppercase">
-                Phụ Huynh
+                {t('parentSidebar.role')}
               </span>
             )}
           </div>
@@ -119,7 +121,7 @@ export default function ParentSidebar({ isOpen }) {
               isOpen ? "opacity-100" : "opacity-0"
             }`}
           >
-            Theo dõi học sinh
+            {t('parentSidebar.tracking')}
           </span>
         </Link>
 
@@ -131,11 +133,9 @@ export default function ParentSidebar({ isOpen }) {
               isOpen ? "opacity-100" : "opacity-0"
             }`}
           >
-            Thông báo
+            {t('parentSidebar.notifications')}
           </span>
         </Link>
-
-
       </nav>
 
       {/* Footer - Quick Info (when expanded) */}
@@ -143,10 +143,10 @@ export default function ParentSidebar({ isOpen }) {
         <div className="absolute bottom-4 left-0 right-0 px-5">
           <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
             <p className="text-xs text-blue-900 font-semibold mb-1">
-              Hỗ trợ 24/7
+              {t('parentSidebar.support')}
             </p>
             <p className="text-xs text-blue-700">
-              Hotline: 1900-xxxx
+              {t('parentSidebar.hotline')}
             </p>
           </div>
         </div>
