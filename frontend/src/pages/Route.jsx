@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getRoutesApi, deleteRouteApi, updateRouteApi } from "@/api/routeApi";
-import { getRoutesByIdApi } from "@/api/routeStopApi";
+import { getRoutesByIdApi } from "@/api/routestopApi";
 import RouteDetailModal from "@/components/RouteDetailModal";
 import RouteEditModal from "@/components/RouteEditModal";
 import {
