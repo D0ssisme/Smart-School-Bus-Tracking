@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CreateNotificationModal from '@/components/CreateNotificationModal';
-import { getAllNotifications, createNotification } from "@/api/notificationApi";
+import { getAllNotifications, createNotification, deleteNotification } from "@/api/notificationApi";
 import ToastService from "@/lib/toastService";
-import { Bell, BellPlus, Filter, Search, TrendingUp, AlertCircle, Info, CheckCircle, Megaphone, Edit2, Trash2, Calendar, Users } from "lucide-react";
+import { Bell, BellPlus, Filter, Search, TrendingUp, AlertCircle, Info, CheckCircle, Megaphone, Edit2, Trash2, Calendar, Users, X } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
 
@@ -90,10 +90,10 @@ function NotificationCard({ notification, onEdit, onDelete }) {
 
                                 {notification.receiver_id.role && (
                                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${notification.receiver_id.role === 'parent'
-                                            ? 'bg-blue-100 text-blue-700'
-                                            : notification.receiver_id.role === 'driver'
-                                                ? 'bg-green-100 text-green-700'
-                                                : 'bg-gray-100 text-gray-700'
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : notification.receiver_id.role === 'driver'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-gray-100 text-gray-700'
                                         }`}>
                                         {notification.receiver_id.role === 'parent'
                                             ? t('notificationManager.card.role.parent')
@@ -151,6 +151,10 @@ function Notifications() {
     const [filterType, setFilterType] = useState("all");
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingNotification, setEditingNotification] = useState(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deletingNotification, setDeletingNotification] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const notificationsPerPage = 20;
 
@@ -196,7 +200,8 @@ function Notifications() {
     };
 
     const handleEditNotification = (notification) => {
-        navigate(`/notifications/edit/${notification._id}`);
+        setEditingNotification(notification);
+        setIsCreateModalOpen(true);
     };
 
     const filteredNotifications = notifications.filter(n => {
@@ -421,7 +426,7 @@ function Notifications() {
                                     key={notification._id}
                                     notification={notification}
                                     onEdit={handleEditNotification}
-                                    onDelete={handleDeleteNotification}
+                                    onDelete={() => handleDeleteNotification(notification)}
                                 />
                             ))}
                         </div>
@@ -438,14 +443,135 @@ function Notifications() {
                 )}
             </div>
 
-            {/* Create Notification Modal */}
+            {/* Create/Edit Notification Modal */}
             <CreateNotificationModal
                 isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
+                onClose={() => {
+                    setIsCreateModalOpen(false);
+                    setEditingNotification(null);
+                }}
+                editingNotification={editingNotification}
                 onNotificationCreated={() => {
                     fetchNotifications();
+                    setEditingNotification(null);
                 }}
             />
+
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-slideUp">
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-red-600 to-orange-600 px-6 py-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
+                                    <AlertCircle className="text-white" size={24} />
+                                </div>
+                                <h2 className="text-xl font-bold text-white">Xác nhận xóa</h2>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsDeleteModalOpen(false);
+                                    setDeletingNotification(null);
+                                }}
+                                disabled={isDeleting}
+                                className="text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors disabled:opacity-50"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6">
+                            <div className="flex items-start gap-4 mb-6">
+                                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                                    <Trash2 className="text-red-600" size={24} />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-gray-700 text-base leading-relaxed mb-3">
+                                        Bạn có chắc chắn muốn xóa thông báo này không?
+                                    </p>
+                                    {deletingNotification && (
+                                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                            <p className="text-sm text-gray-600 line-clamp-2">
+                                                {deletingNotification.message}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <p className="text-sm text-red-800 flex items-center gap-2">
+                                    <AlertCircle size={16} className="flex-shrink-0" />
+                                    <span className="font-medium">Cảnh báo:</span> Hành động này không thể hoàn tác!
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsDeleteModalOpen(false);
+                                    setDeletingNotification(null);
+                                }}
+                                disabled={isDeleting}
+                                className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                disabled={isDeleting}
+                                className="px-6 py-2.5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            >
+                                {isDeleting ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                        Đang xóa...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 size={18} />
+                                        Xác nhận xóa
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { 
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to { 
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .animate-fadeIn {
+                    animation: fadeIn 0.2s ease-out;
+                }
+                .animate-slideUp {
+                    animation: slideUp 0.3s ease-out;
+                }
+                .line-clamp-2 {
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
+            `}</style>
         </div>
     );
 }

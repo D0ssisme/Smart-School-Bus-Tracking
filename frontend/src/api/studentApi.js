@@ -14,3 +14,9 @@ export const deleteStudent = async (studentId) => {
     const res = await axios.delete(`http://localhost:8080/api/student/${studentId}`);
     return res.data;
 };
+
+export const updateStudent = async (studentId, studentData) => {
+    const res = await axios.put(`http://localhost:8080/api/student/${studentId}`, studentData);
+    return res.data;
+}
+;

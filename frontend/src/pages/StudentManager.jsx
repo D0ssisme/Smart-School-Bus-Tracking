@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentTable from "../components/StudentTable";
 import AddStudentModal from "../components/AddStudentModal";
+
+import EditStudentModal from "../components/EditStudentModal ";
 import ToastService from "@/lib/toastService";
 import { getAllParentStudent } from "@/api/parentstudentApi";
 import { getParentsApi } from "@/api/userApi";
 import { getRoutesApi } from "@/api/routeApi";
-import { createStudent, deleteStudent } from "@/api/studentApi";
+import { createStudent, deleteStudent, updateStudent } from "@/api/studentApi";
 import { createParentStudent } from "@/api/parentstudentApi";
 import { createStudentRouteAssignment, getAllStudentRouteAssignments } from "@/api/studentrouteassignmentApi";
 import { GraduationCap, UserPlus, Filter, Search, TrendingUp, BookOpen, Users, Award } from "lucide-react";
@@ -16,6 +18,9 @@ import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
 function StudentManager() {
     const { t } = useLanguage(); // ✅ Sử dụng hook
     const navigate = useNavigate();
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingStudent, setEditingStudent] = useState(null);
+
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -195,7 +200,8 @@ function StudentManager() {
     };
 
     const handleEditStudent = (student) => {
-        navigate(`/students/edit/${student.id}`);
+        setEditingStudent(student);
+        setIsEditModalOpen(true);
     };
 
     const classList = ["all", ...new Set(students.map(s => s.Lop))];
@@ -418,6 +424,19 @@ function StudentManager() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleAddStudent}
+                parents={parents}
+                routes={routes}
+            />
+
+            {/* ✅ Edit Student Modal - RIÊNG BIỆT */}
+            <EditStudentModal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setEditingStudent(null);
+                }}
+                onSubmit={handleUpdateStudent}
+                student={editingStudent}
                 parents={parents}
                 routes={routes}
             />

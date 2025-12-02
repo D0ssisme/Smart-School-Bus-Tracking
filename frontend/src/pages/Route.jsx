@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getRoutesApi } from "@/api/routeApi";
+import { getRoutesApi, deleteRouteApi, updateRouteApi } from "@/api/routeApi";
+import { getRoutesByIdApi } from "@/api/routeStopApi";
+import RouteDetailModal from "@/components/RouteDetailModal";
+import RouteEditModal from "@/components/RouteEditModal";
 import {
   Route as RouteIcon,
   MapPin,
@@ -27,6 +30,7 @@ export default function RouteList() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [loadingAction, setLoadingAction] = useState(false);
 
   useEffect(() => {
     const fetchRoutes = async () => {
@@ -68,14 +72,54 @@ export default function RouteList() {
     }
   };
 
-  const openDetail = (route) => {
-    setSelectedRoute(route);
-    setIsDetailOpen(true);
+  const openDetail = async (route) => {
+    try {
+      setLoadingAction(true);
+      // Fetch detailed route information including stops using MongoDB _id
+      const mongoId = route.originalData?._id || route.originalData?.route_id;
+      const detailedRoute = await getRoutesByIdApi(mongoId);
+
+      // Transform the detailed data
+      const enrichedRoute = {
+        ...route,
+        stopsList: [
+          detailedRoute.start_point?.name,
+          ...(detailedRoute.intermediate_stops?.map(stop => stop.name) || []),
+          detailedRoute.end_point?.name
+        ].filter(Boolean),
+        originalData: detailedRoute
+      };
+
+      setSelectedRoute(enrichedRoute);
+      setIsDetailOpen(true);
+    } catch (err) {
+      console.error("Error fetching route details:", err);
+      alert("Không thể tải thông tin chi tiết. Vui lòng thử lại!");
+    } finally {
+      setLoadingAction(false);
+    }
   };
 
-  const openEdit = (route) => {
-    setSelectedRoute(route);
-    setIsEditOpen(true);
+  const openEdit = async (route) => {
+    try {
+      setLoadingAction(true);
+      // Fetch detailed route information for editing using MongoDB _id
+      const mongoId = route.originalData?._id || route.originalData?.route_id;
+      const detailedRoute = await getRoutesByIdApi(mongoId);
+
+      const enrichedRoute = {
+        ...route,
+        originalData: detailedRoute
+      };
+
+      setSelectedRoute(enrichedRoute);
+      setIsEditOpen(true);
+    } catch (err) {
+      console.error("Error fetching route details:", err);
+      alert("Không thể tải thông tin tuyến đường. Vui lòng thử lại!");
+    } finally {
+      setLoadingAction(false);
+    }
   };
 
   const closeModal = () => {
@@ -84,11 +128,54 @@ export default function RouteList() {
     setSelectedRoute(null);
   };
 
-  const handleEditSave = () => {
-    setRoutes((prev) =>
-      prev.map((r) => (r.id === selectedRoute.id ? selectedRoute : r))
-    );
-    closeModal();
+  const handleEditSave = async (formData) => {
+    try {
+      setLoadingAction(true);
+
+      // Sử dụng MongoDB _id để update
+      const mongoId = selectedRoute.originalData?._id || selectedRoute.originalData?.route_id;
+
+      // Prepare update data
+      const updateData = {
+        name: formData.name,
+        start_point: {
+          name: formData.start,
+          coordinates: selectedRoute.originalData?.start_point?.coordinates || [0, 0]
+        },
+        end_point: {
+          name: formData.end,
+          coordinates: selectedRoute.originalData?.end_point?.coordinates || [0, 0]
+        },
+        status: formData.status
+      };
+
+      // Call API to update route
+      await updateRouteApi(mongoId, updateData);
+
+      // Update local state
+      setRoutes((prev) =>
+        prev.map((r) =>
+          r.id === selectedRoute.id
+            ? {
+              ...r,
+              name: formData.name,
+              start: formData.start,
+              end: formData.end,
+              stops: formData.stops,
+              status: formData.status
+            }
+            : r
+        )
+      );
+
+      alert("Cập nhật tuyến đường thành công!");
+      closeModal();
+    } catch (err) {
+      console.error("Error updating route:", err);
+      alert("Không thể cập nhật tuyến đường. Vui lòng thử lại!");
+    } finally {
+      setLoadingAction(false);
+    }
   };
 
   const filteredRoutes = routes.filter(route => {
@@ -138,6 +225,16 @@ export default function RouteList() {
 
   return (
     <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 min-h-screen p-6">
+      {/* Loading Overlay */}
+      {loadingAction && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-2xl">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto mb-3"></div>
+            <p className="text-gray-700 font-medium">Đang xử lý...</p>
+          </div>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="relative bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 rounded-2xl shadow-2xl overflow-hidden mb-6">
         <div className="absolute inset-0 opacity-10">
