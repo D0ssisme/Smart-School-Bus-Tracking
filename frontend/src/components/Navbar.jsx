@@ -39,22 +39,10 @@ function Navbar() {
             Trang chủ
           </Link>
           <Link
-            to="/dashboard"
-            className="relative text-white hover:text-gray-300 transition font-medium after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
-          >
-            Tính năng
-          </Link>
-          <Link
-            to="/contact"
+            to=""
             className="relative text-white hover:text-gray-300 transition font-medium after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
           >
             Liên hệ
-          </Link>
-          <Link
-            to="/parent/tracking"
-            className="relative text-white hover:text-gray-300 transition font-medium after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
-          >
-           Phụ huynh
           </Link>
           <Link
             to="/login"

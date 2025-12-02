@@ -160,7 +160,7 @@ async function checkProximityAlerts(bus_id, schedule_id, busLat, busLng) {
             .populate('pickup_stop_id')
             .populate('dropoff_stop_id');
 
-        for (const assignment of studentAssignments) {
+        for (const assignment of studentAssignments) {  
             const pickupStop = assignment.pickup_stop_id;
             if (!pickupStop?.location) continue;
 
