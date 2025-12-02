@@ -9,6 +9,9 @@ import Swal from 'sweetalert2';
 import { toast } from 'react-hot-toast';
 
 
+
+
+
 const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
   // State cho Bus mới
   const [plate, setPlate] = useState('');
@@ -577,29 +580,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                         </div>
 
                         {/* Trạng thái lịch trình */}
-                        <div>
-                          <label htmlFor="scheduleStatus" className="block text-sm font-medium text-gray-700">
-                            Trạng thái lịch trình
-                          </label>
-                          <div className="relative mt-1">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                              <Activity size={16} className="text-gray-400" />
-                            </span>
-                            <select
-                              id="scheduleStatus"
-                              value={scheduleStatus}
-                              onChange={(e) => setScheduleStatus(e.target.value)}
-                              required
-                              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white"
-                            >
-                              {scheduleStatusOptions.map(opt => (
-                                <option key={opt} value={opt}>
-                                  {opt === 'scheduled' ? 'Đã lên lịch' : opt === 'completed' ? 'Hoàn thành' : 'Đã hủy'}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
+                       
 
                         <div className="mt-6 flex justify-end gap-3">
                           <button

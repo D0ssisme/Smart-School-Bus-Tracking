@@ -30,7 +30,6 @@ export default function ParentTracking() {
     try {
       setLoading(true);
       const studentsData = await getStudentsByParent(parentId);
-      console.log("👨‍👩‍👧‍👦 Students of parent:", studentsData);
 
       if (!studentsData || studentsData.length === 0) {
         setStudents([]);
@@ -43,9 +42,6 @@ export default function ParentTracking() {
         getStopsApi()
       ]);
 
-      console.log("🚏 Route assignments:", routeAssignments);
-      console.log("📍 All stops:", stopsData);
-
       setAllStops(stopsData);
 
       const transformedStudents = studentsData.map(item => {
@@ -56,8 +52,6 @@ export default function ParentTracking() {
           const raStudentId = ra.student_id?._id || ra.student_id;
           return raStudentId?.toString() === studentId?.toString();
         });
-
-        console.log(`🔍 Route assignment for ${student.name}:`, routeAssignment);
 
         let pickupStop = null;
         let dropoffStop = null;
@@ -72,9 +66,6 @@ export default function ParentTracking() {
           dropoffStop = stopsData.find(stop =>
             (stop._id?.toString() === dropoffStopId?.toString())
           );
-
-          console.log(`  📍 Pickup stop (${pickupStopId}):`, pickupStop);
-          console.log(`  📍 Dropoff stop (${dropoffStopId}):`, dropoffStop);
         }
 
         return {
@@ -100,8 +91,6 @@ export default function ParentTracking() {
         };
       });
 
-      console.log("✅ Transformed students:", transformedStudents);
-
       setStudents(transformedStudents);
       if (transformedStudents.length > 0) {
         setSelectedStudent(transformedStudents[0]);
@@ -117,7 +106,6 @@ export default function ParentTracking() {
 
   useEffect(() => {
     if (selectedStudent) {
-      console.log('🎯 Selected student changed:', selectedStudent);
       buildRouteStops(selectedStudent);
 
       if (selectedStudent.route_id) {
@@ -131,26 +119,17 @@ export default function ParentTracking() {
   }, [selectedStudent, allStops]);
 
   const buildRouteStops = async (student) => {
-    console.log('🏗️ Building route stops for student:', student.name);
-
     if (student.route_full?.stops && Array.isArray(student.route_full.stops)) {
-      console.log('✅ Using stops from route_full:', student.route_full.stops);
       setRouteStops(student.route_full.stops);
       return;
     }
 
     if (student.route_id) {
-      console.log('📡 Fetching route stops from API:', student.route_id);
       try {
         const response = await axios.get(`http://localhost:8080/api/route/${student.route_id}`);
-        console.log('📦 Full API Response:', JSON.stringify(response.data, null, 2));
 
         if (response.data && response.data.stops && response.data.stops.length > 0) {
-          console.log(`📊 Found ${response.data.stops.length} stops in API response`);
-
           const transformedStops = response.data.stops.map((stopData, index) => {
-            console.log(`🔍 Processing stop ${index + 1}:`, stopData);
-
             const stopInfo = stopData.stop_id || stopData;
 
             return {
@@ -165,120 +144,41 @@ export default function ParentTracking() {
             };
           });
 
-          console.log('✅ Transformed stops from API:', transformedStops);
           setRouteStops(transformedStops);
           return;
-        } else {
-          console.log('⚠️ API response has no stops or empty stops array');
         }
       } catch (error) {
-        console.log('⚠️ API fetch failed, using fallback:', error.message);
-        console.log('Error details:', error.response?.data || error);
+        console.log('⚠️ API fetch failed:', error.message);
       }
     }
 
     if (student.pickup_stop_id && student.dropoff_stop_id) {
-      console.log('🔨 Building route from pickup & dropoff stops');
-
       const pickupStopData = allStops.find(s => s._id?.toString() === student.pickup_stop_id?.toString());
       const dropoffStopData = allStops.find(s => s._id?.toString() === student.dropoff_stop_id?.toString());
 
       if (pickupStopData && dropoffStopData) {
         const constructedStops = [
-          {
-            stop_id: pickupStopData,
-            order: 1,
-            estimated_arrival_time: null
-          },
-          {
-            stop_id: dropoffStopData,
-            order: 2,
-            estimated_arrival_time: null
-          }
+          { stop_id: pickupStopData, order: 1, estimated_arrival_time: null },
+          { stop_id: dropoffStopData, order: 2, estimated_arrival_time: null }
         ];
 
-        console.log('✅ Constructed route stops:', constructedStops);
         setRouteStops(constructedStops);
         return;
       }
-    }
-
-    console.log('🔍 Using all assignments fallback');
-    buildRouteStopsFromAllAssignments(student.route_id);
-  };
-
-  const buildRouteStopsFromAllAssignments = async (routeId) => {
-    try {
-      const allAssignments = await getAllStudentRouteAssignments();
-
-      const sameRouteAssignments = allAssignments.filter(assignment => {
-        const assignmentRouteId = assignment.route_id?._id || assignment.route_id;
-        return assignmentRouteId?.toString() === routeId?.toString();
-      });
-
-      console.log(`📦 Found ${sameRouteAssignments.length} assignments for this route`);
-
-      if (sameRouteAssignments.length === 0) {
-        setRouteStops([]);
-        return;
-      }
-
-      const uniqueStopsMap = new Map();
-
-      sameRouteAssignments.forEach(assignment => {
-        const pickupStopId = assignment.pickup_stop_id?._id || assignment.pickup_stop_id;
-        const dropoffStopId = assignment.dropoff_stop_id?._id || assignment.dropoff_stop_id;
-
-        if (pickupStopId) {
-          const stopData = allStops.find(s => s._id?.toString() === pickupStopId?.toString());
-          if (stopData && !uniqueStopsMap.has(pickupStopId.toString())) {
-            uniqueStopsMap.set(pickupStopId.toString(), stopData);
-          }
-        }
-
-        if (dropoffStopId) {
-          const stopData = allStops.find(s => s._id?.toString() === dropoffStopId?.toString());
-          if (stopData && !uniqueStopsMap.has(dropoffStopId.toString())) {
-            uniqueStopsMap.set(dropoffStopId.toString(), stopData);
-          }
-        }
-      });
-
-      const constructedStops = Array.from(uniqueStopsMap.values()).map((stop, index) => ({
-        stop_id: stop,
-        order: index + 1,
-        estimated_arrival_time: null
-      }));
-
-      console.log(`✅ Built ${constructedStops.length} unique stops from assignments:`, constructedStops);
-      setRouteStops(constructedStops);
-
-    } catch (error) {
-      console.error('❌ Error building route stops:', error);
-      setRouteStops([]);
     }
   };
 
   const fetchBusInfoByRoute = async (routeId) => {
     try {
-      console.log(`🚌 Fetching bus info for route: ${routeId}`);
       const scheduleRes = await axios.get(`http://localhost:8080/api/busschedule/by-route/${routeId}`);
       const schedule = scheduleRes.data;
 
-      if (!schedule) {
-        console.log('⚠️ No active schedule for this route');
-        return;
-      }
+      if (!schedule) return;
 
-      console.log('✅ Schedule found:', schedule);
       setBusInfo(schedule);
 
       const busId = schedule.bus_id?._id || schedule.bus_id;
-      console.log(`📍 Fetching location for bus: ${busId}`);
-
       const locationRes = await axios.get(`http://localhost:8080/api/bus-locations/${busId}`);
-      console.log('✅ Bus location:', locationRes.data);
-
       setBusLocation(locationRes.data);
 
     } catch (error) {
@@ -290,7 +190,6 @@ export default function ParentTracking() {
     try {
       const res = await axios.get(`http://localhost:8080/api/studentbusassignments/student/${studentId}`);
       setStudentStatus(res.data);
-      console.log('👨‍🎓 Student status:', res.data);
     } catch (error) {
       console.log('ℹ️ No student assignment found');
     }
@@ -300,29 +199,33 @@ export default function ParentTracking() {
     if (!socket || !busInfo?.bus_id) return;
 
     const busId = busInfo.bus_id._id || busInfo.bus_id;
+    socket.emit('subscribe_bus', busId);
 
     const handleLocationUpdate = (data) => {
-      console.log('🚌 Location update:', data);
-      setBusLocation(prev => ({
-        ...prev,
+      setBusLocation({
+        bus_id: data.bus_id,
         latitude: data.latitude,
         longitude: data.longitude,
-        timestamp: data.timestamp
-      }));
+        timestamp: data.timestamp,
+        schedule_id: data.schedule_id,
+        current_stop_index: data.current_stop_index
+      });
 
       if (selectedStudent?._id) {
         fetchStudentStatus(selectedStudent._id);
       }
     };
 
-    socket.on(`bus_location_${busId}`, handleLocationUpdate);
+    socket.on('bus_location_update', handleLocationUpdate);
 
     return () => {
-      socket.off(`bus_location_${busId}`, handleLocationUpdate);
+      socket.off('bus_location_update', handleLocationUpdate);
+      socket.emit('unsubscribe_bus', busId);
     };
   }, [socket, busInfo, selectedStudent]);
 
-  const calculateDistance = () => {
+  // ✅ Tính khoảng cách đến điểm đón
+  const calculateDistanceToPickup = () => {
     if (!busLocation || !selectedStudent?.pickup_stop_location) return null;
 
     const R = 6371;
@@ -341,15 +244,38 @@ export default function ParentTracking() {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
-  const distance = calculateDistance();
-  const estimatedTime = distance ? Math.ceil(distance / 0.4 * 60) : null;
+  // ✅ Tính khoảng cách đến điểm trả
+  const calculateDistanceToDropoff = () => {
+    if (!busLocation || !selectedStudent?.dropoff_stop_location) return null;
+
+    const R = 6371;
+    const lat1 = busLocation.latitude;
+    const lon1 = busLocation.longitude;
+    const lat2 = selectedStudent.dropoff_stop_location.coordinates[1];
+    const lon2 = selectedStudent.dropoff_stop_location.coordinates[0];
+
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
+  const distanceToPickup = calculateDistanceToPickup();
+  const distanceToDropoff = calculateDistanceToDropoff();
+  const estimatedTimeToPickup = distanceToPickup ? Math.ceil(distanceToPickup / 0.4 * 60) : null;
+  const estimatedTimeToDropoff = distanceToDropoff ? Math.ceil(distanceToDropoff / 0.4 * 60) : null;
 
   const getStatusBadge = (status) => {
     switch (status) {
       case "picked":
         return <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">✅ Đã đón</span>;
       case "dropped":
-        return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">📍 Đã trả</span>;
+      case "completed":
+        return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">✅ Hoàn thành</span>;
       case "pending":
         return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">🚌 Đang đi</span>;
       default:
@@ -388,25 +314,22 @@ export default function ParentTracking() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* Header */}
       <div className="bg-white border-b shadow-sm px-4 py-4">
         <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <MapPin className="text-blue-600" size={24} />
-          Theo dõi xe buýt học sinh 
+          Theo dõi xe buýt học sinh
         </h1>
       </div>
 
       <div className="p-4">
         {selectedStudent && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Left Side - Map Section */}
             <div className="lg:col-span-2 space-y-4">
-              {/* Live Status Banner */}
               {busLocation && (
                 <div className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    <span className="font-semibold text-sm">🔴 LIVE - Đang theo dõi</span>
+                    <span className="font-semibold text-sm">🔴 LIVE - Đang theo dõi realtime</span>
                   </div>
                   <span className="text-xs">
                     {new Date(busLocation.timestamp).toLocaleTimeString('vi-VN')}
@@ -414,16 +337,6 @@ export default function ParentTracking() {
                 </div>
               )}
 
-              {/* Debug Info */}
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-3 text-xs">
-                <p className="font-bold text-blue-800 mb-1">ℹ️ Thông tin tuyến:</p>
-                <p>• Số điểm dừng: <span className="font-bold">{routeStops?.length || 0}</span></p>
-                <p>• Vị trí xe bus: <span className="font-bold">{busLocation ? '✅ Đang hoạt động' : '❌ Chưa khởi hành'}</span></p>
-                <p>• Điểm đón: <span className="font-bold">{selectedStudent?.pickup_stop_name}</span></p>
-                <p>• Điểm trả: <span className="font-bold">{selectedStudent?.dropoff_stop_name}</span></p>
-              </div>
-
-              {/* Map Container */}
               <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full" style={{ height: '60vh' }}>
                 <BusTrackingMapEnhanced
                   busLocation={busLocation}
@@ -444,41 +357,81 @@ export default function ParentTracking() {
                 />
               </div>
 
-              {/* Distance & Time Cards */}
-              {distance !== null && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg p-4">
-                    <p className="text-xs text-blue-600 font-medium mb-1">Khoảng cách</p>
-                    <p className="text-2xl font-bold text-blue-800">{distance.toFixed(2)} km</p>
-                    <p className="text-xs text-blue-600 mt-1">đến điểm đón</p>
+              {/* ✅ Distance & Time Cards - CẢ ĐIỂM ĐÓN VÀ ĐIỂM TRẢ */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Điểm đón */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-green-700 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    Điểm đón
+                  </h3>
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-3">
+                    <p className="text-xs text-green-600 font-medium mb-1">Khoảng cách</p>
+                    <p className="text-xl font-bold text-green-800">
+                      {distanceToPickup !== null ? `${distanceToPickup.toFixed(2)} km` : 'N/A'}
+                    </p>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-lg p-4">
-                    <p className="text-xs text-purple-600 font-medium mb-1">Thời gian dự kiến</p>
-                    <p className="text-2xl font-bold text-purple-800">~{estimatedTime} phút</p>
-                    <p className="text-xs text-purple-600 mt-1">sẽ đến điểm đón</p>
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-3">
+                    <p className="text-xs text-green-600 font-medium mb-1">Thời gian dự kiến</p>
+                    <p className="text-xl font-bold text-green-800">
+                      {estimatedTimeToPickup !== null ? `~${estimatedTimeToPickup} phút` : 'N/A'}
+                    </p>
                   </div>
                 </div>
-              )}
 
-              {/* Alert */}
-              {distance !== null && distance < 1 && (
+                {/* Điểm trả */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-red-700 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                    Điểm trả
+                  </h3>
+                  <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-3">
+                    <p className="text-xs text-red-600 font-medium mb-1">Khoảng cách</p>
+                    <p className="text-xl font-bold text-red-800">
+                      {distanceToDropoff !== null ? `${distanceToDropoff.toFixed(2)} km` : 'N/A'}
+                    </p>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-3">
+                    <p className="text-xs text-red-600 font-medium mb-1">Thời gian dự kiến</p>
+                    <p className="text-xl font-bold text-red-800">
+                      {estimatedTimeToDropoff !== null ? `~${estimatedTimeToDropoff} phút` : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Alert - Điểm đón */}
+              {distanceToPickup !== null && distanceToPickup < 0.5 && (
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 flex items-center gap-3">
                   <div className="bg-green-500 rounded-full p-2">
                     <AlertCircle className="text-white" size={24} />
                   </div>
                   <div>
-                    <p className="font-bold text-green-800 text-lg">⚡ Xe sắp đến rồi!</p>
+                    <p className="font-bold text-green-800 text-lg">⚡ Xe sắp đến điểm đón!</p>
                     <p className="text-sm text-green-700 mt-1">
                       Xe buýt đang rất gần điểm đón. Vui lòng chuẩn bị sẵn sàng.
                     </p>
                   </div>
                 </div>
               )}
+
+              {/* Alert - Điểm trả */}
+              {distanceToDropoff !== null && distanceToDropoff < 0.5 && (
+                <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-lg p-4 flex items-center gap-3">
+                  <div className="bg-orange-500 rounded-full p-2">
+                    <AlertCircle className="text-white" size={24} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-orange-800 text-lg">🏫 Con sắp về đến!</p>
+                    <p className="text-sm text-orange-700 mt-1">
+                      Xe buýt sắp đến điểm trả. Con sắp về đến nhà.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Right Sidebar - Student Selection & Info */}
             <div className="lg:col-span-1 space-y-4">
-              {/* Student Selector */}
               <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-lg shadow-xl p-5 border-2 border-indigo-400">
                 <label className="block text-sm font-bold text-white mb-3 flex items-center gap-2">
                   <User className="text-white" size={18} />
@@ -489,7 +442,6 @@ export default function ParentTracking() {
                     value={selectedStudent?._id || ''}
                     onChange={(e) => {
                       const student = students.find(s => s._id === e.target.value);
-                      console.log('👤 Student selected:', student);
                       setSelectedStudent(student);
                     }}
                     className="w-full px-4 py-3 pr-10 border-2 border-white rounded-lg outline-none focus:ring-4 focus:ring-yellow-300 appearance-none cursor-pointer bg-white hover:bg-gray-50 transition-all font-bold text-gray-800 shadow-md"
@@ -502,14 +454,8 @@ export default function ParentTracking() {
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none" size={20} />
                 </div>
-                <div className="mt-3 bg-white/20 backdrop-blur-sm rounded-lg p-2 border border-white/30">
-                  <p className="text-xs text-white font-medium">
-                    🚌 Tuyến: <span className="font-bold">{selectedStudent?.route_name}</span>
-                  </p>
-                </div>
               </div>
 
-              {/* Student Info */}
               <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg shadow-xl p-5 border-2 border-slate-600">
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-slate-600">
                   <div className="bg-blue-500 rounded-full p-2">
@@ -552,7 +498,6 @@ export default function ParentTracking() {
                 </div>
               </div>
 
-              {/* Status */}
               <div className="bg-white rounded-lg shadow-lg p-4">
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b-2 border-gray-200">
                   <Clock className="text-blue-600" size={20} />
@@ -572,7 +517,6 @@ export default function ParentTracking() {
                 </div>
               </div>
 
-              {/* Bus Info */}
               {busInfo && (
                 <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-lg shadow-lg p-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -586,7 +530,6 @@ export default function ParentTracking() {
                 </div>
               )}
 
-              {/* Emergency */}
               <div className="bg-gradient-to-br from-red-500 to-orange-600 text-white rounded-lg shadow-lg p-4">
                 <h3 className="font-bold mb-2 flex items-center gap-2">
                   <Phone size={18} />

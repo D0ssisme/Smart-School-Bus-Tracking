@@ -1,28 +1,30 @@
 import React from "react";
-import { Users, Bus, MapPin } from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext"; // ✅ Import hook
 
 function Features() {
+  const { t } = useLanguage(); // ✅ Sử dụng hook để dịch
+
   const features = [
     {
       icon: <span className="text-4xl sm:text-5xl md:text-6xl ">👨‍👩‍👧</span>,
-      title: "Phụ huynh",
-      desc: "Theo dõi vị trí xe theo thời gian thực, nhận thông báo khi xe đến gần và xem lịch sử di chuyển.",
+      title: t('sections.parents'), // ✅ Dịch
+      desc: t('sections.parentsDesc'), // ✅ Dịch
       color: "from-blue-500 to-blue-600",
       bgColor: "bg-blue-50",
       iconBg: "bg-gradient-to-br from-blue-50 to-blue-70",
     },
     {
       icon: <span className="text-4xl sm:text-5xl md:text-6xl">👨‍✈️</span>,
-      title: "Tài xế",
-      desc: "Quản lý lịch trình chạy xe, báo cáo nhanh chóng và cập nhật tình trạng xe buýt.",
+      title: t('sections.drivers'), // ✅ Dịch
+      desc: t('sections.driversDesc'), // ✅ Dịch
       color: "from-green-500 to-green-600",
       bgColor: "bg-green-50",
       iconBg: "bg-gradient-to-br from-green-50 to-green-70",
     },
     {
       icon: <span className="text-4xl sm:text-5xl md:text-6xl">🏫</span>,
-      title: "Nhà trường",
-      desc: "Phân công tuyến đường, gửi thông báo đến phụ huynh và giám sát toàn bộ hệ thống.",
+      title: t('sections.school'), // ✅ Dịch
+      desc: t('sections.schoolDesc'), // ✅ Dịch
       color: "from-purple-500 to-purple-600",
       bgColor: "bg-purple-50",
       iconBg: "bg-gradient-to-br from-purple-50 to-purple-70",
@@ -35,7 +37,7 @@ function Features() {
         {/* Header */}
         <div className="text-center mb-16 animate-fade-in-up">
           <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-            Tính năng nổi bật
+            {t('features.title')} {/* ✅ Dịch */}
           </h2>
         </div>
 
@@ -74,4 +76,5 @@ function Features() {
     </section>
   );
 }
+
 export default Features;

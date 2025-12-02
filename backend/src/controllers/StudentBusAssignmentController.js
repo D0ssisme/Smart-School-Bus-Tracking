@@ -1,5 +1,55 @@
 import StudentBusAssignment from "../models/StudentBusAssignment.js";
+import mongoose from "mongoose";
 
+
+
+// GET /api/studentbusassignments/schedule/:scheduleId
+export const getStudentsByScheduleId = async (req, res) => {
+  try {
+    const { schedule_id } = req.params;
+
+    const students = await StudentBusAssignment.find({
+      schedule_id,
+    })
+      .populate({
+        path: "student_id",
+        select: "student_id name grade class"
+      })
+      .populate({
+        path: "schedule_id",
+        select: "schedule_id route_id bus_id driver_id"
+      })
+      .lean();
+
+    // Nếu cần thêm thông tin pickup/dropoff stops
+    const enrichedStudents = await Promise.all(
+      students.map(async (assignment) => {
+        // Lấy thông tin route assignment để có pickup/dropoff stops
+        const RouteAssignment = mongoose.model("StudentRouteAssignment");
+        const routeAssignment = await RouteAssignment.findOne({
+          student_id: assignment.student_id._id
+        })
+          .populate("pickup_stop_id", "name address location")
+          .populate("dropoff_stop_id", "name address location")
+          .lean();
+
+        return {
+          ...assignment,
+          pickup_stop_id: routeAssignment?.pickup_stop_id || null,
+          dropoff_stop_id: routeAssignment?.dropoff_stop_id || null
+        };
+      })
+    );
+
+    res.status(200).json(enrichedStudents);
+  } catch (error) {
+    console.error("❌ Error getting students by schedule:", error);
+    res.status(500).json({
+      message: "Không thể lấy danh sách học sinh",
+      error: error.message
+    });
+  }
+};
 
 // GET BY STUDENT ID
 export const getStudentBusAssignmentByStudentId = async (req, res) => {
@@ -8,7 +58,7 @@ export const getStudentBusAssignmentByStudentId = async (req, res) => {
 
     const assignment = await StudentBusAssignment.findOne({
       student_id,
-      pickup_status: { $ne: 'dropped' } // Chưa trả học sinh
+
     })
       .populate("student_id", "name grade")
       .populate({

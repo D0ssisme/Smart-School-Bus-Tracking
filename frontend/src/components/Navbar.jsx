@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../contexts/LanguageContext"; // ✅ Import hook
+import LanguageSwitcher from "./LanguageSwitcher"; // ✅ Import component
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const { t } = useLanguage(); // ✅ Sử dụng hook để dịch
 
   useEffect(() => {
     const handleScroll = () => {
@@ -12,9 +15,21 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Hàm xử lý smooth scroll
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
   return (
-    <nav className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-blue-800 shadow-lg' : 'bg-blue-900 shadow-md'
-      }`}>
+    <nav className={`sticky top-0 z-50 transition-all duration-300 ${
+      scrolled ? 'bg-blue-800 shadow-lg' : 'bg-blue-900 shadow-md'
+    }`}>
       <div className="container mx-auto px-6 py-3 flex justify-between items-center">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3 group">
@@ -36,25 +51,39 @@ function Navbar() {
             to="/"
             className="relative text-white hover:text-gray-300 transition font-medium after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
           >
-            Trang chủ
+            {t('nav.home')} {/* ✅ Dịch */}
           </Link>
-          <Link
-            to=""
+
+          {/* Bấm vào "Tính năng" → scroll đến #features */}
+          <button
+            onClick={() => scrollToSection('features')}
             className="relative text-white hover:text-gray-300 transition font-medium after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
           >
-            Liên hệ
-          </Link>
+            {t('nav.features')} {/* ✅ Dịch */}
+          </button>
+
+          {/* Bấm vào "Liên hệ" → scroll đến #contact */}
+          <button
+            onClick={() => scrollToSection('contact')}
+            className="relative text-white hover:text-gray-300 transition font-medium after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
+          >
+            {t('nav.contact')} {/* ✅ Dịch */}
+          </button>
+
+          {/* ✅ Thêm nút chuyển ngôn ngữ */}
+          <LanguageSwitcher />
+
           <Link
             to="/login"
             className="px-6 py-2.5 bg-white text-blue-900 rounded-lg hover:shadow-xl transition-all duration-300 font-semibold transform hover:scale-105"
           >
-            Đăng nhập
+            {t('nav.login')} {/* ✅ Dịch */}
           </Link>
         </div>
 
         {/* Mobile Menu Button */}
         <button className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>

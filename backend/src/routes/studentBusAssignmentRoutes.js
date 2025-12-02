@@ -6,13 +6,18 @@ import {
   updateStudentBusAssignment,
   deleteStudentBusAssignment,
   getStudentBusAssignmentByStudentId,
-  getCountStudentByScheduleId
-  
-  
+  getCountStudentByScheduleId,
+  getStudentsByScheduleId
+
+
 
 } from "../controllers/StudentBusAssignmentController.js";
 
 const router = express.Router();
+
+
+router.get('/schedule/:schedule_id', getStudentsByScheduleId);
+
 router.get('/student/:student_id', getStudentBusAssignmentByStudentId);
 
 router.get('/schedule/:schedule_id/count', getCountStudentByScheduleId);

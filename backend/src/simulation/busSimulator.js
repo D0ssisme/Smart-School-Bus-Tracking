@@ -15,7 +15,8 @@ class BusSimulator {
     this.currentStopIndex = 0;
     this.isRunning = false;
     this.intervalId = null;
-    this.speed = 2000; // Update every 2 seconds
+    this.speed = 5000; // 🔧 5 giây mỗi bước (RẤT chậm để test dễ)
+    this.isCompleted = false; // ✅ Thêm flag để check xe đã hoàn thành chưa
   }
 
   // Khởi tạo từ schedule
@@ -48,17 +49,8 @@ class BusSimulator {
 
       console.log(`📍 Loaded ${this.stops.length} stops`);
 
-      // 3. Tạo path
-      if (this.schedule.route_id.path?.coordinates) {
-        // Sử dụng path có sẵn
-        this.path = this.schedule.route_id.path.coordinates.map(coord => ({
-          longitude: coord[0],
-          latitude: coord[1]
-        }));
-      } else {
-        // Tạo từ stops
-        this.path = this.generatePathFromStops(this.stops);
-      }
+      // 3. ✅ LUÔN generate path mới từ stops để đảm bảo mượt mà
+      this.path = this.generatePathFromStops(this.stops);
 
       console.log(`✅ Generated path with ${this.path.length} points`);
       return true;
@@ -69,15 +61,27 @@ class BusSimulator {
     }
   }
 
-  // Tạo path mượt giữa các stops
+  // ✅ Tạo path mượt giữa các stops - FIXED VERSION
   generatePathFromStops(stops) {
     const path = [];
-    
+    const METERS_PER_STEP = 50; // 🔧 Mỗi bước di chuyển 50m (điều chỉnh theo ý muốn)
+
     for (let i = 0; i < stops.length - 1; i++) {
       const start = stops[i].location.coordinates;
       const end = stops[i + 1].location.coordinates;
-      const steps = 100; // 100 bước giữa mỗi stop
 
+      // ✅ Tính khoảng cách thực tế giữa 2 stops
+      const distance = this.calculateDistance(
+        start[1], start[0],  // latitude, longitude
+        end[1], end[0]
+      ) * 1000; // Chuyển km → m
+
+      // ✅ Tính số bước dựa trên khoảng cách
+      const steps = Math.max(5, Math.ceil(distance / METERS_PER_STEP));
+
+      console.log(`📏 Distance ${stops[i].name} → ${stops[i + 1].name}: ${distance.toFixed(0)}m → ${steps} steps`);
+
+      // Tạo các điểm trung gian
       for (let j = 0; j <= steps; j++) {
         const t = j / steps;
         path.push({
@@ -107,6 +111,7 @@ class BusSimulator {
     }
 
     this.isRunning = true;
+    this.isCompleted = false; // ✅ Reset completed flag
     this.intervalId = setInterval(() => {
       this.update();
     }, this.speed);
@@ -128,6 +133,20 @@ class BusSimulator {
   async update() {
     if (!this.path || this.path.length === 0) return;
 
+    // ✅ CHECK: Nếu đã đến điểm cuối thì DỪNG LẠI
+    if (this.currentIndex >= this.path.length - 1) {
+      if (!this.isCompleted) {
+        this.isCompleted = true;
+        console.log(`🏁 Bus has reached the final destination!`);
+        console.log(`📍 Final stop: ${this.stops[this.stops.length - 1].name}`);
+
+        // Update trạng thái cuối cùng
+        await this.updateFinalLocation();
+      }
+      this.stop(); // Dừng hẳn simulator
+      return;
+    }
+
     const position = this.path[this.currentIndex];
 
     // Kiểm tra xe đến stop
@@ -148,11 +167,28 @@ class BusSimulator {
         current_stop_index: this.currentStopIndex
       });
 
-      // Next position
-      this.currentIndex = (this.currentIndex + 1) % this.path.length;
+      // ✅ Next position - KHÔNG loop lại nữa
+      this.currentIndex++;
 
     } catch (error) {
       console.error('❌ Update error:', error.message);
+    }
+  }
+
+  // ✅ Cập nhật vị trí cuối cùng khi xe đã hoàn thành
+  async updateFinalLocation() {
+    try {
+      const finalPosition = this.path[this.path.length - 1];
+      await axios.post('http://localhost:8080/api/bus-locations/update', {
+        bus_id: this.schedule.bus_id._id,
+        latitude: finalPosition.latitude,
+        longitude: finalPosition.longitude,
+        schedule_id: this.scheduleId,
+        current_stop_index: this.stops.length - 1,
+        is_completed: true // Thêm flag để backend biết xe đã xong
+      });
+    } catch (error) {
+      console.error('❌ Final update error:', error.message);
     }
   }
 
@@ -229,11 +265,12 @@ class BusSimulator {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 }
+
 export default BusSimulator;

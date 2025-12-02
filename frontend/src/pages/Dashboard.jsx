@@ -1,12 +1,13 @@
-
 import { useEffect, useState } from "react";
 import { getDriversApi } from "../api/userApi";
 import { getRoutesApi } from "../api/routeApi";
 import { getAllBuschedule } from "../api/busscheduleApi";
 import axios from "axios";
 import { Bus, Users, Route, Calendar, TrendingUp, Clock } from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext"; // ✅ Import hook
 
 export default function Dashboard() {
+  const { t, language } = useLanguage(); // ✅ Sử dụng hook để dịch
   const [busCount, setBusCount] = useState(0);
   const [driverCount, setDriverCount] = useState(0);
   const [routeCount, setRouteCount] = useState(0);
@@ -70,10 +71,10 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">
-                🚌 Hệ thống quản lý xe bus
+                🚌 {t('dashboard.title')} {/* ✅ Dịch */}
               </h1>
               <p className="text-blue-100 text-lg">
-                Giám sát và điều hành hoạt động vận chuyển học sinh
+                {t('dashboard.subtitle')} {/* ✅ Dịch */}
               </p>
             </div>
             <div className="hidden md:block">
@@ -81,9 +82,9 @@ export default function Dashboard() {
                 <div className="flex items-center gap-3">
                   <Calendar className="text-white" size={32} />
                   <div className="text-white">
-                    <div className="text-sm opacity-80">Hôm nay</div>
+                    <div className="text-sm opacity-80">{t('dashboard.today')}</div> {/* ✅ Dịch */}
                     <div className="text-xl font-semibold">
-                      {new Date().toLocaleDateString('vi-VN', {
+                      {new Date().toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
                         day: '2-digit',
                         month: '2-digit',
                         year: 'numeric'
@@ -106,9 +107,9 @@ export default function Dashboard() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Tổng số xe bus</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.totalBuses')}</h3> {/* ✅ Dịch */}
           <p className="text-3xl font-bold text-gray-900">{busCount}</p>
-          <p className="text-xs text-gray-500 mt-2">Đang hoạt động</p>
+          <p className="text-xs text-gray-500 mt-2">{t('dashboard.active')}</p> {/* ✅ Dịch */}
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500">
@@ -118,9 +119,9 @@ export default function Dashboard() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Tổng tài xế</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.totalDrivers')}</h3> {/* ✅ Dịch */}
           <p className="text-3xl font-bold text-gray-900">{driverCount}</p>
-          <p className="text-xs text-gray-500 mt-2">Đã được phân công</p>
+          <p className="text-xs text-gray-500 mt-2">{t('dashboard.assigned')}</p> {/* ✅ Dịch */}
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-purple-500">
@@ -130,9 +131,9 @@ export default function Dashboard() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Tuyến đường</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.totalRoutes')}</h3> {/* ✅ Dịch */}
           <p className="text-3xl font-bold text-gray-900">{routeCount}</p>
-          <p className="text-xs text-gray-500 mt-2">Đang được sử dụng</p>
+          <p className="text-xs text-gray-500 mt-2">{t('dashboard.inUse')}</p> {/* ✅ Dịch */}
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-orange-500">
@@ -142,9 +143,9 @@ export default function Dashboard() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Lịch trình hôm nay</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.todaySchedule')}</h3> {/* ✅ Dịch */}
           <p className="text-3xl font-bold text-gray-900">{scheduleStats.scheduled}</p>
-          <p className="text-xs text-gray-500 mt-2">Chuyến đang chờ</p>
+          <p className="text-xs text-gray-500 mt-2">{t('dashboard.waiting')}</p> {/* ✅ Dịch */}
         </div>
       </div>
 
@@ -154,41 +155,41 @@ export default function Dashboard() {
         <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Calendar size={24} className="text-blue-600" />
-            Tình trạng lịch trình
+            {t('dashboard.scheduleStatus')} {/* ✅ Dịch */}
           </h2>
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-yellow-700 font-medium text-sm">Đang chờ</span>
+                <span className="text-yellow-700 font-medium text-sm">{t('dashboard.pending')}</span> {/* ✅ Dịch */}
                 <div className="bg-yellow-200 rounded-full w-3 h-3"></div>
               </div>
               <p className="text-3xl font-bold text-yellow-800">{scheduleStats.scheduled}</p>
-              <p className="text-xs text-yellow-600 mt-1">Chuyến xe</p>
+              <p className="text-xs text-yellow-600 mt-1">{t('dashboard.pendingTrips')}</p> {/* ✅ Dịch */}
             </div>
 
             <div className="bg-green-50 rounded-lg p-4 border border-green-200">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-green-700 font-medium text-sm">Hoàn thành</span>
+                <span className="text-green-700 font-medium text-sm">{t('dashboard.completed')}</span> {/* ✅ Dịch */}
                 <div className="bg-green-200 rounded-full w-3 h-3"></div>
               </div>
               <p className="text-3xl font-bold text-green-800">{scheduleStats.completed}</p>
-              <p className="text-xs text-green-600 mt-1">Chuyến xe</p>
+              <p className="text-xs text-green-600 mt-1">{t('dashboard.completedTrips')}</p> {/* ✅ Dịch */}
             </div>
 
             <div className="bg-red-50 rounded-lg p-4 border border-red-200">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-red-700 font-medium text-sm">Đã hủy</span>
+                <span className="text-red-700 font-medium text-sm">{t('dashboard.cancelled')}</span> {/* ✅ Dịch */}
                 <div className="bg-red-200 rounded-full w-3 h-3"></div>
               </div>
               <p className="text-3xl font-bold text-red-800">{scheduleStats.cancelled}</p>
-              <p className="text-xs text-red-600 mt-1">Chuyến xe</p>
+              <p className="text-xs text-red-600 mt-1">{t('dashboard.cancelledTrips')}</p> {/* ✅ Dịch */}
             </div>
           </div>
 
           {/* Progress Bar */}
           <div className="mt-6">
             <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <span>Tiến độ hoàn thành</span>
+              <span>{t('dashboard.completionRate')}</span> {/* ✅ Dịch */}
               <span className="font-semibold">
                 {scheduleStats.scheduled + scheduleStats.completed + scheduleStats.cancelled > 0
                   ? Math.round((scheduleStats.completed / (scheduleStats.scheduled + scheduleStats.completed + scheduleStats.cancelled)) * 100)
@@ -210,14 +211,14 @@ export default function Dashboard() {
 
         {/* Quick Actions / Info */}
         <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Thông tin nhanh</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">{t('dashboard.quickInfo')}</h2> {/* ✅ Dịch */}
           <div className="space-y-4">
             <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
               <div className="bg-blue-100 rounded-full p-2">
                 <Bus className="text-blue-600" size={20} />
               </div>
               <div>
-                <p className="text-xs text-gray-600">Xe đang hoạt động</p>
+                <p className="text-xs text-gray-600">{t('dashboard.activeBuses')}</p> {/* ✅ Dịch */}
                 <p className="text-lg font-bold text-gray-900">{scheduleStats.scheduled}</p>
               </div>
             </div>
@@ -227,7 +228,7 @@ export default function Dashboard() {
                 <Users className="text-green-600" size={20} />
               </div>
               <div>
-                <p className="text-xs text-gray-600">Tài xế sẵn sàng</p>
+                <p className="text-xs text-gray-600">{t('dashboard.availableDrivers')}</p> {/* ✅ Dịch */}
                 <p className="text-lg font-bold text-gray-900">{driverCount}</p>
               </div>
             </div>
@@ -237,15 +238,15 @@ export default function Dashboard() {
                 <Route className="text-purple-600" size={20} />
               </div>
               <div>
-                <p className="text-xs text-gray-600">Tuyến hoạt động</p>
+                <p className="text-xs text-gray-600">{t('dashboard.activeRoutes')}</p> {/* ✅ Dịch */}
                 <p className="text-lg font-bold text-gray-900">{routeCount}</p>
               </div>
             </div>
 
             <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-              <p className="text-xs text-blue-700 font-medium mb-1">💡 Mẹo hữu ích</p>
+              <p className="text-xs text-blue-700 font-medium mb-1">💡 {t('dashboard.tips')}</p> {/* ✅ Dịch */}
               <p className="text-xs text-blue-900">
-                Kiểm tra lịch trình định kỳ để đảm bảo xe bus hoạt động ổn định
+                {t('dashboard.tipsContent')} {/* ✅ Dịch */}
               </p>
             </div>
           </div>
@@ -254,17 +255,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-// ====================
-// HƯỚNG DẪN SỬ DỤNG:
-// ====================
-// 1. Copy toàn bộ code trên
-// 2. Mở file src/pages/Dashboard.jsx trong project của bạn
-// 3. Thay thế toàn bộ nội dung bằng code này
-// 4. Lưu file và refresh trình duyệt
-// 
-// Lưu ý: Đảm bảo các API functions đã được import đúng:
-// - getDriversApi từ ../api/userApi
-// - getRoutesApi từ ../api/routeApi  
-// - getAllBuschedule từ ../api/busscheduleApi
-// - axios đã được cài đặt (npm install axios)

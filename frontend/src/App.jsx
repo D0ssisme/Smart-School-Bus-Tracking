@@ -2,8 +2,9 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Toaster } from "react-hot-toast";
-import { useAuth } from "./hooks/useAuth"; // ← Import useAuth
-import { SocketProvider } from "./contexts/SocketContext"; // ← Import SocketProvider
+import { useAuth } from "./hooks/useAuth";
+import { SocketProvider } from "./contexts/SocketContext";
+import { LanguageProvider } from "./contexts/LanguageContext"; // ✅ Import LanguageProvider
 
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
@@ -266,16 +267,18 @@ function AppRoutes() {
   );
 }
 
-// ✅ Component App chính - Wrap SocketProvider ở đây
+// ✅ Wrap toàn bộ app với LanguageProvider
 function App() {
-  const { user } = useAuth(); // Lấy thông tin user từ AuthContext
+  const { user } = useAuth();
 
   return (
-    <BrowserRouter>
-      <SocketProvider userId={user?._id}>
-        <AppRoutes />
-      </SocketProvider>
-    </BrowserRouter>
+    <LanguageProvider>
+      <BrowserRouter>
+        <SocketProvider userId={user?._id}>
+          <AppRoutes />
+        </SocketProvider>
+      </BrowserRouter>
+    </LanguageProvider>
   );
 }
 
