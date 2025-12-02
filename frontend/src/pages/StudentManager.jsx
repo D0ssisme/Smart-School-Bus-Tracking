@@ -4,19 +4,25 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentTable from "../components/StudentTable";
 import AddStudentModal from "../components/AddStudentModal";
+
+import EditStudentModal from "../components/EditStudentModal ";
 import ToastService from "@/lib/toastService";
 import { getAllParentStudent } from "@/api/parentstudentApi";
 import { getParentsApi } from "@/api/userApi";
 import { getRoutesApi } from "@/api/routeApi";
-import { createStudent, deleteStudent } from "@/api/studentApi";
+import { createStudent, deleteStudent, updateStudent } from "@/api/studentApi";
 import { createParentStudent } from "@/api/parentstudentApi";
-import { createStudentRouteAssignment, getAllStudentRouteAssignments } from "@/api/studentrouteassignmentApi";
+
+import { createStudentRouteAssignment, getAllStudentRouteAssignments, updateStudentRouteAssignment } from "@/api/studentrouteassignmentApi";
 import { getRoutesByIdApi } from "@/api/routestopApi";
 import { GraduationCap, UserPlus, Filter, Search, TrendingUp, BookOpen, Users, Award } from "lucide-react";
 import Swal from 'sweetalert2';
 
 function StudentManager() {
     const navigate = useNavigate();
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingStudent, setEditingStudent] = useState(null);
+
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -240,10 +246,65 @@ function StudentManager() {
         });
     };
 
+    const handleUpdateStudent = async (formData) => {
+        const loadingToast = ToastService.loading("Đang cập nhật học sinh...");
+
+        try {
+            console.log("📝 Updating student:", editingStudent.id);
+            console.log("📤 Form data:", formData);
+
+            // 1. Cập nhật thông tin student cơ bản
+            const studentPayload = {
+                name: formData.name,
+                grade: formData.class
+            };
+
+            await updateStudent(editingStudent.id, studentPayload);
+            console.log("✅ Student info updated");
+
+            // 2. Nếu thay đổi parent, cập nhật relationship
+            if (formData.parentId && formData.parentId !== editingStudent.parent_id) {
+                // Có thể cần API update parent-student relationship
+                console.log("⚠️ Parent changed - might need to update relationship");
+            }
+
+            // 3. Cập nhật route assignment nếu có thay đổi
+            if (editingStudent.routeAssignmentId &&
+                (formData.routeId !== editingStudent.routeId ||
+                    formData.pickupStopId !== editingStudent.pickupStopId ||
+                    formData.dropoffStopId !== editingStudent.dropoffStopId)) {
+
+                const assignmentPayload = {
+                    student_id: editingStudent.id,
+                    route_id: formData.routeId,
+                    pickup_stop_id: formData.pickupStopId,
+                    dropoff_stop_id: formData.dropoffStopId
+                };
+
+                console.log("📤 Updating route assignment:", assignmentPayload);
+                await updateStudentRouteAssignment(editingStudent.routeAssignmentId, assignmentPayload);
+                console.log("✅ Route assignment updated");
+            }
+
+            ToastService.update(loadingToast, "Cập nhật học sinh thành công!", "success");
+            setIsEditModalOpen(false);
+            setEditingStudent(null);
+
+            // Refresh danh sách học sinh
+            await fetchStudents();
+
+        } catch (error) {
+            console.error('❌ Error updating student:', error);
+            console.error('Error response:', error.response?.data);
+            const errorMsg = error.response?.data?.message || "Không thể cập nhật học sinh. Vui lòng thử lại!";
+            ToastService.update(loadingToast, errorMsg, "error");
+        }
+    };
 
 
     const handleEditStudent = (student) => {
-        navigate(`/students/edit/${student.id}`);
+        setEditingStudent(student);
+        setIsEditModalOpen(true);
     };
 
     // Lấy danh sách lớp unique
@@ -471,6 +532,19 @@ function StudentManager() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleAddStudent}
+                parents={parents}
+                routes={routes}
+            />
+
+            {/* ✅ Edit Student Modal - RIÊNG BIỆT */}
+            <EditStudentModal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setEditingStudent(null);
+                }}
+                onSubmit={handleUpdateStudent}
+                student={editingStudent}
                 parents={parents}
                 routes={routes}
             />

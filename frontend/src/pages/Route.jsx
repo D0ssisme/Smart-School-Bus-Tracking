@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getRoutesApi } from "@/api/routeApi";
+import { getRoutesApi, deleteRouteApi, updateRouteApi } from "@/api/routeApi";
+import { getRoutesByIdApi } from "@/api/routeStopApi";
+import RouteDetailModal from "@/components/RouteDetailModal";
+import RouteEditModal from "@/components/RouteEditModal";
 import {
   Route as RouteIcon,
   MapPin,
@@ -25,55 +28,108 @@ export default function RouteList() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [loadingAction, setLoadingAction] = useState(false);
 
   useEffect(() => {
-    const fetchRoutes = async () => {
-      try {
-        setLoading(true);
-        const response = await getRoutesApi();
-
-        const transformedRoutes = response.map(route => ({
-          id: route.route_id || route._id,
-          name: route.name,
-          start: route.start_point?.name || "N/A",
-          end: route.end_point?.name || "N/A",
-          stops: route.path?.coordinates?.length || 2,
-          stopsList: [
-            route.start_point?.name,
-            ...(route.intermediate_stops?.map(stop => stop.name) || []),
-            route.end_point?.name
-          ].filter(Boolean),
-          status: route.status,
-          originalData: route
-        }));
-
-        setRoutes(transformedRoutes);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching routes:", err);
-        setError("Không thể tải danh sách tuyến xe. Vui lòng thử lại sau.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRoutes();
   }, []);
 
-  const handleDelete = (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa tuyến này?")) {
-      setRoutes(routes.filter((r) => r.id !== id));
+  const fetchRoutes = async () => {
+    try {
+      setLoading(true);
+      const response = await getRoutesApi();
+
+      const transformedRoutes = response.map(route => ({
+        id: route.route_id || route._id,
+        name: route.name,
+        start: route.start_point?.name || "N/A",
+        end: route.end_point?.name || "N/A",
+        stops: route.path?.coordinates?.length || 2,
+        stopsList: [
+          route.start_point?.name,
+          ...(route.intermediate_stops?.map(stop => stop.name) || []),
+          route.end_point?.name
+        ].filter(Boolean),
+        status: route.status,
+        originalData: route
+      }));
+
+      setRoutes(transformedRoutes);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching routes:", err);
+      setError("Không thể tải danh sách tuyến xe. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const openDetail = (route) => {
-    setSelectedRoute(route);
-    setIsDetailOpen(true);
+  const handleDelete = async (route) => {
+    if (window.confirm("Bạn có chắc muốn xóa tuyến này?")) {
+      try {
+        setLoadingAction(true);
+        // Sử dụng MongoDB _id để xóa
+        const mongoId = route.originalData?._id || route.originalData?.route_id;
+        await deleteRouteApi(mongoId);
+        setRoutes(routes.filter((r) => r.id !== route.id));
+        alert("Xóa tuyến đường thành công!");
+      } catch (err) {
+        console.error("Error deleting route:", err);
+        alert("Không thể xóa tuyến đường. Vui lòng thử lại!");
+      } finally {
+        setLoadingAction(false);
+      }
+    }
   };
 
-  const openEdit = (route) => {
-    setSelectedRoute(route);
-    setIsEditOpen(true);
+  const openDetail = async (route) => {
+    try {
+      setLoadingAction(true);
+      // Fetch detailed route information including stops using MongoDB _id
+      const mongoId = route.originalData?._id || route.originalData?.route_id;
+      const detailedRoute = await getRoutesByIdApi(mongoId);
+
+      // Transform the detailed data
+      const enrichedRoute = {
+        ...route,
+        stopsList: [
+          detailedRoute.start_point?.name,
+          ...(detailedRoute.intermediate_stops?.map(stop => stop.name) || []),
+          detailedRoute.end_point?.name
+        ].filter(Boolean),
+        originalData: detailedRoute
+      };
+
+      setSelectedRoute(enrichedRoute);
+      setIsDetailOpen(true);
+    } catch (err) {
+      console.error("Error fetching route details:", err);
+      alert("Không thể tải thông tin chi tiết. Vui lòng thử lại!");
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const openEdit = async (route) => {
+    try {
+      setLoadingAction(true);
+      // Fetch detailed route information for editing using MongoDB _id
+      const mongoId = route.originalData?._id || route.originalData?.route_id;
+      const detailedRoute = await getRoutesByIdApi(mongoId);
+
+      const enrichedRoute = {
+        ...route,
+        originalData: detailedRoute
+      };
+
+      setSelectedRoute(enrichedRoute);
+      setIsEditOpen(true);
+    } catch (err) {
+      console.error("Error fetching route details:", err);
+      alert("Không thể tải thông tin tuyến đường. Vui lòng thử lại!");
+    } finally {
+      setLoadingAction(false);
+    }
   };
 
   const closeModal = () => {
@@ -82,11 +138,54 @@ export default function RouteList() {
     setSelectedRoute(null);
   };
 
-  const handleEditSave = () => {
-    setRoutes((prev) =>
-      prev.map((r) => (r.id === selectedRoute.id ? selectedRoute : r))
-    );
-    closeModal();
+  const handleEditSave = async (formData) => {
+    try {
+      setLoadingAction(true);
+
+      // Sử dụng MongoDB _id để update
+      const mongoId = selectedRoute.originalData?._id || selectedRoute.originalData?.route_id;
+
+      // Prepare update data
+      const updateData = {
+        name: formData.name,
+        start_point: {
+          name: formData.start,
+          coordinates: selectedRoute.originalData?.start_point?.coordinates || [0, 0]
+        },
+        end_point: {
+          name: formData.end,
+          coordinates: selectedRoute.originalData?.end_point?.coordinates || [0, 0]
+        },
+        status: formData.status
+      };
+
+      // Call API to update route
+      await updateRouteApi(mongoId, updateData);
+
+      // Update local state
+      setRoutes((prev) =>
+        prev.map((r) =>
+          r.id === selectedRoute.id
+            ? {
+              ...r,
+              name: formData.name,
+              start: formData.start,
+              end: formData.end,
+              stops: formData.stops,
+              status: formData.status
+            }
+            : r
+        )
+      );
+
+      alert("Cập nhật tuyến đường thành công!");
+      closeModal();
+    } catch (err) {
+      console.error("Error updating route:", err);
+      alert("Không thể cập nhật tuyến đường. Vui lòng thử lại!");
+    } finally {
+      setLoadingAction(false);
+    }
   };
 
   const filteredRoutes = routes.filter(route => {
@@ -136,6 +235,16 @@ export default function RouteList() {
 
   return (
     <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 min-h-screen p-6">
+      {/* Loading Overlay */}
+      {loadingAction && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-2xl">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto mb-3"></div>
+            <p className="text-gray-700 font-medium">Đang xử lý...</p>
+          </div>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="relative bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 rounded-2xl shadow-2xl overflow-hidden mb-6">
         <div className="absolute inset-0 opacity-10">
@@ -355,183 +464,19 @@ export default function RouteList() {
         )}
       </div>
 
-      {/* Modal chi tiết */}
-      {isDetailOpen && selectedRoute && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <RouteIcon size={24} />
-                  Chi tiết tuyến xe
-                </h3>
-                <button onClick={closeModal} className="text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
-                  <X size={24} />
-                </button>
-              </div>
-            </div>
+      {/* Modal Components */}
+      <RouteDetailModal
+        isOpen={isDetailOpen}
+        onClose={closeModal}
+        route={selectedRoute}
+      />
 
-            <div className="p-6 space-y-4">
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <RouteIcon className="text-indigo-600 mt-1" size={20} />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Mã tuyến</p>
-                  <p className="font-semibold text-gray-800">{selectedRoute.id}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <Map className="text-indigo-600 mt-1" size={20} />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Tên tuyến</p>
-                  <p className="font-semibold text-gray-800">{selectedRoute.name}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
-                <MapPin className="text-green-600 mt-1" size={20} />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Điểm bắt đầu</p>
-                  <p className="font-semibold text-gray-800">{selectedRoute.start}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
-                <MapPin className="text-red-600 mt-1" size={20} />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Điểm kết thúc</p>
-                  <p className="font-semibold text-gray-800">{selectedRoute.end}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                <Navigation className="text-blue-600 mt-1" size={20} />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Số điểm dừng</p>
-                  <p className="font-semibold text-gray-800">{selectedRoute.stops} điểm</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="mt-1">
-                  <div className={`w-5 h-5 rounded-full ${selectedRoute.status === "active" ? "bg-green-500" : "bg-gray-500"}`}></div>
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">Trạng thái</p>
-                  <p className="font-semibold text-gray-800">{selectedRoute.status === "active" ? "Hoạt động" : "Không hoạt động"}</p>
-                </div>
-              </div>
-
-              <div className="p-4 bg-indigo-50 rounded-lg border-l-4 border-indigo-600">
-                <p className="text-sm font-semibold text-gray-800 mb-3">Danh sách điểm dừng:</p>
-                <ul className="space-y-2">
-                  {selectedRoute.stopsList.map((stop, index) => (
-                    <li key={index} className="flex items-center gap-2 text-sm text-gray-700">
-                      <div className="w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold">{index + 1}</div>
-                      {stop}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="p-6 bg-gray-50 rounded-b-2xl">
-              <button onClick={closeModal} className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-3 rounded-lg font-semibold transition-all">
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal sửa */}
-      {isEditOpen && selectedRoute && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Edit size={24} />
-                  Sửa thông tin tuyến
-                </h3>
-                <button onClick={closeModal} className="text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
-                  <X size={24} />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tên tuyến</label>
-                <input
-                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={selectedRoute.name}
-                  onChange={(e) => setSelectedRoute({ ...selectedRoute, name: e.target.value })}
-                  placeholder="Nhập tên tuyến"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Điểm bắt đầu</label>
-                <input
-                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={selectedRoute.start}
-                  onChange={(e) => setSelectedRoute({ ...selectedRoute, start: e.target.value })}
-                  placeholder="Nhập điểm bắt đầu"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Điểm kết thúc</label>
-                <input
-                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={selectedRoute.end}
-                  onChange={(e) => setSelectedRoute({ ...selectedRoute, end: e.target.value })}
-                  placeholder="Nhập điểm kết thúc"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Số điểm dừng</label>
-                <input
-                  type="number"
-                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={selectedRoute.stops}
-                  onChange={(e) => setSelectedRoute({ ...selectedRoute, stops: Number(e.target.value) })}
-                  placeholder="Nhập số điểm dừng"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
-                <select
-                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={selectedRoute.status}
-                  onChange={(e) => setSelectedRoute({ ...selectedRoute, status: e.target.value })}
-                >
-                  <option value="active">Hoạt động</option>
-                  <option value="inactive">Không hoạt động</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="p-6 bg-gray-50 rounded-b-2xl flex gap-3">
-              <button
-                onClick={handleEditSave}
-                className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg font-semibold transition-all"
-              >
-                Lưu thay đổi
-              </button>
-              <button
-                onClick={closeModal}
-                className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-3 rounded-lg font-semibold transition-all"
-              >
-                Hủy
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RouteEditModal
+        isOpen={isEditOpen}
+        onClose={closeModal}
+        route={selectedRoute}
+        onSave={handleEditSave}
+      />
     </div>
   );
 }

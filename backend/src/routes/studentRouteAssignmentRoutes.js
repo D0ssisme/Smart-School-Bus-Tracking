@@ -15,4 +15,5 @@ router.get("/:id", getStudentRouteAssignmentById);
 router.put("/:id", updateStudentRouteAssignment);
 router.delete("/:id", deleteStudentRouteAssignment);
 
+
 export default router;

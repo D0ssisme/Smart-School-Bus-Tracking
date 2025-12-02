@@ -6,6 +6,7 @@ import {
   getNotificationById,
   markAllAsRead,
   markAsRead,
+  updateNotification,
   deleteNotification
 } from "../controllers/NotificationControllers.js";
 
@@ -25,6 +26,9 @@ router.patch("/receiver/:receiver_id/mark-all-read", markAllAsRead);
 
 // Lấy notification theo ID
 router.get("/:id", getNotificationById);
+
+// Cập nhật notification
+router.put("/:id", updateNotification);
 
 // Đánh dấu đã đọc một notification
 router.patch("/:id/mark-read", markAsRead);

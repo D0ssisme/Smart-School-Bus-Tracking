@@ -26,10 +26,10 @@ const EditUserModal = ({ isOpen, onClose, onSave, userId }) => {
     const fetchUserData = async () => {
         setFetchingData(true);
         setError(null);
-        
+
         try {
             const userData = await getUserByIdApi(userId);
-            
+
             setFormData({
                 name: userData.name || '',
                 password: '',
@@ -131,7 +131,7 @@ const EditUserModal = ({ isOpen, onClose, onSave, userId }) => {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm" />
+                    <div className="fixed inset-0 bg-black/10 backdrop-blur-md" />
                 </Transition.Child>
 
                 <div className="fixed inset-0 overflow-y-auto">
