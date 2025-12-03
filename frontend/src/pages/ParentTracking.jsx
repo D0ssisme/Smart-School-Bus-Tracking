@@ -109,6 +109,12 @@ export default function ParentTracking() {
 
   useEffect(() => {
     if (selectedStudent) {
+      // ✅ Reset các state khi chọn học sinh mới
+      setBusInfo(null);
+      setBusLocation(null);
+      setStudentStatus(null);
+      setRouteStops([]);
+
       buildRouteStops(selectedStudent);
 
       if (selectedStudent.route_id) {
@@ -406,18 +412,29 @@ export default function ParentTracking() {
                     <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                     Điểm đón
                   </h3>
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-3">
-                    <p className="text-xs text-green-600 font-medium mb-1">Khoảng cách</p>
-                    <p className="text-xl font-bold text-green-800">
-                      {distanceToPickup !== null ? `${distanceToPickup.toFixed(2)} km` : 'N/A'}
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-3">
-                    <p className="text-xs text-green-600 font-medium mb-1">Thời gian dự kiến</p>
-                    <p className="text-xl font-bold text-green-800">
-                      {estimatedTimeToPickup !== null ? `~${estimatedTimeToPickup} phút` : 'N/A'}
-                    </p>
-                  </div>
+                  {studentStatus?.pickup_status === 'picked' ? (
+                    <div className="bg-gradient-to-br from-green-100 to-green-200 border-2 border-green-400 rounded-lg p-4 flex items-center justify-center">
+                      <div className="text-center">
+                        <p className="text-3xl mb-2">✅</p>
+                        <p className="text-lg font-bold text-green-800">Đã đón</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-3">
+                        <p className="text-xs text-green-600 font-medium mb-1">Khoảng cách</p>
+                        <p className="text-xl font-bold text-green-800">
+                          {distanceToPickup !== null ? `${distanceToPickup.toFixed(2)} km` : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-3">
+                        <p className="text-xs text-green-600 font-medium mb-1">Thời gian dự kiến</p>
+                        <p className="text-xl font-bold text-green-800">
+                          {estimatedTimeToPickup !== null ? `~${estimatedTimeToPickup} phút` : 'N/A'}
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Điểm trả */}
@@ -426,23 +443,46 @@ export default function ParentTracking() {
                     <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                     Điểm trả
                   </h3>
-                  <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-3">
-                    <p className="text-xs text-red-600 font-medium mb-1">Khoảng cách</p>
-                    <p className="text-xl font-bold text-red-800">
-                      {distanceToDropoff !== null ? `${distanceToDropoff.toFixed(2)} km` : 'N/A'}
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-3">
-                    <p className="text-xs text-red-600 font-medium mb-1">Thời gian dự kiến</p>
-                    <p className="text-xl font-bold text-red-800">
-                      {estimatedTimeToDropoff !== null ? `~${estimatedTimeToDropoff} phút` : 'N/A'}
-                    </p>
-                  </div>
+                  {studentStatus?.dropoff_status === 'dropped' || studentStatus?.dropoff_status === 'completed' ? (
+                    <div className="bg-gradient-to-br from-blue-100 to-blue-200 border-2 border-blue-400 rounded-lg p-4 flex items-center justify-center">
+                      <div className="text-center">
+                        <p className="text-3xl mb-2">🏫</p>
+                        <p className="text-lg font-bold text-blue-800">Đã trả</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-3">
+                        <p className="text-xs text-red-600 font-medium mb-1">Khoảng cách</p>
+                        <p className="text-xl font-bold text-red-800">
+                          {distanceToDropoff !== null ? `${distanceToDropoff.toFixed(2)} km` : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-3">
+                        <p className="text-xs text-red-600 font-medium mb-1">Thời gian dự kiến</p>
+                        <p className="text-xl font-bold text-red-800">
+                          {estimatedTimeToDropoff !== null ? `~${estimatedTimeToDropoff} phút` : 'N/A'}
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
               {/* Alert - Điểm đón */}
-              {distanceToPickup !== null && distanceToPickup < 0.5 && (
+              {studentStatus?.pickup_status === 'picked' ? (
+                <div className="bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-400 rounded-lg p-4 flex items-center gap-3">
+                  <div className="bg-green-600 rounded-full p-2">
+                    <AlertCircle className="text-white" size={24} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-green-900 text-lg">✅ Con đã được đón!</p>
+                    <p className="text-sm text-green-800 mt-1">
+                      {selectedStudent.name} đã lên xe buýt an toàn. Xe đang trên đường đến trường.
+                    </p>
+                  </div>
+                </div>
+              ) : distanceToPickup !== null && distanceToPickup < 0.5 && (
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 flex items-center gap-3">
                   <div className="bg-green-500 rounded-full p-2">
                     <AlertCircle className="text-white" size={24} />
@@ -457,7 +497,19 @@ export default function ParentTracking() {
               )}
 
               {/* Alert - Điểm trả */}
-              {distanceToDropoff !== null && distanceToDropoff < 0.5 && (
+              {studentStatus?.dropoff_status === 'dropped' || studentStatus?.dropoff_status === 'completed' ? (
+                <div className="bg-gradient-to-r from-blue-100 to-indigo-100 border-2 border-blue-400 rounded-lg p-4 flex items-center gap-3">
+                  <div className="bg-blue-600 rounded-full p-2">
+                    <AlertCircle className="text-white" size={24} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-blue-900 text-lg">🏫 Con đã được trả!</p>
+                    <p className="text-sm text-blue-800 mt-1">
+                      {selectedStudent.name} đã xuống xe an toàn tại {selectedStudent.dropoff_stop_name}.
+                    </p>
+                  </div>
+                </div>
+              ) : distanceToDropoff !== null && distanceToDropoff < 0.5 && studentStatus?.pickup_status === 'picked' && (
                 <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-lg p-4 flex items-center gap-3">
                   <div className="bg-orange-500 rounded-full p-2">
                     <AlertCircle className="text-white" size={24} />
