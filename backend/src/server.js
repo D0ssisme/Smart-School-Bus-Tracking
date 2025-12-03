@@ -24,6 +24,7 @@ import IncidentReport from './routes/incidentReportRoutes.js';
 import busLocationRoutes from './routes/busLocationRoutes.js'; // ⭐ NEW
 
 import { connectDB } from './config/db.js';
+import { startScheduleResetJob } from './jobs/scheduleResetJob.js'; // ⭐ Daily reset job
 
 dotenv.config();
 
@@ -110,4 +111,7 @@ export { io };
 
 server.listen(port, () => {
   console.log(`✅ Server running at http://localhost:${port}`);
+
+  // ⭐ Start daily schedule reset job
+  startScheduleResetJob();
 });

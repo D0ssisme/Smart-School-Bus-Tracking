@@ -10,7 +10,8 @@ import { getParentsApi } from "@/api/userApi";
 import { getRoutesApi } from "@/api/routeApi";
 import { createStudent, deleteStudent, updateStudent } from "@/api/studentApi";
 import { createParentStudent } from "@/api/parentstudentApi";
-import { createStudentRouteAssignment, getAllStudentRouteAssignments } from "@/api/studentrouteassignmentApi";
+import { createStudentRouteAssignment, getAllStudentRouteAssignments, updateStudentRouteAssignment } from "@/api/studentrouteassignmentApi";
+import { getAllStudentBusAssignments, deleteStudentBusAssignment } from "@/api/studentbusassignmentApi";
 import { GraduationCap, UserPlus, Filter, Search, TrendingUp, BookOpen, Users, Award } from "lucide-react";
 import Swal from 'sweetalert2';
 import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
@@ -35,7 +36,7 @@ function StudentManager() {
     useEffect(() => {
         fetchStudents();
         fetchParentsAndRoutes();
-    }, [t]); 
+    }, [t]);
 
     const fetchStudents = async () => {
         try {
@@ -202,6 +203,62 @@ function StudentManager() {
     const handleEditStudent = (student) => {
         setEditingStudent(student);
         setIsEditModalOpen(true);
+    };
+
+    const handleUpdateStudent = async (formData) => {
+        const loadingToast = ToastService.loading(t('studentManager.messages.updating'));
+
+        try {
+            // 1. Cập nhật thông tin học sinh
+            await updateStudent(editingStudent.id, {
+                name: formData.name,
+                grade: formData.class
+            });
+
+            // 2. Kiểm tra xem có thay đổi tuyến đường không
+            const routeChanged = editingStudent.routeId && editingStudent.routeId !== formData.routeId;
+
+            // 3. Nếu đổi tuyến, xóa học sinh khỏi tất cả schedules của tuyến cũ
+            if (routeChanged) {
+                try {
+                    const allAssignments = await getAllStudentBusAssignments();
+                    const studentAssignments = allAssignments.filter(
+                        assignment => assignment.student_id?._id === editingStudent.id
+                    );
+                    for (const assignment of studentAssignments) {
+                        await deleteStudentBusAssignment(assignment._id);
+                    }
+                    console.log(`✅ Đã xóa ${studentAssignments.length} lịch trình cũ`);
+                } catch (err) {
+                    console.error('⚠️ Lỗi khi xóa lịch trình cũ:', err);
+                }
+            }
+
+            // 4. Cập nhật route assignment
+            if (editingStudent.routeAssignmentId) {
+                await updateStudentRouteAssignment(editingStudent.routeAssignmentId, {
+                    route_id: formData.routeId,
+                    pickup_stop_id: formData.pickupStopId,
+                    dropoff_stop_id: formData.dropoffStopId
+                });
+            } else {
+                await createStudentRouteAssignment({
+                    student_id: editingStudent.id,
+                    route_id: formData.routeId,
+                    pickup_stop_id: formData.pickupStopId,
+                    dropoff_stop_id: formData.dropoffStopId
+                });
+            }
+
+            ToastService.update(loadingToast, t('studentManager.messages.updateSuccess'), "success");
+            setIsEditModalOpen(false);
+            setEditingStudent(null);
+            await fetchStudents();
+        } catch (error) {
+            console.error('❌ Error updating student:', error);
+            const errorMsg = error.response?.data?.message || t('studentManager.messages.updateError');
+            ToastService.update(loadingToast, errorMsg, "error");
+        }
     };
 
     const classList = ["all", ...new Set(students.map(s => s.Lop))];
@@ -435,7 +492,7 @@ function StudentManager() {
                     setIsEditModalOpen(false);
                     setEditingStudent(null);
                 }}
-                // onSubmit={handleUpdateStudent}
+                onSubmit={handleUpdateStudent}
                 student={editingStudent}
                 parents={parents}
                 routes={routes}

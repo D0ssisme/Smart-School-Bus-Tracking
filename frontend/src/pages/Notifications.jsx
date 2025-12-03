@@ -6,6 +6,7 @@ import ToastService from "@/lib/toastService";
 import { Bell, BellPlus, Filter, Search, TrendingUp, AlertCircle, Info, CheckCircle, Megaphone, Edit2, Trash2, Calendar, Users, X } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
+import Swal from 'sweetalert2';
 
 // NotificationCard Component
 function NotificationCard({ notification, onEdit, onDelete }) {
@@ -180,23 +181,45 @@ function Notifications() {
         }
     };
 
-    const handleDeleteNotification = async (id) => {
-        if (confirm(t('notificationManager.messages.deleteConfirm'))) {
-            const loadingToast = ToastService.loading(t('notificationManager.messages.deleting'));
+    const handleDeleteNotification = async (notification) => {
+        const notifId = notification._id || notification;
 
-            try {
-                // TODO: Gọi API xóa notification
-                // await deleteNotificationApi(id);
+        Swal.fire({
+            title: t('notificationManager.swal.deleteTitle'),
+            html: `
+                <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                    <p style="margin: 0; font-size: 16px;">
+                        <strong>📢 ${t('notificationManager.swal.message')}:</strong><br/>
+                        ${notification.message || 'N/A'}
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+                        <strong>🏷️ ${t('notificationManager.swal.type')}:</strong> ${notification.type || 'N/A'}
+                    </p>
+                </div>
+                <p style="color: #d33; font-weight: bold; margin-top: 16px;">${t('notificationManager.swal.warning')}</p>
+            `,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: t('notificationManager.swal.btnDelete'),
+            cancelButtonText: t('notificationManager.swal.btnCancel'),
+            width: 550
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                const loadingToast = ToastService.loading(t('notificationManager.messages.deleting'));
 
-                setTimeout(() => {
-                    setNotifications(notifications.filter(n => n._id !== id));
+                try {
+                    await deleteNotification(notifId);
+                    setNotifications(notifications.filter(n => n._id !== notifId));
                     ToastService.update(loadingToast, t('notificationManager.messages.deleteSuccess'), "success");
-                }, 1000);
-            } catch (error) {
-                console.error('Error deleting notification:', error);
-                ToastService.update(loadingToast, t('notificationManager.messages.deleteError'), "error");
+                } catch (error) {
+                    console.error('Error deleting notification:', error);
+                    const errorMsg = error.response?.data?.message || t('notificationManager.messages.deleteError');
+                    ToastService.update(loadingToast, errorMsg, "error");
+                }
             }
-        }
+        });
     };
 
     const handleEditNotification = (notification) => {

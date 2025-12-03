@@ -13,12 +13,12 @@ const studentBusAssignmentSchema = new mongoose.Schema({
   },
   pickup_status: {
     type: String,
-    enum: ["pending", "picked", "dropped"],
+    enum: ["pending", "picked"],
     default: "pending",
   },
   dropoff_status: {
     type: String,
-    enum: ["pending", "completed"],
+    enum: ["pending", "dropped"],
     default: "pending",
   },
   createdAt: {

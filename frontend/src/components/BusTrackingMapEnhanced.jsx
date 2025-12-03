@@ -117,9 +117,13 @@ function RoutingMachine({ routeStops, busLocation }) {
 
         if (!routeStops || routeStops.length < 2) {
             console.log('⚠️ Not enough stops for routing:', routeStops?.length);
-            if (routingControl) {
-                map.removeControl(routingControl);
-                setRoutingControl(null);
+            if (routingControl && map) {
+                try {
+                    map.removeControl(routingControl);
+                    setRoutingControl(null);
+                } catch (error) {
+                    console.warn('⚠️ Error removing routing control:', error);
+                }
             }
             return;
         }
@@ -147,9 +151,13 @@ function RoutingMachine({ routeStops, busLocation }) {
         }
 
         // Remove existing control
-        if (routingControl) {
-            console.log('🔄 Removing old routing control');
-            map.removeControl(routingControl);
+        if (routingControl && map) {
+            try {
+                console.log('🔄 Removing old routing control');
+                map.removeControl(routingControl);
+            } catch (error) {
+                console.warn('⚠️ Error removing old routing control:', error);
+            }
         }
 
         // Create new routing control
@@ -192,9 +200,13 @@ function RoutingMachine({ routeStops, busLocation }) {
         setRoutingControl(control);
 
         return () => {
-            if (control) {
-                console.log('🧹 Cleaning up routing control');
-                map.removeControl(control);
+            if (control && map) {
+                try {
+                    console.log('🧹 Cleaning up routing control');
+                    map.removeControl(control);
+                } catch (error) {
+                    console.warn('⚠️ Error removing routing control:', error);
+                }
             }
         };
     }, [routeStops, map]);
@@ -375,8 +387,8 @@ export default function BusTrackingMapEnhanced({
                                             </p>
                                         </div>
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ml-2 ${isPickupStop(stopId) ? 'bg-green-100 text-green-800' :
-                                                isDropoffStop(stopId) ? 'bg-red-100 text-red-800' :
-                                                    'bg-blue-100 text-blue-800'
+                                            isDropoffStop(stopId) ? 'bg-red-100 text-red-800' :
+                                                'bg-blue-100 text-blue-800'
                                             }`}>
                                             #{index + 1}
                                         </span>

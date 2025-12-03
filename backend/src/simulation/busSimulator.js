@@ -110,6 +110,23 @@ class BusSimulator {
       }
     }
 
+    // ✅ Reset tất cả trạng thái đón/trả của học sinh về pending
+    try {
+      const StudentBusAssignment = (await import('../models/StudentBusAssignment.js')).default;
+      const resetResult = await StudentBusAssignment.updateMany(
+        { schedule_id: this.scheduleId },
+        {
+          $set: {
+            pickup_status: 'pending',
+            dropoff_status: 'pending'
+          }
+        }
+      );
+      console.log(`🔄 Reset ${resetResult.modifiedCount} student statuses to pending`);
+    } catch (error) {
+      console.error('❌ Error resetting student statuses:', error);
+    }
+
     this.isRunning = true;
     this.isCompleted = false; // ✅ Reset completed flag
     this.intervalId = setInterval(() => {
@@ -187,6 +204,13 @@ class BusSimulator {
         current_stop_index: this.stops.length - 1,
         is_completed: true // Thêm flag để backend biết xe đã xong
       });
+
+      // ✅ Cập nhật schedule status = "completed"
+      await BusSchedule.findByIdAndUpdate(this.scheduleId, {
+        status: 'completed'
+      });
+      console.log(`✅ Schedule ${this.scheduleId} marked as completed`);
+
     } catch (error) {
       console.error('❌ Final update error:', error.message);
     }
@@ -215,6 +239,7 @@ class BusSimulator {
     try {
       const StudentBusAssignment = (await import('../models/StudentBusAssignment.js')).default;
       const StudentRouteAssignment = (await import('../models/StudentRouteAssignment.js')).default;
+      const ParentStudent = (await import('../models/ParentStudent.js')).default;
 
       // Tìm học sinh có pickup/dropoff ở stop này
       const routeAssignments = await StudentRouteAssignment.find({
@@ -237,6 +262,15 @@ class BusSimulator {
             { upsert: true }
           );
           console.log(`✅ Picked up: ${ra.student_id.name}`);
+
+          // 📨 Gửi thông báo cho phụ huynh qua API
+          await this.sendParentNotificationViaAPI(
+            ra.student_id._id,
+            ra.student_id.name,
+            'picked',
+            stop.name,
+            ParentStudent
+          );
         }
 
         // Cập nhật dropoff
@@ -247,16 +281,59 @@ class BusSimulator {
               schedule_id: this.scheduleId
             },
             {
-              pickup_status: 'dropped',
-              dropoff_status: 'completed'
+              dropoff_status: 'dropped'
             }
           );
           console.log(`✅ Dropped off: ${ra.student_id.name}`);
+
+          // 📨 Gửi thông báo cho phụ huynh qua API
+          await this.sendParentNotificationViaAPI(
+            ra.student_id._id,
+            ra.student_id.name,
+            'dropped',
+            stop.name,
+            ParentStudent
+          );
         }
       }
 
     } catch (error) {
       console.error('❌ Error updating student status:', error);
+    }
+  }
+
+  // 📨 Gửi thông báo cho phụ huynh qua API
+  async sendParentNotificationViaAPI(studentId, studentName, action, stopName, ParentStudent) {
+    try {
+      // Tìm phụ huynh của học sinh
+      const parentRelations = await ParentStudent.find({ student_id: studentId }).populate('parent_id');
+
+      for (const relation of parentRelations) {
+        const parentId = relation.parent_id._id;
+
+        // Tạo nội dung thông báo
+        const message = action === 'picked'
+          ? `Học sinh ${studentName} đã được đón tại điểm dừng ${stopName}`
+          : `Học sinh ${studentName} đã được trả tại điểm dừng ${stopName}`;
+
+        const title = action === 'picked' ? 'Đã đón học sinh' : 'Đã trả học sinh';
+
+        // Gửi notification qua API (server sẽ tự động broadcast qua Socket.IO)
+        try {
+          await axios.post('http://localhost:8080/api/notifications', {
+            receiver_id: parentId,
+            title: title,
+            message: message,
+            type: 'status_update',
+            is_read: false
+          });
+          console.log(`📨 Notification sent to parent ${parentId} for ${studentName}`);
+        } catch (apiError) {
+          console.error(`⚠️ Failed to send notification for ${studentName}:`, apiError.message);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error sending parent notification:', error);
     }
   }
 

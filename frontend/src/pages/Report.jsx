@@ -11,8 +11,6 @@ import {
   Info,
   CheckCircle,
   FileText,
-  Edit2,
-  Trash2,
   Calendar,
   Users,
   MapPin,
@@ -22,7 +20,7 @@ import Pagination from "@/components/Pagination";
 import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
 
 // ReportCard Component
-function ReportCard({ report, onEdit, onDelete }) {
+function ReportCard({ report }) {
   const { t, language } = useLanguage(); // ✅ Sử dụng hook
 
   const getStatusStyle = (status) => {
@@ -149,22 +147,6 @@ function ReportCard({ report, onEdit, onDelete }) {
               </p>
             )}
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onEdit(report)}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title={t('reportManager.card.actions.edit')}
-          >
-            <Edit2 size={18} />
-          </button>
-          <button
-            onClick={() => onDelete(report._id)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title={t('reportManager.card.actions.delete')}
-          >
-            <Trash2 size={18} />
-          </button>
         </div>
       </div>
     </div>
@@ -438,8 +420,6 @@ function Report() {
                 <ReportCard
                   key={report._id}
                   report={report}
-                  onEdit={handleEditReport}
-                  onDelete={handleDeleteReport}
                 />
               ))}
             </div>

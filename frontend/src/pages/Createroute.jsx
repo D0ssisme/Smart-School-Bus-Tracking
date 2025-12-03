@@ -5,6 +5,7 @@ import L from "leaflet";
 import "leaflet-routing-machine";
 import { ArrowLeft, Plus, X, MapPin } from "lucide-react";
 import { createRouteAutoApi } from "@/api/routeApi";
+import { toast } from "react-hot-toast";
 
 function RoutingMap({ routeInfo, activeInput, onSelectLocation }) {
   const map = useMap();
@@ -257,7 +258,7 @@ export default function CreateRoute() {
       const response = await createRouteAutoApi(apiData);
 
       console.log("Kết quả:", response);
-      alert("✅ Tuyến đường đã được tạo thành công!");
+      toast.success("✅ Tuyến đường đã được tạo thành công!");
       navigate("/route");
 
     } catch (err) {

@@ -8,7 +8,7 @@ export const translations = {
       contact: "Liên hệ",
       login: "Đăng nhập"
     },
-    
+
     // Sidebar
     sidebar: {
       title: "SSB Tracking",
@@ -51,7 +51,7 @@ export const translations = {
       tips: "Mẹo hữu ích",
       tipsContent: "Kiểm tra lịch trình định kỳ để đảm bảo xe bus hoạt động ổn định"
     },
-    
+
     // Hero Section
     hero: {
       title: "Hệ Thống Quản Lý Xe Bus",
@@ -63,7 +63,7 @@ export const translations = {
       totalStudents: "500+ Học sinh",
       studentsStatus: "Sử dụng mỗi ngày"
     },
-    
+
     // Features
     features: {
       title: "Tính năng nổi bật",
@@ -72,7 +72,7 @@ export const translations = {
       notifications: "Thông báo tức thì",
       location: "Định vị chính xác"
     },
-    
+
     // User Sections
     sections: {
       parents: "Phụ huynh",
@@ -82,7 +82,7 @@ export const translations = {
       school: "Nhà trường",
       schoolDesc: "Phân công tuyến đường, gửi thông báo đến phụ huynh và giám sát toàn bộ hệ thống."
     },
-    
+
     // Footer
     footer: {
       title: "Smart School Bus",
@@ -278,7 +278,7 @@ export const translations = {
         btnUnderstood: "Đã hiểu",
         deleteLoading: "Đang xóa người dùng...",
         deleteSuccess: "Đã xóa người dùng",
-        
+
         // Error Modal - Parent
         errParentTitle: "Không thể xóa phụ huynh!",
         errParentHasStudent: "⚠️ Phụ huynh này đang liên kết với học sinh!",
@@ -496,6 +496,14 @@ export const translations = {
         deleteSuccess: "Xóa thông báo thành công!",
         deleteError: "Không thể xóa thông báo. Vui lòng thử lại!"
       },
+      swal: {
+        deleteTitle: "Xác nhận xóa thông báo",
+        message: "Nội dung thông báo",
+        type: "Loại",
+        warning: "⚠️ Hành động này không thể hoàn tác!",
+        btnDelete: "Xóa",
+        btnCancel: "Hủy"
+      },
       empty: {
         title: "Không tìm thấy thông báo",
         subtitle: "Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm"
@@ -630,7 +638,7 @@ export const translations = {
       },
       status: {
         picked: "✅ Đã đón",
-        completed: "✅ Hoàn thành",
+        dropped: "✅ Đã trả",
         pending: "🚌 Đang đi",
         unknown: "⏸️ Chưa rõ"
       },
@@ -865,9 +873,9 @@ export const translations = {
       role: "Phụ Huynh"
     },
 
-  
+
   },
-  
+
   en: {
     // Navigation
     nav: {
@@ -876,7 +884,7 @@ export const translations = {
       contact: "Contact",
       login: "Login"
     },
-    
+
     // Sidebar
     sidebar: {
       title: "SSB Tracking",
@@ -919,7 +927,7 @@ export const translations = {
       tips: "Helpful Tips",
       tipsContent: "Check schedule regularly to ensure buses operate smoothly"
     },
-    
+
     // Hero Section
     hero: {
       title: "School Bus Management System",
@@ -931,7 +939,7 @@ export const translations = {
       totalStudents: "500+ Students",
       studentsStatus: "Using daily"
     },
-    
+
     // Features
     features: {
       title: "Key Features",
@@ -940,7 +948,7 @@ export const translations = {
       notifications: "Instant Notifications",
       location: "Precise Location"
     },
-    
+
     // User Sections
     sections: {
       parents: "Parents",
@@ -950,7 +958,7 @@ export const translations = {
       school: "School",
       schoolDesc: "Assign routes, send notifications to parents and monitor the entire system."
     },
-    
+
     // Footer
     footer: {
       title: "Smart School Bus",
@@ -1147,7 +1155,7 @@ export const translations = {
         btnUnderstood: "Understood",
         deleteLoading: "Deleting user...",
         deleteSuccess: "User deleted",
-        
+
         // Error Modal - Parent
         errParentTitle: "Cannot delete parent!",
         errParentHasStudent: "⚠️ This parent is linked to students!",
@@ -1364,6 +1372,14 @@ export const translations = {
         deleteSuccess: "Notification deleted successfully!",
         deleteError: "Could not delete notification. Please try again!"
       },
+      swal: {
+        deleteTitle: "Confirm Delete Notification",
+        message: "Notification Content",
+        type: "Type",
+        warning: "⚠️ This action cannot be undone!",
+        btnDelete: "Delete",
+        btnCancel: "Cancel"
+      },
       empty: {
         title: "No notifications found",
         subtitle: "Try changing filters or search keywords"
@@ -1497,7 +1513,7 @@ export const translations = {
       },
       status: {
         picked: "✅ Picked Up",
-        completed: "✅ Completed",
+        dropped: "✅ Dropped Off",
         pending: "🚌 On the way",
         unknown: "⏸️ Unknown"
       },

@@ -42,7 +42,9 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, student, parents, routes 
         try {
             setLoadingStops(true);
             const response = await getRoutesByIdApi(routeId);
-            setStops(response.stops || []);
+            // Response is array of RouteStop objects with populated stop_id
+            const stopsList = response.map(rs => rs.stop_id).filter(Boolean);
+            setStops(stopsList);
         } catch (error) {
             console.error('Error fetching stops:', error);
             setStops([]);
