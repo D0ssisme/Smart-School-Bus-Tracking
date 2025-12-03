@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import ToastService from "@/lib/toastService";
 import { mockStudents, mockRoutes } from "@/lib/mockData";
+import { useLanguage } from '../contexts/LanguageContext';
 
 function StudentFormPage() {
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditMode = !!id;
@@ -49,13 +51,13 @@ function StudentFormPage() {
         }
 
         const loadingToast = ToastService.loading(
-            isEditMode ? "Đang cập nhật học sinh..." : "Đang thêm học sinh..."
+            isEditMode ? t('studentForm.updating') : t('studentForm.adding')
         );
 
         setTimeout(() => {
             ToastService.update(
                 loadingToast,
-                isEditMode ? "Cập nhật học sinh thành công!" : "Thêm học sinh thành công!",
+                isEditMode ? t('studentForm.updateSuccess') : t('studentForm.addSuccess'),
                 "success"
             );
 
@@ -83,10 +85,10 @@ function StudentFormPage() {
                     Quay lại
                 </Button>
                 <h1 className="text-3xl font-bold text-gray-900">
-                    {isEditMode ? "Chỉnh sửa học sinh" : "Thêm học sinh mới"}
+                    {isEditMode ? t('studentForm.editTitle') : t('studentForm.addTitle')}
                 </h1>
                 <p className="text-gray-600 mt-1">
-                    {isEditMode ? "Cập nhật thông tin học sinh" : "Điền thông tin để thêm học sinh mới"}
+                    {isEditMode ? t('studentForm.editSubtitle') : t('studentForm.addSubtitle')}
                 </p>
             </div>
 
@@ -169,7 +171,7 @@ function StudentFormPage() {
                         </select>
                     </div>
 
-                    
+
                 </div>
 
                 {/* Actions */}

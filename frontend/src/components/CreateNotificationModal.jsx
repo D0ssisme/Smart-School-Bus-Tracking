@@ -3,8 +3,10 @@ import { X, BellPlus, User, MessageSquare, AlertCircle, Edit2 } from "lucide-rea
 import { getAllUsersApi, getDriversApi, getParentsApi } from "@/api/userApi";
 import { createNotification, updateNotification } from "@/api/notificationApi";
 import { toast } from "react-hot-toast";
+import { useLanguage } from '../contexts/LanguageContext';
 
 const CreateNotificationModal = ({ isOpen, onClose, onNotificationCreated, editingNotification }) => {
+    const { t } = useLanguage();
     const [formData, setFormData] = useState({
         receiver_id: "",
         message: "",
@@ -101,18 +103,18 @@ const CreateNotificationModal = ({ isOpen, onClose, onNotificationCreated, editi
         if (!validate()) return;
 
         const isEditing = !!editingNotification;
-        const loadingToast = toast.loading(isEditing ? "Đang cập nhật thông báo..." : "Đang tạo thông báo...");
+        const loadingToast = toast.loading(isEditing ? t('createNotification.updating') : t('createNotification.creating'));
         setLoading(true);
 
         try {
             if (isEditing) {
                 await updateNotification(editingNotification._id, formData);
-                toast.success("Cập nhật thông báo thành công!", {
+                toast.success(t('createNotification.updateSuccess'), {
                     id: loadingToast
                 });
             } else {
                 await createNotification(formData);
-                toast.success("Tạo thông báo thành công!", {
+                toast.success(t('createNotification.createSuccess'), {
                     id: loadingToast
                 });
             }
@@ -197,11 +199,11 @@ const CreateNotificationModal = ({ isOpen, onClose, onNotificationCreated, editi
                                         } rounded-lg outline-none transition-colors bg-gray-50 focus:bg-white appearance-none cursor-pointer disabled:opacity-50`}
                                 >
                                     <option value="">
-                                        {fetchingUsers ? "Đang tải..." : "-- Chọn người nhận --"}
+                                        {fetchingUsers ? t('createNotification.loading') : t('createNotification.selectReceiver')}
                                     </option>
                                     {users.map(user => (
                                         <option key={user._id} value={user._id}>
-                                            {user.name} - {user.role === 'parent' ? 'Phụ huynh' : user.role === 'driver' ? 'Tài xế' : user.role === 'admin' ? 'Quản trị viên' : 'Quản lý'}
+                                            {user.name} - {user.role === 'parent' ? t('createNotification.roleParent') : user.role === 'driver' ? t('createNotification.roleDriver') : user.role === 'admin' ? t('createNotification.roleAdmin') : t('createNotification.roleAdmin')}
                                             {user.phoneNumber ? ` (${user.phoneNumber})` : ''}
                                         </option>
                                     ))}

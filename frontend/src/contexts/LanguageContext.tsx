@@ -23,20 +23,39 @@ export function LanguageProvider({ children }) {
   const t = (key) => {
     const keys = key.split('.');
     let value = translations[language];
-    
+
     for (const k of keys) {
       if (value && typeof value === 'object') {
         value = value[k];
       } else {
+        console.warn(`⚠️ Translation not found: ${key} (stopped at: ${k})`);
         return key; // Return key if translation not found
       }
     }
-    
-    return typeof value === 'string' ? value : key;
+
+    if (typeof value === 'string') {
+      return value;
+    } else {
+      console.warn(`⚠️ Translation is not a string: ${key}`, value);
+      return key;
+    }
+  };
+
+  // Helper function to translate data from Vietnamese to English
+  const translateData = (viText) => {
+    // If language is Vietnamese, return original text
+    if (language === 'vi' || !viText) return viText;
+
+    // Get data translations - use type assertion to access data property
+    const enTranslations = translations['en'] as any;
+    const dataTranslations = (enTranslations && enTranslations['data']) || {};
+
+    // Return translated text or original if not found
+    return dataTranslations[viText] || viText;
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, translateData }}>
       {children}
     </LanguageContext.Provider>
   );

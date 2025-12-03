@@ -9,9 +9,11 @@ import { getRoutesApi } from '../api/routeApi';
 import { getAllBuses } from '../api/busApi';
 import ToastService from "@/lib/toastService";
 import Swal from 'sweetalert2';
+import { useLanguage } from '../contexts/LanguageContext';
 
 
 const BusManagementPage = () => {
+  const { t } = useLanguage();
   const [busData, setBusData] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -73,7 +75,7 @@ const BusManagementPage = () => {
         setBusData(transformedData);
       } catch (error) {
         console.error('Error fetching data:', error);
-        toast.error('Không thể tải dữ liệu. Vui lòng thử lại!');
+        toast.error(t('busSchedule.messages.loadError'));
       } finally {
         setLoading(false);
       }
@@ -100,9 +102,9 @@ const BusManagementPage = () => {
       }
 
       const statusMap = {
-        'scheduled': 'Đang chờ',
-        'completed': 'Hoàn thành',
-        'cancelled': 'Hủy'
+        'scheduled': t('busCard.statusScheduled'),
+        'completed': t('busCard.statusCompleted'),
+        'cancelled': t('busCard.statusCancelled')
       };
 
       const busObj = {
@@ -137,7 +139,7 @@ const BusManagementPage = () => {
   const handleOpenEditModal = async (busToEditOrId, formData) => {
     // Nếu có 2 tham số thì đây là việc update từ EditScheduleModal trong BusCard
     if (formData) {
-      const loadingToast = ToastService.loading("Đang cập nhật lịch trình...");
+      const loadingToast = ToastService.loading(t('busSchedule.messages.updating'));
       try {
         await updateBusScheduleApi(busToEditOrId, formData);
 
@@ -147,7 +149,7 @@ const BusManagementPage = () => {
         const transformedData = transformDataForDisplay(schedulesData);
         setBusData(transformedData);
 
-        ToastService.update(loadingToast, "Cập nhật lịch trình thành công!", "success");
+        ToastService.update(loadingToast, t('busSchedule.messages.updateSuccess'), "success");
       } catch (error) {
         console.error("Error updating schedule:", error);
         ToastService.update(
@@ -241,7 +243,7 @@ const BusManagementPage = () => {
       width: 600
     }).then(async (result) => {
       if (result.isConfirmed) {
-        const loadingToast = ToastService.loading("Đang xóa lịch trình...");
+        const loadingToast = ToastService.loading(t('busSchedule.messages.deleting'));
 
         try {
           // Gọi API xóa schedule
@@ -366,7 +368,7 @@ const BusManagementPage = () => {
       <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded p-5 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Đang tải dữ liệu xe bus...</p>
+          <p className="text-gray-600 font-medium">{t('busSchedule.loading')}</p>
         </div>
       </div>
     );

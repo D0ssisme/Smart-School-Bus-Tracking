@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import ToastService from "@/lib/toastService";
 import { mockNotifications } from "@/lib/mockData";
+import { useLanguage } from '../contexts/LanguageContext';
 
 function NotificationFormPage() {
+    const { t, translateData } = useLanguage();
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditMode = !!id;
@@ -98,30 +100,40 @@ function NotificationFormPage() {
         }
 
         const loadingToast = ToastService.loading(
-            isEditMode ? "Đang cập nhật thông báo..." : "Đang gửi thông báo..."
+            isEditMode ? t('notificationForm.updating') : t('notificationForm.sending')
         );
 
         setTimeout(() => {
             ToastService.update(
                 loadingToast,
-                isEditMode ? "Cập nhật thông báo thành công!" : "Gửi thông báo thành công!",
+                isEditMode ? t('notificationForm.updateSuccess') : t('notificationForm.sendSuccess'),
                 "success"
             );
 
+            const oldLoadingToast = ToastService.loading(
+                isEditMode ? "Đang cập nhật thông báo..." : "Đang gửi thông báo..."
+            );
+
             setTimeout(() => {
-                navigate("/notifications");
-            }, 1000);
-        }, 1500);
+                ToastService.update(
+                    oldLoadingToast,
+                    isEditMode ? "Cập nhật thông báo thành công!" : "Gửi thông báo thành công!",
+                    "success"
+                );
+
+                setTimeout(() => {
+                    navigate("/notifications");
+                }, 1000);
+            }, 1500);
+        }, 500);
     };
 
     const handleCancel = () => {
-        if (confirm("Bạn có chắc muốn hủy? Các thay đổi sẽ không được lưu.")) {
-            navigate("/notifications");
-        }
+        navigate("/notifications");
     };
 
-    const isRouteSelected = !!formData.route;
     const allSelected = formData.recipients.driver && formData.recipients.parent;
+    const isRouteSelected = formData.route !== "";
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
@@ -132,20 +144,20 @@ function NotificationFormPage() {
                     className="mb-4 -ml-2"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />
-                    Quay lại
+                    {t('notificationForm.back')}
                 </Button>
                 <h1 className="text-3xl font-bold text-gray-900">
-                    {isEditMode ? "Chỉnh sửa thông báo" : "Tạo thông báo mới"}
+                    {isEditMode ? t('notificationForm.editTitle') : t('notificationForm.createTitle')}
                 </h1>
                 <p className="text-gray-600 mt-1">
-                    {isEditMode ? "Cập nhật thông tin thông báo" : "Gửi thông báo đến tài xế và phụ huynh"}
+                    {isEditMode ? t('notificationForm.editSubtitle') : t('notificationForm.createSubtitle')}
                 </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-lg shadow-sm border p-6">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Type <span className="text-red-500">*</span>
+                        {t('notificationForm.typeLabel')} <span className="text-red-500">*</span>
                     </label>
                     <select
                         name="type"
@@ -154,21 +166,21 @@ function NotificationFormPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
                     >
-                        <option value="parent">Alert</option>
-                        <option value="driver">Info</option>
-                        <option value="manager">Reminder</option>
+                        <option value="parent">{t('notificationForm.typeAlert')}</option>
+                        <option value="driver">{t('notificationForm.typeInfo')}</option>
+                        <option value="manager">{t('notificationForm.typeReminder')}</option>
                     </select>
                 </div>
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nội dung thông báo <span className="text-red-500">*</span>
+                        {t('notificationForm.contentLabel')} <span className="text-red-500">*</span>
                     </label>
                     <textarea
                         name="content"
                         value={formData.content}
                         onChange={handleChange}
-                        placeholder="Nhập nội dung thông báo..."
+                        placeholder={t('notificationForm.contentPlaceholder')}
                         rows={5}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
@@ -178,7 +190,7 @@ function NotificationFormPage() {
                 <div className="border rounded-lg p-5 bg-gray-50">
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Thông báo cho tuyến <span className="text-red-500">*</span>
+                            {t('notificationForm.routeLabel')} <span className="text-red-500">*</span>
                         </label>
                         <select
                             name="route"
@@ -187,10 +199,10 @@ function NotificationFormPage() {
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         >
-                            <option value="">-- Chọn tuyến xe bus --</option>
+                            <option value="">{t('notificationForm.selectRoute')}</option>
                             {routes.map((route) => (
                                 <option key={route.id} value={route.id}>
-                                    {route.name}
+                                    {translateData(route.name)}
                                 </option>
                             ))}
                         </select>
@@ -198,7 +210,7 @@ function NotificationFormPage() {
 
                     <div className={`space-y-3 bg-white p-4 rounded-md border ${!isRouteSelected ? 'opacity-50 pointer-events-none' : ''}`}>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Đối tượng nhận thông báo <span className="text-red-500">*</span>
+                            {t('notificationForm.recipientsLabel')} <span className="text-red-500">*</span>
                         </label>
 
                         <div className="flex items-center space-x-2 pb-3 border-b">
@@ -211,7 +223,7 @@ function NotificationFormPage() {
                                 className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                             />
                             <label htmlFor="all" className="text-gray-700 font-medium cursor-pointer">
-                                Chọn tất cả
+                                {t('notificationForm.selectAll')}
                             </label>
                         </div>
 
@@ -226,7 +238,7 @@ function NotificationFormPage() {
                                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                                 />
                                 <label htmlFor="driver" className="text-gray-700 cursor-pointer">
-                                    Tài xế
+                                    {t('notificationForm.driver')}
                                 </label>
                             </div>
 
@@ -240,14 +252,14 @@ function NotificationFormPage() {
                                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                                 />
                                 <label htmlFor="parent" className="text-gray-700 cursor-pointer">
-                                    Phụ huynh
+                                    {t('notificationForm.parent')}
                                 </label>
                             </div>
                         </div>
 
                         {!isRouteSelected && (
                             <p className="text-xs text-amber-600 mt-2 italic">
-                                * Vui lòng chọn tuyến đường trước
+                                {t('notificationForm.selectRouteFirst')}
                             </p>
                         )}
                     </div>
@@ -259,13 +271,13 @@ function NotificationFormPage() {
                         variant="outline"
                         onClick={handleCancel}
                     >
-                        Hủy
+                        {t('common.cancel')}
                     </Button>
                     <Button
                         type="submit"
                         className="bg-blue-900 hover:bg-blue-700 px-6"
                     >
-                        {isEditMode ? "Cập nhật" : "Gửi thông báo"}
+                        {isEditMode ? t('notificationForm.update') : t('notificationForm.send')}
                     </Button>
                 </div>
             </form>

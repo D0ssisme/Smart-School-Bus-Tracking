@@ -1,8 +1,11 @@
 //src/components/ConfirmDeleteModal.jsx
 import React from 'react';
 import { X, AlertTriangle, Calendar, Bus, User, Route, Clock } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
+  const { t } = useLanguage();
+
   if (!isOpen) return null;
 
   return (
@@ -15,8 +18,8 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
               <AlertTriangle className="text-white" size={28} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">Xác nhận xóa lịch trình</h2>
-              <p className="text-red-100 text-sm">Hành động này không thể hoàn tác</p>
+              <h2 className="text-2xl font-bold text-white">{t('confirmDelete.title')}</h2>
+              <p className="text-red-100 text-sm">{t('confirmDelete.subtitle')}</p>
             </div>
           </div>
           <button
@@ -34,9 +37,9 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
             <div className="flex items-start gap-3">
               <AlertTriangle className="text-red-600 mt-0.5 flex-shrink-0" size={24} />
               <div>
-                <p className="text-sm font-semibold text-red-900 mb-1">Cảnh báo quan trọng!</p>
+                <p className="text-sm font-semibold text-red-900 mb-1">{t('confirmDelete.warningTitle')}</p>
                 <p className="text-xs text-red-700">
-                  Bạn đang thực hiện xóa lịch trình xe bus. Sau khi xóa, mọi thông tin liên quan sẽ bị xóa vĩnh viễn và không thể khôi phục.
+                  {t('confirmDelete.warningText')}
                 </p>
               </div>
             </div>
@@ -47,7 +50,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
             <div className="bg-gray-50 rounded-xl p-5 space-y-4 border border-gray-200">
               <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
                 <Calendar size={16} className="text-blue-600" />
-                Thông tin lịch trình
+                {t('confirmDelete.scheduleInfo')}
               </h3>
 
               <div className="space-y-3">
@@ -57,7 +60,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
                     <Calendar className="text-blue-600" size={18} />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 mb-0.5">Mã lịch trình</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{t('confirmDelete.scheduleId')}</p>
                     <p className="text-sm font-semibold text-gray-900">{scheduleInfo.scheduleId}</p>
                   </div>
                 </div>
@@ -68,7 +71,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
                     <Bus className="text-purple-600" size={18} />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 mb-0.5">Biển số xe</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{t('confirmDelete.plate')}</p>
                     <p className="text-sm font-semibold text-gray-900">{scheduleInfo.plate}</p>
                   </div>
                 </div>
@@ -79,7 +82,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
                     <Route className="text-green-600" size={18} />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 mb-0.5">Tuyến đường</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{t('confirmDelete.route')}</p>
                     <p className="text-sm font-semibold text-gray-900">{scheduleInfo.routeName}</p>
                   </div>
                 </div>
@@ -90,7 +93,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
                     <User className="text-orange-600" size={18} />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 mb-0.5">Tài xế</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{t('confirmDelete.driver')}</p>
                     <p className="text-sm font-semibold text-gray-900">{scheduleInfo.driver}</p>
                   </div>
                 </div>
@@ -101,7 +104,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
                     <Clock className="text-cyan-600" size={18} />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 mb-0.5">Thời gian</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{t('confirmDelete.time')}</p>
                     <p className="text-sm font-semibold text-gray-900">
                       {scheduleInfo.startTime} - {scheduleInfo.endTime}
                     </p>
@@ -118,9 +121,9 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
                       }`}></div>
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500 mb-0.5">Trạng thái</p>
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${scheduleInfo.status === 'Đang chờ' ? 'bg-yellow-100 text-yellow-800' :
-                      scheduleInfo.status === 'Hoàn thành' ? 'bg-green-100 text-green-800' :
+                    <p className="text-xs text-gray-500 mb-0.5">{t('confirmDelete.status')}</p>
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${scheduleInfo.status === t('busCard.statusScheduled') ? 'bg-yellow-100 text-yellow-800' :
+                      scheduleInfo.status === t('busCard.statusCompleted') ? 'bg-green-100 text-green-800' :
                         'bg-red-100 text-red-800'
                       }`}>
                       {scheduleInfo.status}
@@ -134,7 +137,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
           {/* Confirmation Question */}
           <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-sm text-yellow-900 font-medium text-center">
-              Bạn có chắc chắn muốn xóa lịch trình này không?
+              {t('confirmDelete.confirmQuestion')}
             </p>
           </div>
         </div>
@@ -145,14 +148,14 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, scheduleInfo }) => {
             onClick={onClose}
             className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
           >
-            Hủy bỏ
+            {t('confirmDelete.cancelButton')}
           </button>
           <button
             onClick={onConfirm}
             className="px-6 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center gap-2"
           >
             <AlertTriangle size={20} />
-            Xóa lịch trình
+            {t('confirmDelete.deleteButton')}
           </button>
         </div>
       </div>

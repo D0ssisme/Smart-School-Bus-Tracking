@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Navigation } from "lucide-react";
 import Pagination from "@/components/Pagination"; // ✅ import đúng component phân trang
+import { useLanguage } from '../contexts/LanguageContext';
 
 function StudentTable({ students, onEdit, onDelete }) {
+  const { t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
   const studentsPerPage = 10; // 👉 số học sinh mỗi trang (bạn có thể đổi)
 
@@ -26,31 +28,31 @@ function StudentTable({ students, onEdit, onDelete }) {
         <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
           <tr>
             <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-              Mã HS
+              {t('studentTable.headers.code')}
             </th>
             <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-              Họ và tên
+              {t('studentTable.headers.name')}
             </th>
             <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-              Lớp
+              {t('studentTable.headers.grade')}
             </th>
             <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-              Mã Phụ huynh
+              {t('studentTable.headers.parentCode')}
             </th>
             <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
               <div className="flex items-center gap-1">
                 <MapPin size={14} className="text-green-600" />
-                Điểm đón
+                {t('studentTable.headers.pickup')}
               </div>
             </th>
             <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
               <div className="flex items-center gap-1">
                 <Navigation size={14} className="text-blue-600" />
-                Điểm trả
+                {t('studentTable.headers.dropoff')}
               </div>
             </th>
             <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-              Hành động
+              {t('studentTable.headers.actions')}
             </th>
           </tr>
         </thead>
@@ -76,7 +78,7 @@ function StudentTable({ students, onEdit, onDelete }) {
                     </svg>
                   </div>
                   <p className="text-gray-500 font-medium text-sm">
-                    Không tìm thấy học sinh nào
+                    {t('studentTable.noStudents')}
                   </p>
                 </div>
               </td>

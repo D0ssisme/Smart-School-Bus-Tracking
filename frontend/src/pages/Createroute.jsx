@@ -5,9 +5,12 @@ import L from "leaflet";
 import "leaflet-routing-machine";
 import { ArrowLeft, Plus, X, MapPin } from "lucide-react";
 import { createRouteAutoApi } from "@/api/routeApi";
+import { useLanguage } from "../contexts/LanguageContext";
+import ToastService from "@/lib/toastService";
 
 function RoutingMap({ routeInfo, activeInput, onSelectLocation }) {
   const map = useMap();
+  const { t } = useLanguage();
   const [routingControl, setRoutingControl] = useState(null);
 
   useEffect(() => {
@@ -113,7 +116,7 @@ function RoutingMap({ routeInfo, activeInput, onSelectLocation }) {
         >
           <Popup>
             <div className="text-sm">
-              <strong className="text-green-600">🚩 Điểm khởi đầu</strong><br />
+              <strong className="text-green-600">{t('createRoute.startPoint')}</strong><br />
               <span className="text-gray-700">{routeInfo.start.address}</span>
             </div>
           </Popup>
@@ -130,7 +133,7 @@ function RoutingMap({ routeInfo, activeInput, onSelectLocation }) {
           >
             <Popup>
               <div className="text-sm">
-                <strong className="text-blue-600">📍 Điểm dừng {index + 1}</strong><br />
+                <strong className="text-blue-600">{t('createRoute.stopPoint')} {index + 1}</strong><br />
                 <span className="text-gray-700">{stop.address}</span>
               </div>
             </Popup>
@@ -146,7 +149,7 @@ function RoutingMap({ routeInfo, activeInput, onSelectLocation }) {
         >
           <Popup>
             <div className="text-sm">
-              <strong className="text-red-600">🏁 Điểm kết thúc</strong><br />
+              <strong className="text-red-600">{t('createRoute.endPoint')}</strong><br />
               <span className="text-gray-700">{routeInfo.end.address}</span>
             </div>
           </Popup>
@@ -158,6 +161,7 @@ function RoutingMap({ routeInfo, activeInput, onSelectLocation }) {
 
 export default function CreateRoute() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -193,24 +197,24 @@ export default function CreateRoute() {
 
   const validateForm = () => {
     if (!routeInfo.name.trim()) {
-      setError("Vui lòng nhập tên tuyến");
+      setError(t('createRoute.error.nameRequired'));
       return false;
     }
 
     if (!routeInfo.start) {
-      setError("Vui lòng chọn điểm khởi đầu");
+      setError(t('createRoute.error.startRequired'));
       return false;
     }
 
     if (!routeInfo.end) {
-      setError("Vui lòng chọn điểm kết thúc");
+      setError(t('createRoute.error.endRequired'));
       return false;
     }
 
     // Kiểm tra các điểm dừng (nếu có) phải được chọn đầy đủ
     const hasEmptyStops = routeInfo.stops.some((stop) => !stop);
     if (hasEmptyStops) {
-      setError("Vui lòng chọn đầy đủ các điểm dừng hoặc xóa những điểm chưa chọn");
+      setError(t('createRoute.error.stopsIncomplete'));
       return false;
     }
 
@@ -257,14 +261,16 @@ export default function CreateRoute() {
       const response = await createRouteAutoApi(apiData);
 
       console.log("Kết quả:", response);
-      alert("✅ Tuyến đường đã được tạo thành công!");
-      navigate("/route");
+      ToastService.success(t('createRoute.createSuccess'));
+      setTimeout(() => {
+        navigate("/route");
+      }, 1500);
 
     } catch (err) {
       console.error("Lỗi khi tạo tuyến:", err);
       setError(
         err.response?.data?.message ||
-        "Không thể tạo tuyến đường. Vui lòng thử lại."
+        t('createRoute.error.failed')
       );
     } finally {
       setLoading(false);
@@ -276,7 +282,7 @@ export default function CreateRoute() {
   return (
     <div className="p-4 bg-white rounded shadow min-h-screen m-4 flex flex-col">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold">Tạo tuyến xe buýt mới</h2>
+        <h2 className="text-lg font-semibold">{t('createRoute.pageTitle')}</h2>
       </div>
 
       {/* Error Message */}
@@ -289,7 +295,7 @@ export default function CreateRoute() {
       {/* Tên tuyến */}
       <div className="mb-4">
         <input
-          placeholder="Tên tuyến (VD: Tuyến Sài Thành)"
+          placeholder={t('createRoute.namePlaceholder')}
           className="border p-2 rounded w-full"
           value={routeInfo.name}
           onChange={(e) => setRouteInfo({ ...routeInfo, name: e.target.value })}
@@ -299,10 +305,10 @@ export default function CreateRoute() {
       {/* Điểm khởi đầu */}
       <div className="mb-2">
         <label className="font-semibold">
-          Điểm khởi đầu: <span className="text-red-500">*</span>
+          {t('createRoute.startLabel')}
         </label>
         <input
-          placeholder="Click trên bản đồ để chọn vị trí"
+          placeholder={t('createRoute.clickMap')}
           className={`border p-2 rounded w-full mt-1 ${activeInput === "start" ? "border-blue-500 ring-2 ring-blue-200" : ""
             }`}
           value={routeInfo.start?.address || ""}
@@ -319,18 +325,18 @@ export default function CreateRoute() {
       {/* Các điểm dừng */}
       <div className="mb-2">
         <label className="font-semibold flex items-center justify-between">
-          <span>Các điểm dừng (tùy chọn):</span>
+          <span>{t('createRoute.stopsLabel')}</span>
           <button
             onClick={handleAddStop}
             className="flex items-center gap-1 bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
           >
-            <Plus size={16} /> Thêm điểm dừng
+            <Plus size={16} /> {t('createRoute.addStop')}
           </button>
         </label>
         {routeInfo.stops.map((stop, index) => (
           <div key={index} className="flex items-center gap-2 mt-2">
             <input
-              placeholder={`Click trên bản đồ để chọn điểm dừng ${index + 1}`}
+              placeholder={`${t('createRoute.stopPlaceholder')} ${index + 1}`}
               className={`border p-2 rounded flex-1 ${activeInput === `stop${index}`
                 ? "border-blue-500 ring-2 ring-blue-200"
                 : ""
@@ -357,10 +363,10 @@ export default function CreateRoute() {
       {/* Điểm kết thúc */}
       <div className="mb-4">
         <label className="font-semibold">
-          Điểm kết thúc: <span className="text-red-500">*</span>
+          {t('createRoute.endLabel')}
         </label>
         <input
-          placeholder="Click trên bản đồ để chọn vị trí"
+          placeholder={t('createRoute.clickMap')}
           className={`border p-2 rounded w-full mt-1 ${activeInput === "end" ? "border-blue-500 ring-2 ring-blue-200" : ""
             }`}
           value={routeInfo.end?.address || ""}
@@ -379,8 +385,7 @@ export default function CreateRoute() {
         <p className="text-sm text-blue-800 flex items-start gap-2">
           <MapPin size={18} className="mt-0.5 flex-shrink-0" />
           <span>
-            <strong>Hướng dẫn:</strong> Click vào ô input (điểm đầu/dừng/cuối) trước,
-            sau đó click lên bản đồ để chọn vị trí. Tuyến đường sẽ được vẽ tự động.
+            <strong>{t('createRoute.instructions')}</strong> {t('createRoute.instructionsDetail')}
           </span>
         </p>
       </div>
@@ -391,7 +396,7 @@ export default function CreateRoute() {
           <div className="absolute inset-0 z-20 bg-black bg-opacity-20 flex items-center justify-center pointer-events-none">
             <div className="bg-white px-4 py-2 rounded shadow text-gray-800 font-medium flex items-center gap-2">
               <MapPin size={16} className="text-blue-500" />
-              Hãy chọn ô input trước khi chọn vị trí trên bản đồ
+              {t('createRoute.selectInputFirst')}
             </div>
           </div>
         )}
@@ -418,7 +423,7 @@ export default function CreateRoute() {
           disabled={loading}
         >
           <ArrowLeft size={18} />
-          Quay lại
+          {t('common.back')}
         </button>
 
         <button
@@ -427,7 +432,7 @@ export default function CreateRoute() {
           className={`bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition ${loading ? "opacity-50 cursor-not-allowed" : ""
             }`}
         >
-          {loading ? "Đang tạo..." : "+ Tạo tuyến đường"}
+          {loading ? t('createRoute.creating') : t('createRoute.createButton')}
         </button>
       </div>
     </div>

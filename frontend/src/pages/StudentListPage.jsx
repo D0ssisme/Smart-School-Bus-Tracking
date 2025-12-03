@@ -6,9 +6,11 @@ import { getAllStudentRouteAssignments } from '@/api/studentrouteassignmentApi';
 import { toast } from 'react-hot-toast';
 import AddStudentToScheduleModal from '@/components/AddStudentToScheduleModal';
 import Swal from 'sweetalert2';
+import { useLanguage } from '../contexts/LanguageContext';
 
 
 const StudentListPage = () => {
+  const { t } = useLanguage();
   const { busId } = useParams();
   const location = useLocation();
   const { busData } = location.state || { busData: [] };
@@ -42,7 +44,7 @@ const StudentListPage = () => {
       }
 
       if (!foundSchedule) {
-        toast.error("Không tìm thấy thông tin lịch trình");
+        toast.error(t('studentList.noSchedule'));
         return;
       }
 
@@ -114,7 +116,7 @@ const StudentListPage = () => {
 
     } catch (error) {
       console.error("❌ Error fetching students:", error);
-      toast.error("Không thể tải danh sách học sinh");
+      toast.error(t('common.loadError'));
     } finally {
       setLoading(false);
     }
@@ -132,36 +134,36 @@ const StudentListPage = () => {
     if (!student) {
       Swal.fire({
         icon: "error",
-        title: "Không tìm thấy học sinh",
-        text: "Học sinh không tồn tại trong danh sách hiện tại."
+        title: t('studentList.studentNotFound'),
+        text: t('studentList.studentNotFoundDesc')
       });
       return;
     }
 
     // Popup hiển thị thông tin học sinh
     const result = await Swal.fire({
-      title: "Xóa học sinh khỏi lịch trình?",
+      title: t('studentList.deleteConfirm'),
       html: `
       <div style="text-align: left;">
-        <p><strong>👤 Họ tên:</strong> ${student.name}</p>
-        <p><strong>🎓 Lớp:</strong> ${student.grade}</p>
-        <p><strong>📍 Điểm đón:</strong> ${student.pickup_point}</p>
-        <p><strong>🏁 Điểm trả:</strong> ${student.dropoff_point}</p>
+        <p><strong>👤 ${t('common.name')}:</strong> ${student.name}</p>
+        <p><strong>🎓 ${t('common.grade')}:</strong> ${student.grade}</p>
+        <p><strong>📍 ${t('common.pickup')}:</strong> ${student.pickup_point}</p>
+        <p><strong>🏁 ${t('common.dropoff')}:</strong> ${student.dropoff_point}</p>
       </div>
     `,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
       cancelButtonColor: "#3085d6",
-      confirmButtonText: "Xóa luôn",
-      cancelButtonText: "Hủy",
+      confirmButtonText: t('studentList.deleteButton'),
+      cancelButtonText: t('common.cancel'),
     });
 
     if (result.isConfirmed) {
       try {
         // Loading popup
         Swal.fire({
-          title: "Đang xóa...",
+          title: t('studentList.deleting'),
           allowOutsideClick: false,
           didOpen: () => Swal.showLoading()
         });
@@ -175,8 +177,8 @@ const StudentListPage = () => {
         // Thành công
         Swal.fire({
           icon: "success",
-          title: "Đã xóa!",
-          text: `Học sinh ${student.name} đã được xóa khỏi lịch trình.`,
+          title: t('studentList.deleteSuccess'),
+          text: `${t('studentList.deleteSuccessDesc').replace('{name}', student.name)}`,
           timer: 1500,
           showConfirmButton: false,
         });
@@ -184,8 +186,8 @@ const StudentListPage = () => {
         console.error("❌ Error deleting student:", error);
         Swal.fire({
           icon: "error",
-          title: "Lỗi",
-          text: "Không thể xóa học sinh. Vui lòng thử lại sau!"
+          title: t('studentList.deleteError'),
+          text: t('studentList.deleteErrorDesc')
         });
       }
     }
@@ -195,7 +197,7 @@ const StudentListPage = () => {
       <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 min-h-screen p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Đang tải danh sách học sinh...</p>
+          <p className="text-gray-600 font-medium">{t('studentList.loading')}</p>
         </div>
       </div>
     );
@@ -205,13 +207,13 @@ const StudentListPage = () => {
     return (
       <div className="bg-gradient-to-br from-blue-50 via-white to-green-50 min-h-screen p-6">
         <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-          <p className="text-gray-600 mb-4 text-lg">Không tìm thấy thông tin lịch trình.</p>
+          <p className="text-gray-600 mb-4 text-lg">{t('studentList.noSchedule')}</p>
           <Link
             to="/buses"
             className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
           >
             <ChevronLeft size={18} className="mr-1" />
-            Quay lại trang quản lý
+            {t('studentList.backToManagement')}
           </Link>
         </div>
       </div>
@@ -234,13 +236,13 @@ const StudentListPage = () => {
             className="inline-flex items-center text-white/80 hover:text-white text-sm mb-4 transition"
           >
             <ChevronLeft size={18} className="mr-1" />
-            Quay lại Quản lý xe bus
+            {t('studentList.backButton')}
           </Link>
 
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">
-                Danh sách học sinh
+                {t('studentList.title')}
               </h1>
               <div className="space-y-1">
                 <p className="text-cyan-100 text-lg">
@@ -253,9 +255,9 @@ const StudentListPage = () => {
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-4 border border-white/20">
-              <div className="text-white/70 text-xs mb-1">Sĩ số</div>
+              <div className="text-white/70 text-xs mb-1">{t('studentList.capacity')}</div>
               <div className="text-3xl font-bold text-white">{studentList.length}</div>
-              <div className="text-white/70 text-xs mt-1">học sinh</div>
+              <div className="text-white/70 text-xs mt-1">{t('studentList.students')}</div>
             </div>
           </div>
         </div>
@@ -268,7 +270,7 @@ const StudentListPage = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Tìm theo tên hoặc lớp..."
+              placeholder={t('studentList.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
@@ -277,13 +279,13 @@ const StudentListPage = () => {
 
           <div className="flex items-center gap-3">
             <button className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-              <Download size={16} /> Xuất danh sách
+              <Download size={16} /> {t('studentList.exportButton')}
             </button>
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
             >
-              <UserPlus size={16} /> Thêm học sinh
+              <UserPlus size={16} /> {t('studentList.addButton')}
             </button>
           </div>
         </div>
@@ -297,10 +299,10 @@ const StudentListPage = () => {
               <UserPlus className="text-gray-400" size={48} />
             </div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              {searchTerm ? "Không tìm thấy học sinh" : "Chưa có học sinh nào"}
+              {searchTerm ? t('common.noResults') : t('studentList.noStudents')}
             </h3>
             <p className="text-gray-500 mb-4">
-              {searchTerm ? "Thử thay đổi từ khóa tìm kiếm" : "Thêm học sinh vào lịch trình này"}
+              {searchTerm ? t('studentList.searchHelp') : t('studentList.noStudentsHelp')}
             </p>
           </div>
         ) : (
@@ -308,12 +310,12 @@ const StudentListPage = () => {
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-blue-50 to-cyan-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">STT</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Họ tên</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Lớp</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Điểm đón/trả</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Trạng thái</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Hành động</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{t('common.stt')}</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{t('common.name')}</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{t('common.grade')}</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{t('common.pickup')}/{t('common.dropoff')}</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{t('common.status')}</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -355,14 +357,14 @@ const StudentListPage = () => {
                           ? 'bg-green-100 text-green-800'
                           : 'bg-yellow-100 text-yellow-800'
                           }`}>
-                          Đón: {student.pickup_status === 'picked' ? 'Đã đón' : 'Chờ đón'}
+                          {t('common.pickup')}: {student.pickup_status === 'picked' ? t('common.picked') : t('common.waiting')}
                         </span>
                         <br />
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${student.dropoff_status === 'completed'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-yellow-100 text-yellow-800'
                           }`}>
-                          Trả: {student.dropoff_status === 'completed' ? 'Đã trả' : 'Chờ trả'}
+                          {t('common.dropoff')}: {student.dropoff_status === 'completed' ? t('common.dropped') : t('common.waiting')}
                         </span>
                       </div>
                     </td>
@@ -370,7 +372,7 @@ const StudentListPage = () => {
                       <button
                         onClick={() => handleDeleteStudent(student._id)}
                         className="text-gray-400 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg"
-                        title="Xóa khỏi lịch trình"
+                        title={t('studentList.removeFromSchedule')}
                       >
                         <Trash2 size={18} />
                       </button>

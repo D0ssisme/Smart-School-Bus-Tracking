@@ -1,6 +1,8 @@
 import React from "react";
+import { useLanguage } from '../contexts/LanguageContext';
 
 function Pagination({ currentPage, totalPages, onPageChange }) {
+  const { t } = useLanguage();
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
@@ -9,13 +11,12 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className={`px-3 py-1.5 text-sm rounded-md border transition ${
-          currentPage === 1
+        className={`px-3 py-1.5 text-sm rounded-md border transition ${currentPage === 1
             ? "text-gray-400 border-gray-200 cursor-not-allowed bg-gray-100"
             : "text-gray-700 hover:bg-gray-100 border-gray-300"
-        }`}
+          }`}
       >
-        ← Trước
+        {t('pagination.previous')}
       </button>
 
       {/* Số trang */}
@@ -24,11 +25,10 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
           <button
             key={num}
             onClick={() => onPageChange(num)}
-            className={`w-8 h-8 text-sm rounded-md border transition-all ${
-              currentPage === num
+            className={`w-8 h-8 text-sm rounded-md border transition-all ${currentPage === num
                 ? "bg-blue-600 text-white border-blue-600"
                 : "border-gray-300 text-gray-700 hover:bg-gray-100"
-            }`}
+              }`}
           >
             {num}
           </button>
@@ -39,13 +39,12 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className={`px-3 py-1.5 text-sm rounded-md border transition ${
-          currentPage === totalPages
+        className={`px-3 py-1.5 text-sm rounded-md border transition ${currentPage === totalPages
             ? "text-gray-400 border-gray-200 cursor-not-allowed bg-gray-100"
             : "text-gray-700 hover:bg-gray-100 border-gray-300"
-        }`}
+          }`}
       >
-        Sau →
+        {t('pagination.next')}
       </button>
     </div>
   );
