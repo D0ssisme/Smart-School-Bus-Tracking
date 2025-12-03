@@ -25,10 +25,21 @@ export default function ParentTracking() {
   const parentId = currentUser._id || currentUser.id;
 
   useEffect(() => {
-    fetchStudents();
-  }, [t]); // Reload khi đổi ngôn ngữ để cập nhật text mặc định nếu cần
+    if (parentId) {
+      fetchStudents();
+    } else {
+      console.error('❌ Parent ID not found in localStorage');
+      toast.error(t('parentTracking.messages.noParentId'));
+      setLoading(false);
+    }
+  }, [t, parentId]); // Reload khi đổi ngôn ngữ hoặc parentId thay đổi
 
   const fetchStudents = async () => {
+    if (!parentId) {
+      console.error('❌ Cannot fetch students: parentId is undefined');
+      return;
+    }
+
     try {
       setLoading(true);
       const studentsData = await getStudentsByParent(parentId);
@@ -259,11 +270,16 @@ export default function ParentTracking() {
       Math.sin(dLon / 2) * Math.sin(dLon / 2);
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
-
+  const SPEED_KMH = 40;
   const distanceToPickup = calculateDistanceToPickup();
   const distanceToDropoff = calculateDistanceToDropoff();
-  const estimatedTimeToPickup = distanceToPickup ? Math.ceil(distanceToPickup / 0.4 * 60) : null;
-  const estimatedTimeToDropoff = distanceToDropoff ? Math.ceil(distanceToDropoff / 0.4 * 60) : null;
+  const estimatedTimeToPickup = distanceToPickup
+    ? Math.ceil((distanceToPickup / SPEED_KMH) * 60)
+    : null;
+
+  const estimatedTimeToDropoff = distanceToDropoff
+    ? Math.ceil((distanceToDropoff / SPEED_KMH) * 60)
+    : null;
 
   const getStatusBadge = (status) => {
     switch (status) {
