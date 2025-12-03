@@ -3,11 +3,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth"; // ✅ dùng context thay vì axios
+import { useLanguage } from "../contexts/LanguageContext";
 import Swal from "sweetalert2";
 
 function Login() {
   const navigate = useNavigate();
   const { login, loading } = useAuth();
+  const { t } = useLanguage();
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +27,7 @@ function Login() {
         toast: true,
         position: "bottom-end",
         icon: "success",
-        title: "Đăng nhập thành công!", // Sửa lại title
+        title: t('login.loginSuccess'),
         timer: 2000,
         timerProgressBar: true,
         showConfirmButton: false,
@@ -66,12 +68,12 @@ function Login() {
             </Link>
 
             <div className="bg-white shadow-lg rounded-2xl p-8">
-              <h2 className="text-xl font-bold text-blue-900 text-center">Đăng nhập</h2>
+              <h2 className="text-xl font-bold text-blue-900 text-center">{t('login.title')}</h2>
 
               <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-blue-900">
-                    Số điện thoại
+                    {t('login.phoneLabel')}
                   </label>
                   <input
                     id="phone"
@@ -85,7 +87,7 @@ function Login() {
 
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-blue-900">
-                    Mật khẩu
+                    {t('login.passwordLabel')}
                   </label>
                   <input
                     id="password"
@@ -106,7 +108,7 @@ function Login() {
                   disabled={loading}
                   className="w-full px-4 py-2 text-white bg-blue-900 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 disabled:opacity-50"
                 >
-                  {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+                  {loading ? t('login.loggingIn') : t('login.loginButton')}
                 </button>
               </form>
             </div>

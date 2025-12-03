@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import CreateNotificationModal from '@/components/CreateNotificationModal';
 import { getAllNotifications, createNotification, deleteNotification } from "@/api/notificationApi";
 import ToastService from "@/lib/toastService";
+import Swal from 'sweetalert2';
 import { Bell, BellPlus, Filter, Search, TrendingUp, AlertCircle, Info, CheckCircle, Megaphone, Edit2, Trash2, Calendar, Users, X } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
@@ -69,12 +70,15 @@ function NotificationCard({ notification, onEdit, onDelete }) {
                             <span className={`text-xs font-semibold px-2 py-1 rounded-full ${getTypeStyle(notification.type)}`}>
                                 {getTypeLabel(notification.type)}
                             </span>
-                            {notification.createdAt && (
-                                <span className="text-xs text-gray-500 flex items-center gap-1">
-                                    <Calendar size={14} />
-                                    {new Date(notification.createdAt).toLocaleDateString('vi-VN')}
-                                </span>
-                            )}
+                            {notification.timestamp && (() => {
+                                const date = new Date(notification.timestamp);
+                                return !isNaN(date.getTime()) ? (
+                                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                                        <Calendar size={14} />
+                                        {date.toLocaleDateString('vi-VN')}
+                                    </span>
+                                ) : null;
+                            })()}
                         </div>
                         <p className="text-gray-800 font-medium mb-1">{notification.message}</p>
 

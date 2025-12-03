@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 import {
   Settings, Info, Pencil, Trash2, Clock, X, Calendar, Truck, Users, MapPin
 } from 'lucide-react';
@@ -35,9 +36,11 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
 
   if (!isOpen) return null;
 
+  const { t } = useLanguage();
+
   const handleSubmit = async () => {
     if (!formData.driver_id || !formData.bus_id || !formData.route_id || !formData.start_time || !formData.end_time) {
-      alert('⚠️ Vui lòng điền đầy đủ thông tin!');
+      alert(t('busCard.error.fillAll'));
       return;
     }
 
@@ -57,7 +60,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
           <div>
             <h2 className="text-2xl font-bold text-white flex items-center gap-3">
               <BusIcon size={28} />
-              Sửa lịch trình
+              {t('busCard.editSchedule')}
             </h2>
             <p className="text-blue-100 text-sm mt-1">
               {schedule?.plate} - {schedule?.scheduleId}
@@ -77,7 +80,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
             {/* Tài xế */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Tài xế <span className="text-red-500">*</span>
+                {t('busCard.driverLabel')}
               </label>
               <select
                 value={formData.driver_id}
@@ -85,7 +88,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={saving}
               >
-                <option value="">Chọn tài xế</option>
+                <option value="">{t('busCard.selectDriver')}</option>
                 {drivers?.map(driver => (
                   <option key={driver.id} value={driver.id}>
                     {driver.name}
@@ -97,7 +100,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
             {/* Xe bus */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Xe bus <span className="text-red-500">*</span>
+                {t('busCard.busLabel')}
               </label>
               <select
                 value={formData.bus_id}
@@ -105,7 +108,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={saving}
               >
-                <option value="">Chọn xe bus</option>
+                <option value="">{t('busCard.selectBus')}</option>
                 {buses?.map(bus => (
                   <option key={bus.id} value={bus.id}>
                     {bus.plate} - {bus.capacity} chỗ
@@ -118,11 +121,11 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
           {/* Tuyến đường - READ ONLY */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Tuyến đường
+              {t('busCard.routeLabel')}
             </label>
             <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 text-sm text-gray-600">
-              {routes?.find(route => route.id === formData.route_id)?.name || 'Không xác định'}
-              <p className="text-xs text-gray-500 mt-1">🔒 Không thể thay đổi tuyến đường</p>
+              {routes?.find(route => route.id === formData.route_id)?.name || t('common.unknown')}
+              <p className="text-xs text-gray-500 mt-1">{t('busCard.routeLocked')}</p>
             </div>
           </div>
 
@@ -130,7 +133,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
             {/* Giờ bắt đầu */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Giờ bắt đầu <span className="text-red-500">*</span>
+                {t('busCard.startTime')}
               </label>
               <input
                 type="time"
@@ -144,7 +147,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
             {/* Giờ kết thúc */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Giờ kết thúc <span className="text-red-500">*</span>
+                {t('busCard.endTime')}
               </label>
               <input
                 type="time"
@@ -158,7 +161,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
             {/* Ngày */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Ngày
+                {t('busCard.date')}
               </label>
               <input
                 type="date"
@@ -173,7 +176,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
           {/* Trạng thái */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Trạng thái
+              {t('busCard.status')}
             </label>
             <select
               value={formData.status}
@@ -181,9 +184,9 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={saving}
             >
-              <option value="scheduled">Đang chờ</option>
-              <option value="completed">Hoàn thành</option>
-              <option value="cancelled">Hủy</option>
+              <option value="scheduled">{t('busCard.statusScheduled')}</option>
+              <option value="completed">{t('busCard.statusCompleted')}</option>
+              <option value="cancelled">{t('busCard.statusCancelled')}</option>
             </select>
           </div>
 
@@ -195,7 +198,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
               className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
               disabled={saving}
             >
-              Hủy
+              {t('common.cancel')}
             </button>
             <button
               type="button"
@@ -203,7 +206,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
               className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
               disabled={saving}
             >
-              {saving ? 'Đang lưu...' : 'Cập nhật'}
+              {saving ? t('busCard.saving') : t('common.update')}
             </button>
           </div>
         </div>
@@ -213,6 +216,7 @@ const EditScheduleModal = ({ isOpen, onClose, onSave, schedule, drivers, routes,
 };
 
 const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete, drivers, routes, buses }) => {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const menuRef = useRef(null);
@@ -229,9 +233,9 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete, drivers, r
 
   const getStatusClasses = (status) => {
     switch (status) {
-      case 'Đang chờ': return 'bg-yellow-100 text-yellow-800';
-      case 'Hoàn thành': return 'bg-green-100 text-green-800';
-      case 'Hủy': return 'bg-red-100 text-red-800';
+      case t('busCard.statusScheduled'): return 'bg-yellow-100 text-yellow-800';
+      case t('busCard.statusCompleted'): return 'bg-green-100 text-green-800';
+      case t('busCard.statusCancelled'): return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -273,7 +277,7 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete, drivers, r
                   className="group flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                 >
                   <Info size={16} className="mr-3" />
-                  Danh sách học sinh
+                  {t('busCard.studentList')}
                 </Link>
 
                 <button
@@ -281,7 +285,7 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete, drivers, r
                   className="group flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                 >
                   <Pencil size={16} className="mr-3" />
-                  Sửa lịch trình
+                  {t('busCard.editSchedule')}
                 </button>
                 <div className="my-1 h-px bg-gray-100" />
                 <button
@@ -289,21 +293,21 @@ const BusCard = ({ bus, allBusData, allStudentData, onEdit, onDelete, drivers, r
                   className="group flex w-full items-center rounded-md px-3 py-2 text-sm text-red-600 font-medium hover:bg-red-50 hover:text-red-700"
                 >
                   <Trash2 size={16} className="mr-3" />
-                  Xoá lịch trình
+                  {t('busCard.deleteSchedule')}
                 </button>
               </div>
             )}
           </div>
         </div>
         <div className="space-y-2 text-sm text-gray-700">
-          <p><span className="font-medium text-gray-900">Tài xế:</span> {bus.driver}</p>
-          <p><span className="font-medium text-gray-900">Sức chứa:</span> {bus.capacity} chỗ</p>
+          <p><span className="font-medium text-gray-900">{t('busCard.driverLabel')}:</span> {bus.driver}</p>
+          <p><span className="font-medium text-gray-900">{t('busCard.capacity')}:</span> {bus.capacity} {t('busCard.seats')}</p>
           <div className="flex items-center">
             <Clock size={15} className="text-gray-500 mr-2 flex-shrink-0" />
             <span className="font-medium text-gray-900">{bus.startTime} - {bus.endTime}</span>
           </div>
           <div className="flex items-center">
-            <span className="font-medium text-gray-900">Trạng thái:</span>
+            <span className="font-medium text-gray-900">{t('busCard.status')}:</span>
             <span className={`ml-2 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClasses(bus.status)}`}>
               {bus.status}
             </span>

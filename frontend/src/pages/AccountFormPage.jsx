@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import ToastService from "@/lib/toastService";
 import { mockUsers } from "@/lib/mockData";
+import { useLanguage } from '../contexts/LanguageContext';
 
 function AccountFormPage() {
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditMode = !!id;
@@ -50,13 +52,13 @@ function AccountFormPage() {
         }
 
         const loadingToast = ToastService.loading(
-            isEditMode ? "Đang cập nhật..." : "Đang thêm người dùng..."
+            isEditMode ? t('accountForm.updating') : t('accountForm.adding')
         );
 
         setTimeout(() => {
             ToastService.update(
                 loadingToast,
-                isEditMode ? "Cập nhật thành công!" : "Thêm người dùng thành công!",
+                isEditMode ? t('accountForm.updateSuccess') : t('accountForm.addSuccess'),
                 "success"
             );
 
@@ -84,10 +86,10 @@ function AccountFormPage() {
                     Quay lại
                 </Button>
                 <h1 className="text-3xl font-bold text-gray-900">
-                    {isEditMode ? "Chỉnh sửa người dùng" : "Thêm người dùng mới"}
+                    {isEditMode ? t('accountForm.editTitle') : t('accountForm.addTitle')}
                 </h1>
                 <p className="text-gray-600 mt-1">
-                    {isEditMode ? "Cập nhật thông tin người dùng" : "Điền thông tin để tạo tài khoản mới"}
+                    {isEditMode ? t('accountForm.editSubtitle') : t('accountForm.addSubtitle')}
                 </p>
             </div>
 

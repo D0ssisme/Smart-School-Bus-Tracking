@@ -6,6 +6,7 @@ import RouteDetailModal from "@/components/RouteDetailModal";
 import RouteEditModal from "@/components/RouteEditModal";
 import ToastService from "@/lib/toastService";
 import Swal from 'sweetalert2';
+import { useLanguage } from "../contexts/LanguageContext";
 import {
   Route as RouteIcon,
   MapPin,
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 
 export default function RouteList() {
+  const { t } = useLanguage();
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,7 +65,7 @@ export default function RouteList() {
       setError(null);
     } catch (err) {
       console.error("Error fetching routes:", err);
-      setError("Không thể tải danh sách tuyến xe. Vui lòng thử lại sau.");
+      setError(t('routePage.loadErrorDesc'));
     } finally {
       setLoading(false);
     }
@@ -103,7 +105,7 @@ export default function RouteList() {
       width: 600
     }).then(async (result) => {
       if (result.isConfirmed) {
-        const loadingToast = ToastService.loading('Đang xóa tuyến đường...');
+        const loadingToast = ToastService.loading(t('routePage.delete.deleting'));
 
         try {
           setLoadingAction(true);
@@ -111,7 +113,7 @@ export default function RouteList() {
           const mongoId = route.originalData?._id || route.id;
 
           if (!mongoId) {
-            ToastService.update(loadingToast, 'Không tìm thấy ID tuyến đường!', 'error');
+            ToastService.update(loadingToast, t('routePage.delete.notFoundError'), 'error');
             return;
           }
 
@@ -121,10 +123,10 @@ export default function RouteList() {
           // Fetch lại danh sách routes
           await fetchRoutes();
 
-          ToastService.update(loadingToast, 'Xóa tuyến đường thành công!', 'success');
+          ToastService.update(loadingToast, t('routePage.delete.deleteSuccess'), 'success');
         } catch (err) {
           console.error("Error deleting route:", err);
-          const errorMessage = err.response?.data?.message || 'Không thể xóa tuyến đường!';
+          const errorMessage = err.response?.data?.message || t('routePage.delete.deleteError');
           ToastService.update(loadingToast, errorMessage, 'error');
         } finally {
           setLoadingAction(false);
@@ -141,7 +143,7 @@ export default function RouteList() {
       const mongoId = route.originalData?._id || route.id;
 
       if (!mongoId) {
-        ToastService.error('Không tìm thấy ID tuyến đường!');
+        ToastService.error(t('routePage.delete.notFoundError'));
         return;
       }
 
@@ -162,7 +164,7 @@ export default function RouteList() {
       setIsDetailOpen(true);
     } catch (err) {
       console.error("Error fetching route details:", err);
-      ToastService.error('Không thể tải thông tin chi tiết. Vui lòng thử lại!');
+      ToastService.error(t('routePage.detail.loadError'));
     } finally {
       setLoadingAction(false);
     }
@@ -175,7 +177,7 @@ export default function RouteList() {
       const mongoId = route.originalData?._id || route.id;
 
       if (!mongoId) {
-        ToastService.error('Không tìm thấy ID tuyến đường!');
+        ToastService.error(t('routePage.delete.notFoundError'));
         return;
       }
 
@@ -190,7 +192,7 @@ export default function RouteList() {
       setIsEditOpen(true);
     } catch (err) {
       console.error("Error fetching route details:", err);
-      ToastService.error('Không thể tải thông tin tuyến đường. Vui lòng thử lại!');
+      ToastService.error(t('routePage.edit.loadError'));
     } finally {
       setLoadingAction(false);
     }
@@ -210,7 +212,7 @@ export default function RouteList() {
       const mongoId = selectedRoute.originalData?._id || selectedRoute.id;
 
       if (!mongoId) {
-        ToastService.error('Không tìm thấy ID tuyến đường!');
+        ToastService.error(t('routePage.delete.notFoundError'));
         return;
       }
 
@@ -228,11 +230,11 @@ export default function RouteList() {
       // Fetch lại danh sách routes để có data mới nhất
       await fetchRoutes();
 
-      ToastService.success('Cập nhật tuyến đường thành công!');
+      ToastService.success(t('routePage.edit.updateSuccess'));
       closeModal();
     } catch (err) {
       console.error("Error updating route:", err);
-      const errorMessage = err.response?.data?.message || 'Không thể cập nhật tuyến đường!';
+      const errorMessage = err.response?.data?.message || t('routePage.edit.updateError');
       ToastService.error(errorMessage);
     } finally {
       setLoadingAction(false);
@@ -260,7 +262,7 @@ export default function RouteList() {
       <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded p-5 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Đang tải dữ liệu tuyến đường...</p>
+          <p className="text-gray-600 font-medium">{t('routePage.loading')}</p>
         </div>
       </div>
     );
@@ -275,7 +277,7 @@ export default function RouteList() {
               <X className="text-red-600" size={24} />
             </div>
             <div>
-              <p className="font-bold text-red-800">Lỗi tải dữ liệu</p>
+              <p className="font-bold text-red-800">{t('routePage.loadError')}</p>
               <p className="text-red-700">{error}</p>
             </div>
           </div>
@@ -291,7 +293,7 @@ export default function RouteList() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl shadow-2xl">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto mb-3"></div>
-            <p className="text-gray-700 font-medium">Đang xử lý...</p>
+            <p className="text-gray-700 font-medium">{t('routePage.processing')}</p>
           </div>
         </div>
       )}
@@ -324,22 +326,22 @@ export default function RouteList() {
                 <Map className="text-white" size={40} />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white mb-1">Quản lý tuyến đường</h1>
-                <p className="text-indigo-100">Danh sách và thông tin các tuyến xe buýt</p>
+                <h1 className="text-3xl font-bold text-white mb-1">{t('routePage.title')}</h1>
+                <p className="text-indigo-100">{t('routePage.subtitle')}</p>
               </div>
             </div>
 
             <div className="hidden md:flex gap-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                <div className="text-white/70 text-xs mb-1">Tổng số</div>
+                <div className="text-white/70 text-xs mb-1">{t('routePage.stats.total')}</div>
                 <div className="text-2xl font-bold text-white">{routes.length}</div>
               </div>
               <div className="bg-green-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-green-300/30">
-                <div className="text-green-100 text-xs mb-1">Hoạt động</div>
+                <div className="text-green-100 text-xs mb-1">{t('routePage.stats.active')}</div>
                 <div className="text-2xl font-bold text-white">{activeRoutes}</div>
               </div>
               <div className="bg-blue-500/20 backdrop-blur-sm rounded-xl px-6 py-3 border border-blue-300/30">
-                <div className="text-blue-100 text-xs mb-1">TB điểm dừng</div>
+                <div className="text-blue-100 text-xs mb-1">{t('routePage.stats.avgStops')}</div>
                 <div className="text-2xl font-bold text-white">{avgStops}</div>
               </div>
             </div>
@@ -358,9 +360,9 @@ export default function RouteList() {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="bg-transparent border-none focus:ring-0 text-sm outline-none font-medium text-gray-700 cursor-pointer"
               >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="active">Hoạt động</option>
-                <option value="inactive">Không hoạt động</option>
+                <option value="all">{t('routePage.filterAll')}</option>
+                <option value="active">{t('routePage.filterActive')}</option>
+                <option value="inactive">{t('routePage.filterInactive')}</option>
               </select>
             </div>
 
@@ -368,7 +370,7 @@ export default function RouteList() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
-                placeholder="Tìm theo tên tuyến, mã, điểm đầu/cuối..."
+                placeholder={t('routePage.searchPlaceholder')}
                 className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -380,7 +382,7 @@ export default function RouteList() {
             to="/createroute"
             className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
           >
-            <Plus size={20} /> Tạo tuyến mới
+            <Plus size={20} /> {t('routePage.createNew')}
           </Link>
         </div>
       </div>
@@ -394,9 +396,9 @@ export default function RouteList() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Tổng tuyến đường</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('routePage.stats.total')}</h3>
           <p className="text-3xl font-bold text-gray-900">{routes.length}</p>
-          <p className="text-xs text-gray-500 mt-2">Đã tạo trong hệ thống</p>
+          <p className="text-xs text-gray-500 mt-2">{t('routePage.stats.totalDesc')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500">
@@ -406,9 +408,9 @@ export default function RouteList() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Đang hoạt động</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('routePage.stats.active')}</h3>
           <p className="text-3xl font-bold text-gray-900">{activeRoutes}</p>
-          <p className="text-xs text-gray-500 mt-2">Tuyến đang vận hành</p>
+          <p className="text-xs text-gray-500 mt-2">{t('routePage.stats.activeDesc')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-blue-500">
@@ -418,9 +420,9 @@ export default function RouteList() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Tổng điểm dừng</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('routePage.stats.totalStops')}</h3>
           <p className="text-3xl font-bold text-gray-900">{totalStops}</p>
-          <p className="text-xs text-gray-500 mt-2">Trên tất cả tuyến</p>
+          <p className="text-xs text-gray-500 mt-2">{t('routePage.stats.totalStopsDesc')}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-purple-500">
@@ -430,9 +432,9 @@ export default function RouteList() {
             </div>
             <TrendingUp className="text-green-500" size={20} />
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">TB điểm dừng</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">{t('routePage.stats.avgStops')}</h3>
           <p className="text-3xl font-bold text-gray-900">{avgStops}</p>
-          <p className="text-xs text-gray-500 mt-2">Điểm dừng/tuyến</p>
+          <p className="text-xs text-gray-500 mt-2">{t('routePage.stats.avgStopsDesc')}</p>
         </div>
       </div>
 
@@ -444,14 +446,14 @@ export default function RouteList() {
               <RouteIcon className="text-gray-400" size={48} />
             </div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              {searchTerm || filterStatus !== "all" ? "Không tìm thấy tuyến đường" : "Chưa có tuyến đường nào"}
+              {searchTerm || filterStatus !== "all" ? t('routePage.noResults') : t('routePage.noRoutes')}
             </h3>
             <p className="text-gray-500 mb-4">
-              {searchTerm || filterStatus !== "all" ? "Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm" : "Bắt đầu tạo tuyến đường mới cho hệ thống"}
+              {searchTerm || filterStatus !== "all" ? t('routePage.noResultsDesc') : t('routePage.noRoutesDesc')}
             </p>
             {(searchTerm || filterStatus !== "all") && (
               <button onClick={() => { setSearchTerm(""); setFilterStatus("all"); }} className="text-indigo-600 hover:text-indigo-700 font-medium text-sm">
-                Xóa bộ lọc
+                {t('routePage.clearFilter')}
               </button>
             )}
           </div>
@@ -460,13 +462,13 @@ export default function RouteList() {
             <table className="w-full">
               <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b-2 border-indigo-100">
                 <tr>
-                  <th className="p-4 text-left text-sm font-semibold text-gray-700">Mã tuyến</th>
-                  <th className="p-4 text-left text-sm font-semibold text-gray-700">Tên tuyến</th>
-                  <th className="p-4 text-left text-sm font-semibold text-gray-700">Điểm khởi đầu</th>
-                  <th className="p-4 text-left text-sm font-semibold text-gray-700">Điểm kết thúc</th>
-                  <th className="p-4 text-center text-sm font-semibold text-gray-700">Điểm dừng</th>
-                  <th className="p-4 text-center text-sm font-semibold text-gray-700">Trạng thái</th>
-                  <th className="p-4 text-center text-sm font-semibold text-gray-700">Hành động</th>
+                  <th className="p-4 text-left text-sm font-semibold text-gray-700">{t('routePage.table.code')}</th>
+                  <th className="p-4 text-left text-sm font-semibold text-gray-700">{t('routePage.table.name')}</th>
+                  <th className="p-4 text-left text-sm font-semibold text-gray-700">{t('routePage.table.start')}</th>
+                  <th className="p-4 text-left text-sm font-semibold text-gray-700">{t('routePage.table.end')}</th>
+                  <th className="p-4 text-center text-sm font-semibold text-gray-700">{t('routePage.table.stops')}</th>
+                  <th className="p-4 text-center text-sm font-semibold text-gray-700">{t('routePage.table.status')}</th>
+                  <th className="p-4 text-center text-sm font-semibold text-gray-700">{t('routePage.table.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -491,7 +493,7 @@ export default function RouteList() {
                     </td>
                     <td className="p-4 text-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${r.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
-                        {r.status === "active" ? "Hoạt động" : "Không hoạt động"}
+                        {r.status === "active" ? t('routePage.statusActive') : t('routePage.statusInactive')}
                       </span>
                     </td>
                     <td className="p-4 text-center">

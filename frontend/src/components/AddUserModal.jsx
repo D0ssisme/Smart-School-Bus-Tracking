@@ -1,8 +1,10 @@
 import React, { useState, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, User, Phone, Lock, MapPin, CreditCard, UserCircle } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const AddUserModal = ({ isOpen, onClose, onSave }) => {
+    const { t } = useLanguage();
     const [formData, setFormData] = useState({
         name: '',
         password: '',
@@ -65,7 +67,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
             onClose();
         } catch (err) {
             console.error("Error creating user:", err);
-            setError(err.response?.data?.message || "Không thể tạo người dùng. Vui lòng thử lại.");
+            setError(err.response?.data?.message || t('addUser.error.createFailed'));
         } finally {
             setLoading(false);
         }
@@ -100,7 +102,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                             <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all">
                                 <Dialog.Title className="flex justify-between items-center mb-4">
                                     <h3 className="text-lg font-semibold text-gray-900">
-                                        Thêm người dùng mới
+                                        {t('addUser.title')}
                                     </h3>
                                     <button
                                         onClick={onClose}
@@ -120,7 +122,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                     {/* Họ tên */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Họ và tên <span className="text-red-500">*</span>
+                                            {t('addUser.name')} <span className="text-red-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -132,7 +134,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                                 value={formData.name}
                                                 onChange={handleChange}
                                                 required
-                                                placeholder="Nhập họ tên"
+                                                placeholder={t('addUser.namePlaceholder')}
                                                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                             />
                                         </div>
@@ -141,7 +143,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                     {/* Số điện thoại */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Số điện thoại <span className="text-red-500">*</span>
+                                            {t('addUser.phoneNumber')} <span className="text-red-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -153,7 +155,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                                 value={formData.phoneNumber}
                                                 onChange={handleChange}
                                                 required
-                                                placeholder="0912345678"
+                                                placeholder={t('addUser.phonePlaceholder')}
                                                 pattern="[0-9]{10}"
                                                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                             />
@@ -163,7 +165,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                     {/* Mật khẩu */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Mật khẩu <span className="text-red-500">*</span>
+                                            {t('addUser.password')} <span className="text-red-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -176,7 +178,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                                 onChange={handleChange}
                                                 required
                                                 minLength={6}
-                                                placeholder="Tối thiểu 6 ký tự"
+                                                placeholder={t('addUser.passwordPlaceholder')}
                                                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                             />
                                         </div>
@@ -185,7 +187,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                     {/* Vai trò */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Vai trò <span className="text-red-500">*</span>
+                                            {t('addUser.role')} <span className="text-red-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -198,9 +200,9 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                                 required
                                                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
                                             >
-                                                <option value="parent">Phụ huynh</option>
-                                                <option value="driver">Tài xế</option>
-                                                <option value="admin">Quản trị viên</option>
+                                                <option value="parent">{t('addUser.roleParent')}</option>
+                                                <option value="driver">{t('addUser.roleDriver')}</option>
+                                                <option value="admin">{t('addUser.roleAdmin')}</option>
                                             </select>
                                         </div>
                                     </div>
@@ -209,7 +211,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                     {formData.role === 'driver' && (
                                         <div className="bg-blue-50 p-3 rounded-lg">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Số giấy phép lái xe
+                                                {t('addUser.licenseNumber')}
                                             </label>
                                             <div className="relative">
                                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -220,7 +222,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                                     name="licenseNumber"
                                                     value={formData.licenseNumber}
                                                     onChange={handleChange}
-                                                    placeholder="VD: B2-12345678"
+                                                    placeholder={t('addUser.licensePlaceholder')}
                                                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                 />
                                             </div>
@@ -231,7 +233,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                     {formData.role === 'parent' && (
                                         <div className="bg-green-50 p-3 rounded-lg">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Địa chỉ
+                                                {t('addUser.address')}
                                             </label>
                                             <div className="relative">
                                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -242,7 +244,7 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                                     name="address"
                                                     value={formData.address}
                                                     onChange={handleChange}
-                                                    placeholder="Nhập địa chỉ"
+                                                    placeholder={t('addUser.addressPlaceholder')}
                                                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                                 />
                                             </div>
@@ -256,14 +258,14 @@ const AddUserModal = ({ isOpen, onClose, onSave }) => {
                                             onClick={onClose}
                                             className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                                         >
-                                            Hủy
+                                            {t('common.cancel')}
                                         </button>
                                         <button
                                             type="submit"
                                             disabled={loading}
                                             className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            {loading ? 'Đang tạo...' : 'Tạo người dùng'}
+                                            {loading ? t('addUser.creating') : t('addUser.createButton')}
                                         </button>
                                     </div>
                                 </form>

@@ -1,8 +1,10 @@
 //src/components/RouteDetailModal.jsx
 import React from 'react';
 import { X, RouteIcon, Map, MapPin, Navigation } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const RouteDetailModal = ({ isOpen, onClose, route }) => {
+    const { t } = useLanguage();
     if (!isOpen || !route) return null;
 
     return (
@@ -12,7 +14,7 @@ const RouteDetailModal = ({ isOpen, onClose, route }) => {
                     <div className="flex items-center justify-between">
                         <h3 className="text-xl font-bold text-white flex items-center gap-2">
                             <RouteIcon size={24} />
-                            Chi tiết tuyến xe
+                            {t('routeDetail.title')}
                         </h3>
                         <button
                             onClick={onClose}
@@ -27,7 +29,7 @@ const RouteDetailModal = ({ isOpen, onClose, route }) => {
                     <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                         <RouteIcon className="text-indigo-600 mt-1" size={20} />
                         <div className="flex-1">
-                            <p className="text-xs text-gray-500 mb-1">Mã tuyến</p>
+                            <p className="text-xs text-gray-500 mb-1">{t('routeDetail.code')}</p>
                             <p className="font-semibold text-gray-800">{route.id}</p>
                         </div>
                     </div>
@@ -35,7 +37,7 @@ const RouteDetailModal = ({ isOpen, onClose, route }) => {
                     <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                         <Map className="text-indigo-600 mt-1" size={20} />
                         <div className="flex-1">
-                            <p className="text-xs text-gray-500 mb-1">Tên tuyến</p>
+                            <p className="text-xs text-gray-500 mb-1">{t('routeDetail.name')}</p>
                             <p className="font-semibold text-gray-800">{route.name}</p>
                         </div>
                     </div>
@@ -43,7 +45,7 @@ const RouteDetailModal = ({ isOpen, onClose, route }) => {
                     <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
                         <MapPin className="text-green-600 mt-1" size={20} />
                         <div className="flex-1">
-                            <p className="text-xs text-gray-500 mb-1">Điểm bắt đầu</p>
+                            <p className="text-xs text-gray-500 mb-1">{t('routeDetail.start')}</p>
                             <p className="font-semibold text-gray-800">{route.start}</p>
                         </div>
                     </div>
@@ -51,7 +53,7 @@ const RouteDetailModal = ({ isOpen, onClose, route }) => {
                     <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
                         <MapPin className="text-red-600 mt-1" size={20} />
                         <div className="flex-1">
-                            <p className="text-xs text-gray-500 mb-1">Điểm kết thúc</p>
+                            <p className="text-xs text-gray-500 mb-1">{t('routeDetail.end')}</p>
                             <p className="font-semibold text-gray-800">{route.end}</p>
                         </div>
                     </div>
@@ -59,8 +61,8 @@ const RouteDetailModal = ({ isOpen, onClose, route }) => {
                     <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
                         <Navigation className="text-blue-600 mt-1" size={20} />
                         <div className="flex-1">
-                            <p className="text-xs text-gray-500 mb-1">Số điểm dừng</p>
-                            <p className="font-semibold text-gray-800">{route.stops} điểm</p>
+                            <p className="text-xs text-gray-500 mb-1">{t('routeDetail.stopsCount')}</p>
+                            <p className="font-semibold text-gray-800">{route.stops} {t('routeDetail.stops')}</p>
                         </div>
                     </div>
 
@@ -69,14 +71,14 @@ const RouteDetailModal = ({ isOpen, onClose, route }) => {
                             <div className={`w-5 h-5 rounded-full ${route.status === "active" ? "bg-green-500" : "bg-gray-500"}`}></div>
                         </div>
                         <div className="flex-1">
-                            <p className="text-xs text-gray-500 mb-1">Trạng thái</p>
-                            <p className="font-semibold text-gray-800">{route.status === "active" ? "Hoạt động" : "Không hoạt động"}</p>
+                            <p className="text-xs text-gray-500 mb-1">{t('common.status')}</p>
+                            <p className="font-semibold text-gray-800">{route.status === "active" ? t('routeDetail.statusActive') : t('routeDetail.statusInactive')}</p>
                         </div>
                     </div>
 
                     {route.stopsList && route.stopsList.length > 0 && (
                         <div className="p-4 bg-indigo-50 rounded-lg border-l-4 border-indigo-600">
-                            <p className="text-sm font-semibold text-gray-800 mb-3">Danh sách điểm dừng:</p>
+                            <p className="text-sm font-semibold text-gray-800 mb-3">{t('routeDetail.stopsList')}</p>
                             <ul className="space-y-2">
                                 {route.stopsList.map((stop, index) => (
                                     <li key={index} className="flex items-center gap-2 text-sm text-gray-700">

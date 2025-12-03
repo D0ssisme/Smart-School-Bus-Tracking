@@ -2,9 +2,11 @@ import { useAuth } from "../hooks/useAuth"; // hoặc "../context/AuthContext" t
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import ToastService from "../lib/toastService";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function MyAccount() {
   const { user } = useAuth(); // ✅ lấy thông tin user hiện tại
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("profile");
 
   const [formData, setFormData] = useState({
@@ -41,13 +43,13 @@ export default function MyAccount() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const id = ToastService.loading("Đang cập nhật...");
+    const id = ToastService.loading(t('myAccount.updating'));
 
     try {
       await new Promise((r) => setTimeout(r, 1500));
-      ToastService.success("Hồ sơ đã được cập nhật!");
+      ToastService.success(t('myAccount.updateSuccess'));
     } catch {
-      ToastService.error("Cập nhật thất bại!");
+      ToastService.error(t('myAccount.updateFailed'));
     }
   };
 
@@ -55,7 +57,7 @@ export default function MyAccount() {
   if (!user) {
     return (
       <div className="p-10 text-center text-gray-600">
-        Bạn cần đăng nhập để xem thông tin tài khoản.
+        {t('myAccount.loginRequired')}
       </div>
     );
   }
@@ -68,67 +70,67 @@ export default function MyAccount() {
           <button
             onClick={() => setActiveTab("profile")}
             className={`px-6 py-3 font-medium ${activeTab === "profile"
-                ? "border-b-2 border-blue-900 text-blue-900"
-                : "text-gray-600 hover:text-blue-900"
+              ? "border-b-2 border-blue-900 text-blue-900"
+              : "text-gray-600 hover:text-blue-900"
               }`}
           >
-            Hồ sơ
+            {t('myAccount.tabs.profile')}
           </button>
           <button
             onClick={() => setActiveTab("password")}
             className={`px-6 py-3 font-medium ${activeTab === "password"
-                ? "border-b-2 border-blue-900 text-blue-900"
-                : "text-gray-600 hover:text-blue-900"
+              ? "border-b-2 border-blue-900 text-blue-900"
+              : "text-gray-600 hover:text-blue-900"
               }`}
           >
-            Mật khẩu
+            {t('myAccount.tabs.security')}
           </button>
         </div>
 
         {/* Nội dung tab Hồ sơ */}
         {/* Nội dung tab Hồ sơ */}
-{activeTab === "profile" && (
-  <form onSubmit={handleSubmit} className="p-6 grid grid-cols-3 gap-6">
-    {/* Cột trái */}
-    <div className="col-span-2 space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Số điện thoại
-        </label>
-        <input
-          type="text"
-          value={formData.Sdt}
-          disabled
-          className="h-8 p-1 pl-3 mt-1 w-120 rounded-md border border-gray-300 bg-gray-100 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition duration-150 ease-in-out"
-        />
-      </div>
+        {activeTab === "profile" && (
+          <form onSubmit={handleSubmit} className="p-6 grid grid-cols-3 gap-6">
+            {/* Cột trái */}
+            <div className="col-span-2 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  {t('myAccount.phone')}
+                </label>
+                <input
+                  type="text"
+                  value={formData.Sdt}
+                  disabled
+                  className="h-8 p-1 pl-3 mt-1 w-120 rounded-md border border-gray-300 bg-gray-100 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition duration-150 ease-in-out"
+                />
+              </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Họ và tên
-        </label>
-        <input
-          type="text"
-          value={formData.hoTen}
-          onChange={(e) =>
-            setFormData({ ...formData, hoTen: e.target.value })
-          }
-          className="h-8 p-1 pl-3  mt-1 w-120 rounded-md border border-gray-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition duration-150 ease-in-out"
-        />
-      </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  {t('myAccount.fullName')}
+                </label>
+                <input
+                  type="text"
+                  value={formData.hoTen}
+                  onChange={(e) =>
+                    setFormData({ ...formData, hoTen: e.target.value })
+                  }
+                  className="h-8 p-1 pl-3  mt-1 w-120 rounded-md border border-gray-300 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition duration-150 ease-in-out"
+                />
+              </div>
 
-      {/* ❌ Đã xoá ô nhập địa chỉ */}
-      {/* ❌ Đã xoá ô chọn giới tính */}
+              {/* ❌ Đã xoá ô nhập địa chỉ */}
+              {/* ❌ Đã xoá ô chọn giới tính */}
 
-      <button
-        type="submit"
-        className="mt-4 px-5 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700"
-      >
-        Cập nhật hồ sơ
-      </button>
-    </div>
-  </form>
-)}
+              <button
+                type="submit"
+                className="mt-4 px-5 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700"
+              >
+                {t('myAccount.updateProfile')}
+              </button>
+            </div>
+          </form>
+        )}
 
 
         {/* Nội dung tab Mật khẩu */}
@@ -136,7 +138,7 @@ export default function MyAccount() {
           <form className="p-6 max-w-md space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Mật khẩu hiện tại
+                {t('myAccount.currentPassword')}
               </label>
               <input
                 type="password"
@@ -145,7 +147,7 @@ export default function MyAccount() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Mật khẩu mới
+                {t('myAccount.newPassword')}
               </label>
               <input
                 type="password"
@@ -154,7 +156,7 @@ export default function MyAccount() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Xác nhận mật khẩu
+                {t('myAccount.confirmPassword')}
               </label>
               <input
                 type="password"
@@ -165,7 +167,7 @@ export default function MyAccount() {
               type="submit"
               className="px-5 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-700"
             >
-              Cập nhật mật khẩu
+              {t('myAccount.changePassword')}
             </button>
           </form>
         )}

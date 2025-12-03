@@ -2,8 +2,10 @@ import React, { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, User, Phone, Lock, MapPin, CreditCard, UserCircle } from 'lucide-react';
 import { getUserByIdApi, updateUserApi } from '@/api/userApi';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const EditUserModal = ({ isOpen, onClose, onSave, userId }) => {
+    const { t } = useLanguage();
     const [formData, setFormData] = useState({
         name: '',
         password: '',
@@ -40,7 +42,7 @@ const EditUserModal = ({ isOpen, onClose, onSave, userId }) => {
             });
         } catch (err) {
             console.error("Error fetching user:", err);
-            setError("Không thể tải thông tin người dùng. Vui lòng thử lại.");
+            setError(t('editUser.error.fetchFailed'));
         } finally {
             setFetchingData(false);
         }
@@ -98,7 +100,7 @@ const EditUserModal = ({ isOpen, onClose, onSave, userId }) => {
             onClose();
         } catch (err) {
             console.error("Error updating user:", err);
-            setError(err.response?.data?.message || "Không thể cập nhật người dùng. Vui lòng thử lại.");
+            setError(err.response?.data?.message || t('editUser.error.updateFailed'));
         } finally {
             setLoading(false);
         }
@@ -149,7 +151,7 @@ const EditUserModal = ({ isOpen, onClose, onSave, userId }) => {
                                 {/* ✅ FIX: Thêm as="div" để tránh lỗi nested heading */}
                                 <Dialog.Title as="div" className="flex justify-between items-center mb-4">
                                     <span className="text-lg font-semibold text-gray-900">
-                                        Chỉnh sửa người dùng
+                                        {t('editUser.title')}
                                     </span>
                                     <button
                                         onClick={handleClose}
@@ -169,7 +171,7 @@ const EditUserModal = ({ isOpen, onClose, onSave, userId }) => {
                                 {fetchingData ? (
                                     <div className="py-12 text-center">
                                         <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-600 border-t-transparent mx-auto mb-4"></div>
-                                        <p className="text-gray-600 font-medium">Đang tải thông tin...</p>
+                                        <p className="text-gray-600 font-medium">{t('editUser.loadingInfo')}</p>
                                     </div>
                                 ) : (
                                     <form onSubmit={handleSubmit} className="space-y-4">
