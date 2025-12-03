@@ -7,12 +7,14 @@ import { getAllBuses, createBusApi } from '@/api/busApi';
 import { createBusScheduleApi, updateBusScheduleApi } from '@/api/busscheduleApi';
 import Swal from 'sweetalert2';
 import { toast } from 'react-hot-toast';
+import { useLanguage } from '../contexts/LanguageContext';
 
 
 
 
 
 const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
+  const { t } = useLanguage();
   // State cho Bus mới
   const [plate, setPlate] = useState('');
   const [capacity, setCapacity] = useState('');
@@ -202,7 +204,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
       }
 
       // ← Thay alert bằng Toast đẹp
-      const successMessage = isEditing ? 'Cập nhật lịch trình thành công' : 'Phân bổ lịch trình xe bus thành công';
+      const successMessage = isEditing ? t('addBus.messages.updateSuccess') : t('addBus.messages.createSuccess');
       toast.success(
         <div className="flex items-center gap-3">
           <div className="bg-green-100 rounded-full p-2">
@@ -211,7 +213,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
             </svg>
           </div>
           <div>
-            <p className="font-semibold text-gray-800">Thành công!</p>
+            <p className="font-semibold text-gray-800">{t('common.success')}!</p>
             <p className="text-sm text-gray-600">{successMessage}</p>
           </div>
         </div>,
@@ -470,7 +472,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                             disabled={loading}
                             className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {loading ? 'Đang tạo...' : 'Tạo xe bus'}
+                            {loading ? t('addBus.creating') : t('addBus.createBus')}
                           </button>
                         </div>
                       </form>
@@ -619,7 +621,7 @@ const AddBusModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                             disabled={loading || buses.length === 0}
                             className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {loading ? 'Đang xử lý...' : (isEditing ? 'Cập nhật lịch trình' : 'Phân bổ lịch trình')}
+                            {loading ? t('addBus.processing') : (isEditing ? t('addBus.updateSchedule') : t('addBus.allocateSchedule'))}
                           </button>
                         </div>
                       </form>

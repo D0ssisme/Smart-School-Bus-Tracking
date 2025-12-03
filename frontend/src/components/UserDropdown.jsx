@@ -2,12 +2,14 @@ import { useState } from "react";
 import { User, ChevronDown, LogOut, Settings } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth"; // ✅ dùng context để gọi logout()
+import { useLanguage } from "../contexts/LanguageContext";
 import Swal from "sweetalert2";
 import ToastService from "@/lib/toastService";
 
 export default function UserDropdown() {
     const [open, setOpen] = useState(false);
     const { user, logout } = useAuth(); // ✅ lấy user & logout từ context
+    const { t } = useLanguage();
     const navigate = useNavigate();
 
 
@@ -16,12 +18,12 @@ export default function UserDropdown() {
 
     const handleLogout = () => {
         Swal.fire({
-            title: "Bạn có chắc muốn đăng xuất?",
-            text: "Phiên đăng nhập hiện tại sẽ kết thúc.",
+            title: t('userDropdown.logoutConfirm'),
+            text: t('userDropdown.logoutDesc'),
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Đăng xuất",
-            cancelButtonText: "Hủy",
+            confirmButtonText: t('userDropdown.logout'),
+            cancelButtonText: t('common.cancel'),
             reverseButtons: true,
             confirmButtonColor: "#d33",
         }).then((result) => {
@@ -38,7 +40,7 @@ export default function UserDropdown() {
                         toast: true,
                         position: "bottom-end",
                         icon: "success",
-                        title: "Đã đăng xuất!",
+                        title: t('userDropdown.logoutSuccess'),
                         timer: 1500,
                         showConfirmButton: false,
                         timerProgressBar: true,
@@ -82,7 +84,7 @@ export default function UserDropdown() {
                             className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-md text-black"
                         >
                             <Settings className="w-4 h-4" />
-                            <span>Tài khoản</span>
+                            <span>{t('userDropdown.account')}</span>
                         </Link>
 
                         {/* ✅ Nút logout */}
@@ -91,7 +93,7 @@ export default function UserDropdown() {
                             className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-md text-red-600"
                         >
                             <LogOut className="w-4 h-4" />
-                            <span>Đăng xuất</span>
+                            <span>{t('userDropdown.logout')}</span>
                         </button>
                     </div>
                 </div>

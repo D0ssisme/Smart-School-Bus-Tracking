@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import CreateNotificationModal from '@/components/CreateNotificationModal';
 import { getAllNotifications, createNotification, deleteNotification } from "@/api/notificationApi";
 import ToastService from "@/lib/toastService";
+import Swal from 'sweetalert2';
 import { Bell, BellPlus, Filter, Search, TrendingUp, AlertCircle, Info, CheckCircle, Megaphone, Edit2, Trash2, Calendar, Users, X } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { useLanguage } from '../contexts/LanguageContext'; // ✅ Import hook
@@ -68,12 +69,15 @@ function NotificationCard({ notification, onEdit, onDelete }) {
                             <span className={`text-xs font-semibold px-2 py-1 rounded-full ${getTypeStyle(notification.type)}`}>
                                 {getTypeLabel(notification.type)}
                             </span>
-                            {notification.createdAt && (
-                                <span className="text-xs text-gray-500 flex items-center gap-1">
-                                    <Calendar size={14} />
-                                    {new Date(notification.createdAt).toLocaleDateString('vi-VN')}
-                                </span>
-                            )}
+                            {notification.timestamp && (() => {
+                                const date = new Date(notification.timestamp);
+                                return !isNaN(date.getTime()) ? (
+                                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                                        <Calendar size={14} />
+                                        {date.toLocaleDateString('vi-VN')}
+                                    </span>
+                                ) : null;
+                            })()}
                         </div>
                         <p className="text-gray-800 font-medium mb-1">{notification.message}</p>
 
@@ -180,23 +184,54 @@ function Notifications() {
         }
     };
 
-    const handleDeleteNotification = async (id) => {
-        if (confirm(t('notificationManager.messages.deleteConfirm'))) {
-            const loadingToast = ToastService.loading(t('notificationManager.messages.deleting'));
+    const handleDeleteNotification = async (notification) => {
+        // Tìm thông tin thông báo để hiển thị
+        const notifData = typeof notification === 'object' ? notification : notifications.find(n => n._id === notification);
 
-            try {
-                // TODO: Gọi API xóa notification
-                // await deleteNotificationApi(id);
+        Swal.fire({
+            title: t('notificationManager.messages.deleteConfirm') || 'Xác nhận xóa thông báo',
+            html: notifData ? `
+                <div style="text-align: left;">
+                    <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #dc3545;">
+                        <p style="margin: 0; font-size: 16px;">
+                            <strong>📢 Loại:</strong> ${notifData.type === 'info' ? 'Thông tin' : notifData.type === 'alert' ? 'Cảnh báo' : notifData.type === 'success' ? 'Thành công' : 'Thông báo'}
+                        </p>
+                        <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+                            <strong>📝 Nội dung:</strong> ${notifData.message?.substring(0, 100)}${notifData.message?.length > 100 ? '...' : ''}
+                        </p>
+                        <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+                            <strong>📅 Ngày:</strong> ${notifData.timestamp ? (() => {
+                    const date = new Date(notifData.timestamp);
+                    return !isNaN(date.getTime()) ? date.toLocaleDateString('vi-VN') : 'N/A';
+                })() : 'N/A'}
+                        </p>
+                    </div>
+                    <p style="color: #d33; font-weight: bold; margin-top: 16px;">⚠️ Hành động này không thể hoàn tác!</p>
+                </div>
+            ` : '<p>Bạn có chắc muốn xóa thông báo này?</p>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Xóa thông báo',
+            cancelButtonText: 'Hủy',
+            width: 600
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                const loadingToast = ToastService.loading(t('notificationManager.messages.deleting') || 'Đang xóa...');
 
-                setTimeout(() => {
-                    setNotifications(notifications.filter(n => n._id !== id));
-                    ToastService.update(loadingToast, t('notificationManager.messages.deleteSuccess'), "success");
-                }, 1000);
-            } catch (error) {
-                console.error('Error deleting notification:', error);
-                ToastService.update(loadingToast, t('notificationManager.messages.deleteError'), "error");
+                try {
+                    const notifId = notifData?._id || notification;
+                    await deleteNotification(notifId);
+
+                    setNotifications(notifications.filter(n => n._id !== notifId));
+                    ToastService.update(loadingToast, t('notificationManager.messages.deleteSuccess') || 'Xóa thông báo thành công!', "success");
+                } catch (error) {
+                    console.error('Error deleting notification:', error);
+                    ToastService.update(loadingToast, t('notificationManager.messages.deleteError') || 'Không thể xóa thông báo!', "error");
+                }
             }
-        }
+        });
     };
 
     const handleEditNotification = (notification) => {

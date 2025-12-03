@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from "react";
 import { X, UserPlus, User, GraduationCap, Users, Route, MapPin } from "lucide-react";
 import { getRoutesByIdApi } from "@/api/routestopApi";
+import { useLanguage } from '../contexts/LanguageContext';
 
 function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
+    const { t } = useLanguage();
     const [formData, setFormData] = useState({
         name: "",
         class: "",
@@ -96,27 +98,27 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
         const newErrors = {};
 
         if (!formData.name.trim()) {
-            newErrors.name = "Vui lòng nhập tên học sinh";
+            newErrors.name = t('addStudent.validation.nameRequired');
         }
 
         if (!formData.class.trim()) {
-            newErrors.class = "Vui lòng nhập lớp";
+            newErrors.class = t('addStudent.validation.gradeRequired');
         }
 
         if (!formData.parentId) {
-            newErrors.parentId = "Vui lòng chọn phụ huynh";
+            newErrors.parentId = t('addStudent.validation.parentRequired');
         }
 
         if (!formData.routeId) {
-            newErrors.routeId = "Vui lòng chọn tuyến đường";
+            newErrors.routeId = t('addStudent.validation.routeRequired');
         }
 
         if (!formData.pickupStopId) {
-            newErrors.pickupStopId = "Vui lòng chọn điểm đón";
+            newErrors.pickupStopId = t('addStudent.validation.pickupRequired');
         }
 
         if (!formData.dropoffStopId) {
-            newErrors.dropoffStopId = "Vui lòng chọn điểm trả";
+            newErrors.dropoffStopId = t('addStudent.validation.dropoffRequired');
         }
 
         setErrors(newErrors);
@@ -143,8 +145,8 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                             <UserPlus className="text-white" size={24} />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-white">Thêm học sinh mới</h2>
-                            <p className="text-cyan-100 text-sm">Điền thông tin học sinh vào form bên dưới</p>
+                            <h2 className="text-2xl font-bold text-white">{t('addStudent.title')}</h2>
+                            <p className="text-cyan-100 text-sm">{t('addStudent.subtitle')}</p>
                         </div>
                     </div>
                     <button
@@ -162,14 +164,14 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                         <div>
                             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                 <User size={18} className="text-cyan-600" />
-                                Tên học sinh <span className="text-red-500">*</span>
+                                {t('addStudent.name')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                placeholder="Nhập tên học sinh..."
+                                placeholder={t('addStudent.namePlaceholder')}
                                 className={`w-full px-4 py-3 border-2 ${errors.name ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-cyan-500'
                                     } rounded-lg outline-none transition-colors bg-gray-50 focus:bg-white`}
                             />
@@ -184,14 +186,14 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                         <div>
                             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                 <GraduationCap size={18} className="text-cyan-600" />
-                                Lớp <span className="text-red-500">*</span>
+                                {t('addStudent.grade')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 name="class"
                                 value={formData.class}
                                 onChange={handleChange}
-                                placeholder="Ví dụ: 10A1, 11B2..."
+                                placeholder={t('addStudent.gradePlaceholder')}
                                 className={`w-full px-4 py-3 border-2 ${errors.class ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-cyan-500'
                                     } rounded-lg outline-none transition-colors bg-gray-50 focus:bg-white`}
                             />
@@ -206,7 +208,7 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                         <div>
                             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                 <Users size={18} className="text-cyan-600" />
-                                Phụ huynh <span className="text-red-500">*</span>
+                                {t('addStudent.parent')} <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                                 <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -217,7 +219,7 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                                     className={`w-full pl-11 pr-4 py-3 border-2 ${errors.parentId ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-cyan-500'
                                         } rounded-lg outline-none transition-colors bg-gray-50 focus:bg-white appearance-none cursor-pointer`}
                                 >
-                                    <option value="">-- Chọn phụ huynh --</option>
+                                    <option value="">{t('addStudent.selectParent')}</option>
                                     {parents.map(parent => (
                                         <option key={parent._id} value={parent._id}>
                                             {parent.name} {parent.phoneNumber ? `- ${parent.phoneNumber}` : ''}
@@ -241,7 +243,7 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                         <div>
                             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                 <Route size={18} className="text-cyan-600" />
-                                Tuyến đường <span className="text-red-500">*</span>
+                                {t('addStudent.route')} <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                                 <Route className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -252,7 +254,7 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                                     className={`w-full pl-11 pr-4 py-3 border-2 ${errors.routeId ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-cyan-500'
                                         } rounded-lg outline-none transition-colors bg-gray-50 focus:bg-white appearance-none cursor-pointer`}
                                 >
-                                    <option value="">-- Chọn tuyến đường --</option>
+                                    <option value="">{t('addStudent.selectRoute')}</option>
                                     {routes.map(route => (
                                         <option key={route._id} value={route._id}>
                                             {route.name} {route.description ? `- ${route.description}` : ''}
@@ -277,7 +279,7 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                             <div>
                                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                     <MapPin size={18} className="text-green-600" />
-                                    Điểm đón <span className="text-red-500">*</span>
+                                    {t('addStudent.pickup')} <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -290,7 +292,7 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                                             } rounded-lg outline-none transition-colors bg-gray-50 focus:bg-white appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
                                     >
                                         <option value="">
-                                            {loadingStops ? "Đang tải điểm dừng..." : routeStops.length === 0 ? "Không có điểm dừng" : "-- Chọn điểm đón --"}
+                                            {loadingStops ? t('addStudent.loadingStops') : routeStops.length === 0 ? t('addStudent.noStops') : t('addStudent.selectPickup')}
                                         </option>
                                         {routeStops.map(stop => (
                                             <option key={stop._id} value={stop._id}>
@@ -321,7 +323,7 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                             <div>
                                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                     <MapPin size={18} className="text-red-600" />
-                                    Điểm trả <span className="text-red-500">*</span>
+                                    {t('addStudent.dropoff')} <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -334,7 +336,7 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                                             } rounded-lg outline-none transition-colors bg-gray-50 focus:bg-white appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
                                     >
                                         <option value="">
-                                            {loadingStops ? "Đang tải điểm dừng..." : routeStops.length === 0 ? "Không có điểm dừng" : "-- Chọn điểm trả --"}
+                                            {loadingStops ? t('addStudent.loadingStops') : routeStops.length === 0 ? t('addStudent.noStops') : t('addStudent.selectDropoff')}
                                         </option>
                                         {routeStops.map(stop => (
                                             <option key={stop._id} value={stop._id}>
@@ -366,11 +368,11 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                                 <div className="flex items-start gap-3">
                                     <MapPin className="text-cyan-600 mt-0.5" size={20} />
                                     <div>
-                                        <p className="text-sm font-semibold text-cyan-900">Lưu ý về điểm đón/trả</p>
+                                        <p className="text-sm font-semibold text-cyan-900">{t('addStudent.noteTitle')}</p>
                                         <p className="text-xs text-cyan-700 mt-1">
                                             {routeStops.length > 0
-                                                ? `Tuyến này có ${routeStops.length} điểm dừng. Vui lòng chọn điểm đón và điểm trả phù hợp.`
-                                                : "Tuyến này chưa có điểm dừng nào. Vui lòng liên hệ quản trị viên."}
+                                                ? t('addStudent.noteContent').replace('{count}', routeStops.length)
+                                                : t('addStudent.noteSelect')}
                                         </p>
                                     </div>
                                 </div>
@@ -386,14 +388,14 @@ function AddStudentModal({ isOpen, onClose, onSubmit, parents, routes }) {
                         onClick={onClose}
                         className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
                     >
-                        Hủy
+                        {t('common.cancel')}
                     </button>
                     <button
                         onClick={handleSubmit}
                         className="px-6 py-2.5 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center gap-2"
                     >
                         <UserPlus size={20} />
-                        Thêm học sinh
+                        {t('addStudent.submit')}
                     </button>
                 </div>
             </div>

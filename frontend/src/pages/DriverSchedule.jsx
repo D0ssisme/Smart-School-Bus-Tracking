@@ -39,7 +39,7 @@ export default function DriverSchedule() {
       setSchedules(list);
     } catch (error) {
       console.error("Error fetching schedules:", error);
-      toast.error("Không thể tải lịch trình");
+      toast.error(t('driverSchedule.messages.error'));
       setSchedules([]); // tránh crash UI
     } finally {
       setLoading(false);

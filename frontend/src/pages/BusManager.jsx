@@ -15,7 +15,7 @@ import Swal from 'sweetalert2';
 // Component BusCard
 const BusCard = ({ bus, onEdit, onDelete }) => {
   const { t } = useLanguage(); // ✅ Sử dụng hook
-  
+
   const statusConfig = {
     active: {
       label: t('busManager.status.active'), // ✅ Dịch label
@@ -348,68 +348,68 @@ const BusManager = () => {
 
   const handleDeleteBus = async (bus) => {
     Swal.fire({
-      title: 'Xác nhận xóa xe bus',
+      title: t('busManager.swal.deleteTitle'),
       html: `
         <div style="text-align: left;">
           <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #dc3545;">
             <p style="margin: 0; font-size: 16px;">
-              <strong>🚌 Biển số:</strong> ${bus.license_plate}
+              <strong>🚌 ${t('busManager.swal.plate')}:</strong> ${bus.license_plate}
             </p>
             <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
-              <strong>🆔 Mã xe:</strong> ${bus.bus_id}
+              <strong>🆔 ${t('busManager.swal.busId')}:</strong> ${bus.bus_id}
             </p>
             <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
-              <strong>👥 Sức chứa:</strong> ${bus.capacity} chỗ
+              <strong>👥 ${t('busManager.swal.capacity')}:</strong> ${bus.capacity} ${t('busManager.card.seat')}
             </p>
           </div>
-          <p style="color: #d33; font-weight: bold; margin-top: 16px;">⚠️ Hành động này không thể hoàn tác!</p>
+          <p style="color: #d33; font-weight: bold; margin-top: 16px;">⚠️ ${t('busManager.swal.warning')}</p>
         </div>
       `,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Xóa xe bus',
-      cancelButtonText: 'Hủy',
+      confirmButtonText: t('busManager.swal.confirmDelete'),
+      cancelButtonText: t('busManager.swal.cancel'),
       width: 600
     }).then(async (result) => {
       if (result.isConfirmed) {
-        const loadingToast = ToastService.loading('Đang xóa xe bus...');
+        const loadingToast = ToastService.loading(t('busManager.swal.deleting'));
 
         try {
           console.log('🗑️ Deleting bus:', bus._id);
           await deleteBusApi(bus._id);
 
           setBuses(buses.filter(b => b._id !== bus._id));
-          ToastService.update(loadingToast, 'Xóa xe bus thành công!', 'success');
+          ToastService.update(loadingToast, t('busManager.messages.deleteSuccess'), 'success');
         } catch (err) {
           console.error('❌ Error deleting bus:', err);
 
           if (err.response?.status === 400 && err.response?.data?.message?.includes('lịch trình')) {
-            ToastService.update(loadingToast, 'Xe đang được sử dụng trong lịch trình!', 'error');
+            ToastService.update(loadingToast, t('busManager.swal.constraintError'), 'error');
 
             Swal.fire({
-              title: 'Không thể xóa!',
+              title: t('busManager.swal.cannotDelete'),
               html: `
                 <div style="text-align: left;">
-                  <p style="margin-bottom: 12px;">Xe <strong>${bus.license_plate}</strong> đang được sử dụng trong lịch trình.</p>
+                  <p style="margin-bottom: 12px;">${t('busManager.swal.busInUse', { plate: bus.license_plate })}</p>
                   <div style="background: #fff3cd; padding: 12px; border-radius: 8px; border-left: 4px solid #ffc107;">
                     <p style="margin: 0; font-size: 14px;">
-                      💡 <strong>Hướng dẫn:</strong><br/>
-                      1. Vào trang <strong>Quản lý lịch trình</strong><br/>
-                      2. Xóa các lịch trình của xe này<br/>
-                      3. Quay lại xóa xe bus
+                      💡 <strong>${t('busManager.swal.instructionTitle')}:</strong><br/>
+                      1. ${t('busManager.swal.instruction1')}<br/>
+                      2. ${t('busManager.swal.instruction2')}<br/>
+                      3. ${t('busManager.swal.instruction3')}
                     </p>
                   </div>
                 </div>
               `,
               icon: 'error',
-              confirmButtonText: 'Đã hiểu'
+              confirmButtonText: t('busManager.swal.understood')
             });
           } else {
             ToastService.update(
               loadingToast,
-              err.response?.data?.message || 'Có lỗi xảy ra khi xóa xe bus!',
+              err.response?.data?.message || t('busManager.messages.genericError'),
               'error'
             );
           }
